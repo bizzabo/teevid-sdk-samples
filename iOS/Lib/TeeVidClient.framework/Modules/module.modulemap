@@ -1,0 +1,6 @@
+framework module TeeVidClient {
+  umbrella header "TeeVidClient.h"
+
+  export *
+  module * { export * }
+}
