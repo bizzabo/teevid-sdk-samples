@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/html">
+<head>
+    <title>JavaScript Motion Detection</title>
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="main.css"/>
+</head>
+<body>
+
+<div id="container">
+
+    <div id="header"></div>
+
+    <div id="content">
+
+        <video id="webcam" autoplay width="640" height="480"></video> 
+        <canvas id="canvas-source" width="640" height="480"></canvas>
+        <canvas id="canvas-highlights" width="640" height="480"></canvas>
+        <canvas id="canvas-blended" width="640" height="480"></canvas>
+
+        <div id="hotSpots">
+            <!-- <div id="one"></div> <div id="another"></div> -->
+            <a href="http://www.teevid.com" class="link" style="right: 6%; top: 5%; width: 14%"><img src="/img/big_logo.png" width="100%"></a>
+        </div>
+    </div>
+
+
+
+    <div id="footer">
+        
+    </div>
+
+</div>
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+<script src="app.js"></script>
+<script src="sample.js"></script>
+
+</body>
+</html>
