@@ -1,40 +1,37 @@
-<!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/html">
+html>
+
 <head>
-    <title>JavaScript Motion Detection</title>
-    <link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
-    <link rel="stylesheet" href="main.css"/>
+  <meta charset="UTF-8">
+  <title>TeeVid SDK demo</title>
+  <style>
+    #streams>div {
+      height: 200px;
+      width: 200px;
+      float: left;
+      border: 1px solid black;
+      margin: 0 10px 10px 0;
+    }
+
+    #error {
+      clear: both;
+    }
+
+    #error::before {
+      content: 'Last error: '
+    }
+  </style>
 </head>
+
 <body>
+  <div id="streams">
+    <div id="stream_local" style="border-color: red;"></div>
+  </div>
+  <div id="error"></div>
 
-<div id="container">
-
-    <div id="header"></div>
-
-    <div id="content">
-
-        <video id="webcam" autoplay width="640" height="480"></video> 
-        <canvas id="canvas-source" width="640" height="480"></canvas>
-        <canvas id="canvas-highlights" width="640" height="480"></canvas>
-        <canvas id="canvas-blended" width="640" height="480"></canvas>
-
-        <div id="hotSpots">
-            <!-- <div id="one"></div> <div id="another"></div> -->
-            <a href="http://www.teevid.com" class="link" style="right: 6%; top: 5%; width: 14%"><img src="/img/big_logo.png" width="100%"></a>
-        </div>
-    </div>
-
-
-
-    <div id="footer">
-        
-    </div>
-
-</div>
-
-<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
-<script src="app.js"></script>
-<script src="sample.js"></script>
-
+  <script src="./libs/sdk.js"></script>
+  <script src="./libs/jquery-1.9.1.min.js"></script>
+  <script src="sample.js"></script>
 </body>
+
 </html>
+
