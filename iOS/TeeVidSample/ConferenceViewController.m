@@ -29,7 +29,7 @@
     // Initialize TeeVidClient
     // Two modes are available: video layout is managed by client, or by application
     // To use mode when video layout is managed by application, set clientManagedLayout to NO
-    clientManagedLayout = NO;
+    clientManagedLayout = YES;
     if (clientManagedLayout) {
         // Pass whatever view you want video to be rendered in
         CGRect bounds = self.view.frame;
