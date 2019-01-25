@@ -2,7 +2,7 @@
 //  ConferenceViewController.m
 //  TeeVidSample
 //
-//  Copyright © 2016-2018 cloudAYI. All rights reserved.
+//  Copyright © 2016-2019 cloudAYI. All rights reserved.
 //
 
 #import "ConferenceViewController.h"
@@ -29,7 +29,7 @@
     // Initialize TeeVidClient
     // Two modes are available: video layout is managed by client, or by application
     // To use mode when video layout is managed by application, set clientManagedLayout to NO
-    clientManagedLayout = YES;
+    clientManagedLayout = NO;
     if (clientManagedLayout) {
         // Pass whatever view you want video to be rendered in
         CGRect bounds = self.view.frame;
@@ -218,6 +218,11 @@
             [self refreshLayout];
         } completion:nil];
     }
+}
+
+- (void)client:(TeeVidClient *)client didRecieveUnmuteRequest:(NSDictionary*)request completionHandler:(void (^)(BOOL allowUnmute))completionHandler {
+    // completionHandler should called when a user make a choice about approving or discard the request. allowUnmute is a BOOL value that represent a user's answer
+    completionHandler(YES);
 }
 
 // only used when video layout is managed by application
