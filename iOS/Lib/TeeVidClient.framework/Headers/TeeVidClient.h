@@ -2,7 +2,7 @@
 //  TeeVidClient.h
 //  TeeVid
 //
-//  Copyright © 2017-2018 cloudAYI. All rights reserved.
+//  Copyright © 2017-2019 cloudAYI. All rights reserved.
 //
 
 /*!
@@ -62,6 +62,21 @@ FOUNDATION_EXPORT NSString *const TEEVID_ATTRIBUTE_LOCAL;
  */
 FOUNDATION_EXPORT NSString *const TEEVID_ATTRIBUTE_QOE;
 
+/*!
+ @brief Name of participant attribute containing dictionary of flags indicating mute status of media channels.
+ @discussion Each key in such dictionary represents media channed (audio or video), and value is a boolean indicating whether given channel is muted.
+ 
+ Note that this dictionary migh also contain special entry which contains another dictionary of mute flags indicating which channels were muted by moderator (vs muted locally by user).
+ @constant TEEVID_ATTRIBUTE_IS_MUTED
+ */
+FOUNDATION_EXPORT NSString *const TEEVID_ATTRIBUTE_IS_MUTED;
+
+/*!
+ @brief Name of participant attribute containing dictionary of flags indicating mute status of media channels when they muted by moderator.
+ @discussion Each key in such dictionary represents media channed (audio or video), and value is a boolean indicating whether given channel is muted.
+ @constant TEEVID_ATTRIBUTE_BY_MODERATOR
+ */
+FOUNDATION_EXPORT NSString *const TEEVID_ATTRIBUTE_BY_MODERATOR;
 
 /*!
  @brief Conference room not found error message.
@@ -637,5 +652,16 @@ typedef enum {
  @return reference to a view where video of individual participant is being rendered in, or nil if specified participant does not send video stream
  */
 - (UIView *)getViewForParticipant:(NSString *)participantId video:(BOOL)video;
+
+/*!
+ @brief Retrieves ids of participants selected by lecturer to be included in video layout during lecture mode.
+ @discussion While in lecture mode, lecturer can designate some participants to be included in video layout.
+ 
+ Non-empty list indicates that lecturer selected specific video layout with given number of participants in it. Some slots might be empty, it is indicated by special entry in the list - "stub". This list might or might not include lecturer itself.
+ Empty list indicates "automatic" layout during lecture mode. In such case, lecturer is always included. Other participants might be also included if lecturer accepted their "raise hand" request.
+ 
+ @return list of participant ids to included in video layout during lecture mode
+ */
+- (NSArray *)getLecturerSelectedParticipants;
 
 @end
