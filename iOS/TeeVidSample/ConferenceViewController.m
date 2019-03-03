@@ -16,6 +16,7 @@
     UIView *conferenceView;
     TeeVidClient *teeVidClient;
     NSMutableDictionary *videoViews;
+    NSMutableDictionary *screenSharingViews;
     BOOL clientManagedLayout;
     BOOL disconnecing;
 }
@@ -42,6 +43,7 @@
         // Create client without passing view, instead get and manage individual participant video views directly
         teeVidClient = [[TeeVidClient alloc] initWithOptions:nil andDelegate:self];
         videoViews = [[NSMutableDictionary alloc] init];
+        screenSharingViews = [[NSMutableDictionary alloc] init];
     }
     
     // Initiate conference room connection
@@ -146,18 +148,7 @@
     // Application can use this call to update participant list
     // If video layout is managed by application, application is also responsible to get and manage view for each participant
     if (!clientManagedLayout) {
-        id videoAttribute = attributes[TEEVID_ATTRIBUTE_VIDEO];
-        if (videoAttribute && [videoAttribute boolValue]) {
-            UIView *videoView = [client getViewForParticipant:participantId video:YES];
-            // Participant might not have video stream yet
-            if (videoView) {
-                videoViews[participantId] = videoView;
-                [self.view addSubview:videoView];
-                [UIView transitionWithView:conferenceView duration:0.3 options:(UIViewAnimationOptionLayoutSubviews) animations:^{
-                    [self refreshLayout];
-                } completion:nil];
-            }
-        }
+        [self addViewForParticipant:participantId withAttributes:attributes];
     }
 }
 
@@ -166,22 +157,7 @@
     // Application can use this call to update participant list
     // If video layout is managed by application, application is also responsible to manage view for each participant
     if (!clientManagedLayout) {
-        id videoAttribute = attributes[TEEVID_ATTRIBUTE_VIDEO];
-        if (videoAttribute && [videoAttribute boolValue]) {
-            // Is there already video view for this participant?
-            UIView *videoView = videoViews[participantId];
-            if (!videoView) {
-                // No cached video view, check if participant added video stream
-                videoView = [client getViewForParticipant:participantId video:YES];
-                if (videoView) {
-                    videoViews[participantId] = videoView;
-                    [self.view addSubview:videoView];
-                    [UIView transitionWithView:conferenceView duration:0.3 options:(UIViewAnimationOptionLayoutSubviews) animations:^{
-                        [self refreshLayout];
-                    } completion:nil];
-                }
-            }
-        }
+        [self addViewForParticipant:participantId withAttributes:attributes];
     }
 }
 
@@ -190,14 +166,7 @@
     // Application can use this call to update participant list
     // If video layout is managed by application, application is also responsible to manage view for each participant
     if (!clientManagedLayout) {
-        UIView *videoView = videoViews[participantId];
-        if (videoView) {
-            [videoViews removeObjectForKey:participantId];
-            [videoView removeFromSuperview];
-            [UIView transitionWithView:conferenceView duration:0.3 options:(UIViewAnimationOptionLayoutSubviews) animations:^{
-                [self refreshLayout];
-            } completion:nil];
-        }
+        [self removeView:nil forParticipant:participantId];
     }
 }
 
@@ -208,21 +177,85 @@
 }
 
 - (void)client:(TeeVidClient *)client didRemoveVideoView:(UIView *)view forParticipant:(NSString *)participantId {
-    // Note that client will notify about video size change only if video layout is managed by application
+    // Note that client will notify about video view removed only if video layout is managed by application
     // Application should use this call to remove view from video layout
-    UIView *videoView = videoViews[participantId];
-    if (videoView) {
-        [videoViews removeObjectForKey:participantId];
-        [videoView removeFromSuperview];
+    [self removeView:view forParticipant:participantId];
+}
+
+- (void)client:(TeeVidClient *)client didRecieveUnmuteRequest:(NSDictionary*)request completionHandler:(void (^)(BOOL allowUnmute))completionHandler {
+    // completionHandler should called when a user make a choice about approving or discard the request. allowUnmute is a BOOL value that represent a user's answer
+    completionHandler(YES);
+}
+
+# pragma mark - Private
+
+- (void)addViewForParticipant:(NSString *)participantId withAttributes:(NSDictionary *)attributes {
+    BOOL refresh = NO;
+    
+    id videoAttribute = attributes[TEEVID_ATTRIBUTE_VIDEO];
+    if (videoAttribute && [videoAttribute boolValue]) {
+        // Is there already video view for this participant?
+        if (!videoViews[participantId]) {
+            // No cached video view, check if participant added video stream
+            UIView *videoView = [teeVidClient getViewForParticipant:participantId video:YES];
+            // Participant might not have video stream yet
+            if (videoView) {
+                videoViews[participantId] = videoView;
+                [self.view addSubview:videoView];
+                refresh = YES;
+            }
+        }
+    }
+    
+    id screenSharingAttribute = attributes[TEEVID_ATTRIBUTE_SCREEN_SHARING];
+    if (screenSharingAttribute && [screenSharingAttribute boolValue]) {
+        if (!screenSharingViews[participantId]) {
+            // No cached video view, check if participant added screen sharing stream
+            UIView *screenSharingView = [teeVidClient getViewForParticipant:participantId video:NO];
+            // Participant might not have video stream yet
+            if (screenSharingView) {
+                screenSharingViews[participantId] = screenSharingView;
+                [self.view addSubview:screenSharingView];
+                refresh = YES;
+            }
+        }
+    }
+    
+    if (refresh) {
         [UIView transitionWithView:conferenceView duration:0.3 options:(UIViewAnimationOptionLayoutSubviews) animations:^{
             [self refreshLayout];
         } completion:nil];
     }
 }
 
-- (void)client:(TeeVidClient *)client didRecieveUnmuteRequest:(NSDictionary*)request completionHandler:(void (^)(BOOL allowUnmute))completionHandler {
-    // completionHandler should called when a user make a choice about approving or discard the request. allowUnmute is a BOOL value that represent a user's answer
-    completionHandler(YES);
+- (void)removeView:(UIView *)view forParticipant:(NSString *)participantId {
+    BOOL refresh = NO;
+    
+    UIView *videoView = videoViews[participantId];
+    if (videoView) {
+        // if specific view passed to this method, check for match
+        if (!view || [videoView isEqual:view]) {
+            [videoViews removeObjectForKey:participantId];
+            [videoView removeFromSuperview];
+            refresh = YES;
+        }
+    }
+    
+    UIView *screenSharingView = screenSharingViews[participantId];
+    if (screenSharingView) {
+        // if specific view passed to this method, check for match
+        if (!view || [screenSharingView isEqual:view]) {
+            [screenSharingViews removeObjectForKey:participantId];
+            [screenSharingView removeFromSuperview];
+            refresh = YES;
+        }
+    }
+    
+    if (refresh) {
+        [UIView transitionWithView:conferenceView duration:0.3 options:(UIViewAnimationOptionLayoutSubviews) animations:^{
+            [self refreshLayout];
+        } completion:nil];
+    }
 }
 
 // only used when video layout is managed by application
@@ -236,29 +269,57 @@
     
     NSArray *keys = [videoViews allKeys];
     unsigned long count = keys.count;
-    unsigned long start = count > 4 ? count - 4 : 0;
-    for (unsigned long i = 0; i < count; ++i) {
-        UIView *videoView = videoViews[keys[i]];
-        if (i < start) {
-            videoView.hidden = YES;
-        } else {
-            videoView.bounds = CGRectMake(0, 0, singleViewWidth, singleViewHeight);
-            switch(i - start) {
-                case 0:
-                    videoView.frame = CGRectMake(0, 40, singleViewWidth, singleViewHeight);
-                    break;
-                case 1:
-                    videoView.frame = CGRectMake(singleViewWidth, 40, singleViewWidth, singleViewHeight);
-                    break;
-                case 2:
-                    videoView.frame = CGRectMake(0, singleViewHeight + 40, singleViewWidth, singleViewHeight);
-                    break;
-                case 3:
-                    videoView.frame = CGRectMake(singleViewWidth, singleViewHeight + 40, singleViewWidth, singleViewHeight);
-                    break;
+    // if there is screen sharing, use bottom two quandrants for it
+    UIView *screenSharingView = screenSharingViews.count > 0 ? screenSharingViews[[screenSharingViews allKeys][0]] : nil;
+    if (screenSharingView) {
+        unsigned long start = count > 2 ? count - 2 : 0;
+        for (unsigned long i = 0; i < count; ++i) {
+            UIView *videoView = videoViews[keys[i]];
+            if (i < start) {
+                videoView.hidden = YES;
+            } else {
+                videoView.bounds = CGRectMake(0, 0, singleViewWidth, singleViewHeight);
+                switch(i - start) {
+                    case 0:
+                        videoView.frame = CGRectMake(0, 40, singleViewWidth, singleViewHeight);
+                        break;
+                    case 1:
+                        videoView.frame = CGRectMake(singleViewWidth, 40, singleViewWidth, singleViewHeight);
+                        break;
+                }
+                videoView.hidden = NO;
+                [self.view bringSubviewToFront:videoView];
             }
-            videoView.hidden = NO;
-            [self.view bringSubviewToFront:videoView];
+        }
+        screenSharingView.bounds = CGRectMake(0, 0, singleViewWidth * 2, singleViewHeight);
+        screenSharingView.frame = CGRectMake(0, singleViewHeight + 40, singleViewWidth * 2, singleViewHeight);
+        screenSharingView.hidden = NO;
+        [self.view bringSubviewToFront:screenSharingView];
+    } else {
+        unsigned long start = count > 4 ? count - 4 : 0;
+        for (unsigned long i = 0; i < count; ++i) {
+            UIView *videoView = videoViews[keys[i]];
+            if (i < start) {
+                videoView.hidden = YES;
+            } else {
+                videoView.bounds = CGRectMake(0, 0, singleViewWidth, singleViewHeight);
+                switch(i - start) {
+                    case 0:
+                        videoView.frame = CGRectMake(0, 40, singleViewWidth, singleViewHeight);
+                        break;
+                    case 1:
+                        videoView.frame = CGRectMake(singleViewWidth, 40, singleViewWidth, singleViewHeight);
+                        break;
+                    case 2:
+                        videoView.frame = CGRectMake(0, singleViewHeight + 40, singleViewWidth, singleViewHeight);
+                        break;
+                    case 3:
+                        videoView.frame = CGRectMake(singleViewWidth, singleViewHeight + 40, singleViewWidth, singleViewHeight);
+                        break;
+                }
+                videoView.hidden = NO;
+                [self.view bringSubviewToFront:videoView];
+            }
         }
     }
 }
