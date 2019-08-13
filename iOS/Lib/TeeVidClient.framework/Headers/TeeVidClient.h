@@ -388,6 +388,11 @@ typedef enum {
 @property (nonatomic, readonly) NSString *serverMiddlewareVersion;
 
 /*!
+ @brief Contains version of the moderation server for target conference room.
+ */
+@property (nonatomic, readonly) NSString *serverModerationVersion;
+
+/*!
  @brief Contains id of the conference room to connect to.
  */
 @property (nonatomic, readonly) NSString *roomId;
