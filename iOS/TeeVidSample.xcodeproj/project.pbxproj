@@ -8,8 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		0A3563292188BD0600A8D011 /* SocketIO.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A3563272188BD0500A8D011 /* SocketIO.framework */; };
-		0A35632A2188BD0600A8D011 /* Starscream.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A3563282188BD0600A8D011 /* Starscream.framework */; };
-		0A35632B2188BD0F00A8D011 /* SocketIO.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A3563272188BD0500A8D011 /* SocketIO.framework */; };
 		0A35632C2188BD0F00A8D011 /* SocketIO.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 0A3563272188BD0500A8D011 /* SocketIO.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		0A35632D2188BD0F00A8D011 /* Starscream.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A3563282188BD0600A8D011 /* Starscream.framework */; };
 		0A35632E2188BD0F00A8D011 /* Starscream.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 0A3563282188BD0600A8D011 /* Starscream.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -67,12 +65,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F583C3851F813A3400D043DF /* TeeVidClient.framework in Frameworks */,
+				F583C3861F813A3400D043DF /* WebRTC.framework in Frameworks */,
 				0A3563292188BD0600A8D011 /* SocketIO.framework in Frameworks */,
 				0A35632D2188BD0F00A8D011 /* Starscream.framework in Frameworks */,
-				0A35632A2188BD0600A8D011 /* Starscream.framework in Frameworks */,
-				F583C3851F813A3400D043DF /* TeeVidClient.framework in Frameworks */,
-				0A35632B2188BD0F00A8D011 /* SocketIO.framework in Frameworks */,
-				F583C3861F813A3400D043DF /* WebRTC.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
