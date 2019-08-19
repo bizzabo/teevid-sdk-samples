@@ -1,6 +1,7 @@
 import React, { Fragment, useState, useRef } from 'react';
 import { connect } from 'react-redux';
-import { push } from 'react-router-redux';
+// import { push } from 'react-router-redux';
+import { withRouter } from 'react-router-dom';
 import actions from '../ducks/actions';
 import Button from '@material-ui/core/Button';
 import { makeStyles } from '@material-ui/core/styles';
@@ -19,19 +20,17 @@ const useStyles = makeStyles(theme => ({
 }));
 
 const Join = (props) => {
-  const [username, setName] = useState('');
-  const [room, setRoom] = useState('');
+  const [username, setName] = useState('Your name');
+  const [room, setRoom] = useState('Nas10ka');
   const [labelWidth] = useState(0);
-  const handleChange = (event) => setName(event.target.value);
+  const handleChange = e => setName(e.target.value);
   const setRoomName = e => setRoom(e.target.value);
   const labelRef = useRef(null);
   const classes = useStyles();
   const join = () => {
-    console.log(props, TeeVidSdk.actions, username, room );
-    TeeVidSdk.actions.connect({ username, room, pin: '', connectAnyway: true });
-    return props.goToMeeting();
+    props.connect(username, room, '', true);
+    return props.history.push('/meeting');
   };
-
 
   return (
     <Fragment>
@@ -63,12 +62,9 @@ const Join = (props) => {
     </Fragment>
   );
 }
-const mapStateToProps = state => ({
-  ...state
-});
 
 const mapDispatchToProps = {
   connect: actions.connect,
   goToMeeting: () => push('/meeting')
 }
-export default connect(mapStateToProps, mapDispatchToProps)(Join);
+export default connect(null, mapDispatchToProps)(withRouter(Join));

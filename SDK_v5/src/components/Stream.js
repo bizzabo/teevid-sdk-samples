@@ -8,6 +8,8 @@ class Stream extends Component {
   }
 
   render () {
+    console.log('Stream ', this.props);
+
     return (
       <div className='stream'  
         id={this.streamId}

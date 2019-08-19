@@ -1,9 +1,9 @@
 import types from './types';
 
 export default Object.freeze({
-  connect: payload => ({
+  connect: (username, room, pin, connectAnyway) => ({
     type: types.CONNECT,
-    payload
+    payload: { username, room, pin, connectAnyway }
   }),
 
 });

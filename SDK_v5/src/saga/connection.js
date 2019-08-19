@@ -5,6 +5,7 @@ import forEach from 'lodash.foreach';
 import types from '../ducks/actions/types';
 import actions from '../ducks/actions';
 const actionTypes = TeeVidSdk.actionTypes;
+
 const createLocalStream = (
   connection,
   mode = 'interactive',
@@ -42,7 +43,6 @@ export const publishStream = (stream, connection) => {
  */
 export const initLocalStream = (stream) =>
   new Promise((resolve, reject) => {
-    // const { video, audio } = stream;
     stream.addEventListener('access-accepted', () => {
       if (!stream.stream) {
         return reject(new Error({ message: 'Stream is not ready or is already published' }));
@@ -73,9 +73,7 @@ function* connectionWorker() {
 
 
 export function* connectSaga() {
-  // ? maybe use 'take' to make sure it runs only once?
   yield all([
-
     // create participant
     takeEvery(types.CONNECT, participantWorker),
     // create connection
@@ -110,7 +108,6 @@ export function* connectSaga() {
         // publish streams
       } catch (error) {
         TeeVidSdk.actions.disconnect();
-        // console.log('<> ERROR', error);
       }
     })
 

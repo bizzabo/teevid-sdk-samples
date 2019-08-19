@@ -8,9 +8,9 @@ import {
 
 function* rootApiSaga() {
   yield all ([
-    connectSaga,
-    disconnectSaga,
-    disconnectedSaga
+    connectSaga(),
+    disconnectSaga(),
+    disconnectedSaga()
   ]);
 }
 

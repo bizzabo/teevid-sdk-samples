@@ -1,21 +1,22 @@
 import React, { Component, Fragment } from 'react';
 import { connect } from 'react-redux';
-import actions from '../ducks/actions';
 import Stream from './Stream';
 
 class Meeting extends Component {
   static defaultProps = {
     participants: []
   }
-  state = {
-    connected: false
-  }
 
   render() {
-    const { participants = [] } = this.props;
+    const { participant = [], remote } = this.props;
+    console.log(this.props);
+    
+    const streams = Object.keys(remote).length ? Object.values(remote).map(
+      (item, index) => <Stream id={item} key={`stream_remote_${index}`} />
+    ) : null;
 
-    const stream = participants.length ? participants.map((item, index) => 
-      <Stream {...item} key={`stream_${index}`} />
+    const localStream = participant ? Object.values(participant).map((item, index) => 
+      <Stream id={item} key={`stream_${index}`} />
     ) : <div className="no-remote-streams">
           There is no any stream
         </div>
@@ -23,7 +24,8 @@ class Meeting extends Component {
     return (
       <Fragment>
         <div className='meeting'>
-          { stream }
+          { localStream }
+          { streams }
         </div>
       </Fragment>
     );
@@ -31,11 +33,8 @@ class Meeting extends Component {
 }
 
 const mapStateToProps = state => ({
-  participants: state.participants
+  participant: state.teevid.meeting.participant,
+  remote: state.teevid.meeting.remoteParticipants
 });
 
-const mapDispatchToProps = {
-  connect: actions.connect
-};
-
-export default connect(mapStateToProps, mapDispatchToProps)(Meeting);
+export default connect(mapStateToProps)(Meeting);
