@@ -3,11 +3,11 @@ import { routerMiddleware, routerReducer } from 'react-router-redux';
 import { reducer as formReducer } from 'redux-form';
 import { applyMiddleware, combineReducers, compose, createStore } from 'redux';
 import createSagaMiddleware from 'redux-saga';
-import TeeVidSdk from '../sdk/sdk';
 import saga from './saga/index';
-import hostname from '../env.js'
+import hostname from './env.js';
+import'./sdk/sdk.js';
 export const history = createHistory();
-
+/* eslint-disable */
 const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
 
 const sagaMw = createSagaMiddleware({

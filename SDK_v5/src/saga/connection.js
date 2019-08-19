@@ -5,9 +5,10 @@ import forEach from 'lodash.foreach';
 import types from '../ducks/actions/types';
 import actions from '../ducks/actions';
 // import { actionTypes } from '../../sdk/sdk';
-import TeeVidSdk from '../../sdk/sdk';
-const actionTypes = TeeVidSdk.actionTypes;
-
+// const TeeVidSdk = require('../sdk/sdk');.
+// const actionTypes = TeeVidSdk.actionTypes;
+// import TeeVidSdk from '../sdk/sdk';
+/* eslint-disable */
 const createLocalStream = (
   connection,
   mode = 'interactive',
