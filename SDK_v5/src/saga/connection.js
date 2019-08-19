@@ -4,13 +4,7 @@ import { push } from 'react-router-redux';
 import forEach from 'lodash.foreach';
 import types from '../ducks/actions/types';
 import actions from '../ducks/actions';
-// import { actionTypes } from '../../sdk/sdk';
-// const TeeVidSdk = require('../sdk/sdk');.
-// const actionTypes = TeeVidSdk.actionTypes;
-// import '../sdk/sdk';
-const TeeVidSdk = require('../sdk/sdk');
-const actionTypes = require('../sdk/sdk').actionTypes;
-
+const actionTypes = TeeVidSdk.actionTypes;
 const createLocalStream = (
   connection,
   mode = 'interactive',
@@ -64,6 +58,7 @@ export const initLocalStream = (stream) =>
   });
 
 function* participantWorker({ payload: { room, username, pin } }) {
+  console.log('Participant Worker');
   if (username && room) {
     yield TeeVidSdk.actions.createParticipant(room, username, pin);
   } else {
@@ -76,17 +71,6 @@ function* connectionWorker() {
   yield TeeVidSdk.actions.createConnection();
 }
 
-const connectionEventHandlers = {
-  'bandwidth-alert': (e) => {
-    // console.log('==>', e);
-  }
-};
-
-function registerHandlers(connection) {
-  forEach(connectionEventHandlers, (handler, eventName) => {
-    connection.addEventListener(eventName, handler);
-  });
-}
 
 export function* connectSaga() {
   // ? maybe use 'take' to make sure it runs only once?
@@ -105,7 +89,6 @@ export function* connectSaga() {
     takeEvery(actionTypes.CONNECTION_READY, function* () {
       const connection = yield select((state) => state.teevid.meeting
         .connection);
-      registerHandlers(connection);
       connection.connect();
     }),
     // room is connected

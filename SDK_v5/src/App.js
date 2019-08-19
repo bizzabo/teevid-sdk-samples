@@ -4,25 +4,21 @@ import './App.css';
 import Meeting from './components/Meeting';
 import Join from './components/Join';
 import { Provider } from 'react-redux';
-import { Route, Switch } from 'react-router-dom';
-import { ConnectedRouter } from 'react-router-redux';
+import { Route, BrowserRouter, Switch } from 'react-router-dom';
 import { history, store } from './reduxRoot';
-// import actions from './ducks/actions';
-console.log(store);
+
 export default () =>
   (<Provider store={store}>
-     {/* <ConnectedRouter history={history}> */}
-      <div className="App">
-        <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-        </header>
-        {/* <Switch>
-          <Route path='/join' component={Join} />
-          <Route path='/meeting' component={Meeting} />
-        </Switch> */}
-      </div>
-    {/* </ConnectedRouter> */}
+    <div className="App">
+      <header className="App-header">
+        <img src={logo} className="App-logo" alt="logo" />
+      </header>
+      <BrowserRouter history={history}>
+        <Switch>
+          <Route exact path="/" component={Join} />
+          <Route exact path='/join' component={Join} />
+          <Route exact path='/meeting' component={Meeting} />
+        </Switch>
+      </BrowserRouter>
+    </div>
   </Provider>)
-
-
-// export default App;

@@ -1,4 +1,7 @@
 import React, { Fragment, useState, useRef } from 'react';
+import { connect } from 'react-redux';
+import { push } from 'react-router-redux';
+import actions from '../ducks/actions';
 import Button from '@material-ui/core/Button';
 import { makeStyles } from '@material-ui/core/styles';
 import FormControl from '@material-ui/core/FormControl';
@@ -16,14 +19,19 @@ const useStyles = makeStyles(theme => ({
 }));
 
 const Join = (props) => {
-  const [name, setName] = useState('');
+  const [username, setName] = useState('');
   const [room, setRoom] = useState('');
   const [labelWidth] = useState(0);
   const handleChange = (event) => setName(event.target.value);
   const setRoomName = e => setRoom(e.target.value);
-  const { connect } = props;
   const labelRef = useRef(null);
   const classes = useStyles();
+  const join = () => {
+    console.log(props, TeeVidSdk.actions, username, room );
+    TeeVidSdk.actions.connect({ username, room, pin: '', connectAnyway: true });
+    return props.goToMeeting();
+  };
+
 
   return (
     <Fragment>
@@ -32,7 +40,7 @@ const Join = (props) => {
           Your name
         </InputLabel>
         <OutlinedInput
-          value={name}
+          value={username}
           onChange={handleChange}
           labelWidth={labelWidth}
           placeholder='Your name'
@@ -49,11 +57,18 @@ const Join = (props) => {
           placeholder='Room'
         />
       </FormControl>
-      <Button variant="contained" color="primary" className='join' onClick={connect}>
+      <Button variant="contained" color="primary" className='join' onClick={join}>
         Join
       </Button> 
     </Fragment>
   );
 }
+const mapStateToProps = state => ({
+  ...state
+});
 
-export default Join;
+const mapDispatchToProps = {
+  connect: actions.connect,
+  goToMeeting: () => push('/meeting')
+}
+export default connect(mapStateToProps, mapDispatchToProps)(Join);
