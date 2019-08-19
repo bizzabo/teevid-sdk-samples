@@ -1,4 +1,4 @@
-
+/** eslint-disable */
 import { put, takeEvery, select, all } from 'redux-saga/effects';
 import { push } from 'react-router-redux';
 import forEach from 'lodash.foreach';
@@ -7,8 +7,10 @@ import actions from '../ducks/actions';
 // import { actionTypes } from '../../sdk/sdk';
 // const TeeVidSdk = require('../sdk/sdk');.
 // const actionTypes = TeeVidSdk.actionTypes;
-// import TeeVidSdk from '../sdk/sdk';
-/* eslint-disable */
+// import '../sdk/sdk';
+const TeeVidSdk = require('../sdk/sdk');
+const actionTypes = require('../sdk/sdk').actionTypes;
+
 const createLocalStream = (
   connection,
   mode = 'interactive',

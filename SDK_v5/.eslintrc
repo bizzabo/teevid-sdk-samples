@@ -1,5 +1,8 @@
 {
   "globals": {
     "TeeVidSdk": true
+  },
+  "rules": {
+    "no-undef": "warn"
   }
 }

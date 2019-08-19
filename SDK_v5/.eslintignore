@@ -1,1 +1,3 @@
-src/sdk/*
+build/
+src/
+*.js

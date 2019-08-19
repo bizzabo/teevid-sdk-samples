@@ -5,9 +5,10 @@ import { applyMiddleware, combineReducers, compose, createStore } from 'redux';
 import createSagaMiddleware from 'redux-saga';
 import saga from './saga/index';
 import hostname from './env.js';
-import'./sdk/sdk.js';
+// const TeeVidSdk = window.TeeVidSdk || {};
+const TeeVidSdk = require('./sdk/sdk');
+
 export const history = createHistory();
-/* eslint-disable */
 const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
 
 const sagaMw = createSagaMiddleware({
@@ -26,5 +27,7 @@ export const store =  createStore(
   }),  composeEnhancers(applyMiddleware(sagaMw, routerMw)));
 
 sagaMw.run(saga);
-sagaMw.run(TeeVidSdk.saga);
-TeeVidSdk.init(hostname, store);
+if(TeeVidSdk.saga)
+  sagaMw.run(TeeVidSdk.saga);
+if(TeeVidSdk.init)
+  TeeVidSdk.init(hostname, store);
