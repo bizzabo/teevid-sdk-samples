@@ -1,20 +1,21 @@
 import React, { Component } from 'react';
-import id from 'uniqid';
 
 class Stream extends Component {
-  constructor(props) {
-    super(props);
-    this.streamId = `stream_${id()}`
+
+  componentDidMount() {
+    const { id, stream } = this.props;
+    stream.play(id);
   }
 
   render () {
-    console.log('Stream ', this.props);
-
+    const { id } = this.props;
+    
     return (
-      <div className='stream'  
-        id={this.streamId}
-        key={this.streamId}
-      ></div>
+      <div 
+        className='stream'  
+        id={id}
+      >
+      </div>
     );
   }
 }

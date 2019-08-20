@@ -1,40 +1,30 @@
-import React, { Component, Fragment } from 'react';
+import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import Stream from './Stream';
 
 class Meeting extends Component {
-  static defaultProps = {
-    participants: []
-  }
-
   render() {
-    const { participant = [], remote } = this.props;
-    console.log(this.props);
-    
-    const streams = Object.keys(remote).length ? Object.values(remote).map(
-      (item, index) => <Stream id={item} key={`stream_remote_${index}`} />
-    ) : null;
+    const { streams } = this.props;
 
-    const localStream = participant ? Object.values(participant).map((item, index) => 
-      <Stream id={item} key={`stream_${index}`} />
-    ) : <div className="no-remote-streams">
-          There is no any stream
-        </div>
+    const renderStreams = Object.entries(streams).map(item => {
+        const stream = item[1].stream;
+        return (<Stream 
+          stream={item[1]}
+          id={stream.id} 
+          key={stream.id} />);
+      }
+    ); 
 
     return (
-      <Fragment>
-        <div className='meeting'>
-          { localStream }
-          { streams }
-        </div>
-      </Fragment>
+      <div className='meeting'>
+        { renderStreams }
+      </div>
     );
   }
 }
 
 const mapStateToProps = state => ({
-  participant: state.teevid.meeting.participant,
-  remote: state.teevid.meeting.remoteParticipants
+  streams: state.teevid.meeting.streams
 });
 
 export default connect(mapStateToProps)(Meeting);

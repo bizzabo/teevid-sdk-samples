@@ -49,3 +49,45 @@
     transform: rotate(360deg);
   }
 }
+
+.meeting {
+
+  display: flex;
+  justify-content: center;
+  flex-flow: row wrap;
+
+}
+.stream {
+  width: calc(100vw / 4);
+  height: calc(100vh / 4);
+  margin: 8px;
+  border-radius: 10px;
+  border: 4px solid #02598a;
+  overflow: hidden;
+}
+.licode_subbar {
+  display: none;
+}
+.join {
+  background: #0878E3 !important;
+  color:white;
+  font-size: 16px;
+
+}
+
+.join__inputs * {
+  color: white!important;
+}
+
+.stream p {
+  margin-top: -34px;
+  position: relative;
+}
+
+input {
+  outline: 0!important;
+}
+
+input:focus {
+  outline-offset: 0!important;
+}

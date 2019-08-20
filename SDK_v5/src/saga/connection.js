@@ -58,7 +58,6 @@ export const initLocalStream = (stream) =>
   });
 
 function* participantWorker({ payload: { room, username, pin } }) {
-  console.log('Participant Worker');
   if (username && room) {
     yield TeeVidSdk.actions.createParticipant(room, username, pin);
   } else {
