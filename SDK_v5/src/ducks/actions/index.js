@@ -5,5 +5,4 @@ export default Object.freeze({
     type: types.CONNECT,
     payload: { username, room, pin, connectAnyway }
   }),
-
 });

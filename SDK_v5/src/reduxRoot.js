@@ -25,4 +25,4 @@ export const store = createStore(
 
 sagaMw.run(saga);
 sagaMw.run(TeeVidSdk.saga);
-TeeVidSdk.init(hostname, store);
+TeeVidSdk.init(hostname, store, 'ENTER_SDK_KEY_HERE');
