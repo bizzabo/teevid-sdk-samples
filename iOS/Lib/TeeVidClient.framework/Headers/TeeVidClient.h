@@ -304,6 +304,18 @@ typedef enum {
  */
 - (void)client:(TeeVidClient *)client didUpdateMuteAttributes:(NSDictionary *)muteAttributes;
 
+
+/*!
+@brief Notifies application that client was muted by system - HardMute.
+@discussion Upon receiving this call, application can change the microphone icon to enabled or disabled state.
+
+Note that this selector is optional.
+
+@param client instance of the client this call came from
+@param muteAttributes variable that represents the muted state
+*/
+- (void)client:(TeeVidClient *)client didUpdateHardMuteAttributes:(NSDictionary *)muteAttributes;
+
 /*!
  @brief The user mute mode was changed due to the use of raise hand feature.
  @discussion Upon receiving this call, application can handle a case with (un) muting current participant. Both current user and moderator can discard raised hand.
@@ -314,6 +326,29 @@ typedef enum {
  @param allowed whether raise hand request was approved by moderator and client was allowed to unmute microphone and/or start sending video
  */
 - (void)client:(TeeVidClient *)client didUpdateRaiseHandStatus:(BOOL)allowed;
+
+/*!
+ @brief Notifies application that conference room entered into storyboard presentation mode.
+ @discussion When storyboard is presented, it is being rendered in an extra view which is not associated with any of participant (though, technically, it is being presented by lecturer). Application can obtain that view similarly to another other view by using dedicated participant id passed in this notification.
+ 
+ Note that this selector is optional and is being fired only when video layout is managed by application (and not by TeeVidClient itself).
+ 
+ @param client instance of the client this call came from
+ @param roomId conference room id
+ @param participantId dedicated participant id associated with presented storyboard
+ */
+- (void)client:(TeeVidClient *)client didEnterStoryboardMode:(NSString *)roomId withDedicatedParticipantId:(NSString *)participantId;
+
+/*!
+ @brief Notifies application that conference room left storyboard presentation mode.
+ @discussion When storyboard presentation has ended, presentation should release view associated with it (if such view was previousely obtained).
+ 
+ Note that this selector is optional and is being fired only when video layout is managed by application (and not by TeeVidClient itself).
+ 
+ @param client instance of the client this call came from
+ @param roomId conference room id
+ */
+- (void)client:(TeeVidClient *)client didLeaveStoryboardMode:(NSString *)roomId;
 
 @end
 
