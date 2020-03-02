@@ -7,9 +7,11 @@
 
 #import "ConferenceViewController.h"
 
+
 @interface ConferenceViewController ()
 
 @end
+
 
 @implementation ConferenceViewController {
 @private
@@ -58,16 +60,21 @@
     // Dispose of any resources that can be recreated
 }
 
-- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
-    if ([segue.identifier isEqualToString:@"DisconnectSegue"]) {
-        // Disconnect button was tapped
-        disconnecing = YES;
-        [teeVidClient disconnect];
-        
-        // Restore application idle timer
-        [[UIApplication sharedApplication] setIdleTimerDisabled: NO];
-    }
+
+- (IBAction)disconnectPressed:(id)sender {
+    [teeVidClient disconnect];
+    
+    // Restore application idle timer
+    [[UIApplication sharedApplication] setIdleTimerDisabled: NO];
+    
+    // Disconnect button was tapped
+    disconnecing = YES;
+    
+    if (self.roomDelegate && [self.roomDelegate respondsToSelector:@selector(didExitRoom:)])
+        [self.roomDelegate didExitRoom:self];
 }
+
+
 
 # pragma mark - TeeVidClientDelegate
 
@@ -92,9 +99,7 @@
     // Client has disconnected from the conference room
     // Note that this can be result of disconnect segue, or disconnect on remote end
     // If disconnected remotely, need to perform disconnect seque to return to entry screen
-    if (!disconnecing) {
-        [self performSegueWithIdentifier:@"DisconnectSegue" sender:self];
-    }
+    if (!disconnecing) [self disconnectPressed:nil];
 }
 
 - (void)client:(TeeVidClient *)client didEnterLectureMode:(NSString *)roomId {
@@ -127,7 +132,7 @@
                              actionWithTitle:@"OK"
                              style:UIAlertActionStyleDefault
                              handler:^(UIAlertAction *action) {
-                                 [self performSegueWithIdentifier:@"DisconnectSegue" sender:self];
+        [self disconnectPressed:nil];
                              }];
     [alert addAction:action];
     

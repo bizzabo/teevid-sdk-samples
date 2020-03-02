@@ -108,10 +108,10 @@
 			children = (
 				F5A6A8291F5DA7EF005E109F /* AppDelegate.h */,
 				F5A6A82A1F5DA7EF005E109F /* AppDelegate.m */,
-				F583C3781F812AB200D043DF /* ConferenceViewController.h */,
-				F583C3791F812AB200D043DF /* ConferenceViewController.m */,
 				F5A6A82C1F5DA7EF005E109F /* EntryViewController.h */,
 				F5A6A82D1F5DA7EF005E109F /* EntryViewController.m */,
+				F583C3781F812AB200D043DF /* ConferenceViewController.h */,
+				F583C3791F812AB200D043DF /* ConferenceViewController.m */,
 				F5A6A82F1F5DA7EF005E109F /* Main.storyboard */,
 				F5A6A8321F5DA7EF005E109F /* Assets.xcassets */,
 				F5A6A8341F5DA7EF005E109F /* LaunchScreen.storyboard */,

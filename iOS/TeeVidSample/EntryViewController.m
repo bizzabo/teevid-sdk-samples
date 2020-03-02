@@ -8,9 +8,12 @@
 #import "EntryViewController.h"
 #import "ConferenceViewController.h"
 
-@interface EntryViewController ()
+
+@interface EntryViewController () <ConferenceViewControllerDelegate>
 
 @end
+
+
 
 @implementation EntryViewController
 
@@ -36,8 +39,10 @@
         ConferenceViewController *conferenceViewController = segue.destinationViewController;
         conferenceViewController.serverAddress = self.serverAddress.text;
         conferenceViewController.roomId = self.roomId.text;
+        conferenceViewController.roomDelegate = self;
     }
 }
+
 
 - (BOOL)shouldPerformSegueWithIdentifier:(NSString *)segue sender:(id)sender {
     if ([segue isEqualToString:@"ConnectSegue"]) {
@@ -74,5 +79,11 @@
     
     [self presentViewController:alert animated:YES completion:nil];
 }
+
+
+- (void)didExitRoom:(ConferenceViewController *)room {
+    [room dismissViewControllerAnimated:YES completion:nil];
+}
+
 
 @end
