@@ -22,9 +22,7 @@
 
 @property (nonatomic, strong) NSString *serverAddress;
 @property (nonatomic, strong) NSString *roomId;
-
 @property (weak, nonatomic) IBOutlet UIBarButtonItem *disconnectButton;
-
 @property (weak, nonatomic) id <ConferenceViewControllerDelegate> roomDelegate;
 
 @end

@@ -9,8 +9,8 @@
 
 
 @interface ConferenceViewController ()
-
 @end
+
 
 
 @implementation ConferenceViewController {
@@ -22,13 +22,11 @@
     BOOL clientManagedLayout;
     BOOL disconnecing;
 }
-
 @synthesize serverAddress, roomId;
+
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    // Do any additional setup after loading the view, typically from a nib
-    
     // Initialize TeeVidClient
     // Two modes are available: video layout is managed by client, or by application
     // To use mode when video layout is managed by application, set clientManagedLayout to NO
@@ -77,23 +75,26 @@
 
 
 # pragma mark - TeeVidClientDelegate
-
 - (void)client:(TeeVidClient *)client didRequestAccessPIN:(NSString *)roomId {
     // Prompt for access PIN
 }
+
 
 - (void)client:(TeeVidClient *)client didEnterWaitingRoom:(NSString *)roomId {
     // Prompt for owner PIN to unlock waiting room, or wait until owner joins
 }
 
+
 - (void)client:(TeeVidClient *)client didLeaveWaitingRoom:(NSString *)roomId {
     // Dismiss prompt for owner PIN if still shown
 }
+
 
 - (void)client:(TeeVidClient *)client didConnect:(NSString *)roomId {
     // Client has connected to the conference room
     // Perform any appropriate actions - enable controls, etc.
 }
+
 
 - (void)client:(TeeVidClient *)client didDisconnect:(NSString *)roomId {
     // Client has disconnected from the conference room
@@ -102,42 +103,40 @@
     if (!disconnecing) [self disconnectPressed:nil];
 }
 
+
 - (void)client:(TeeVidClient *)client didEnterLectureMode:(NSString *)roomId {
     // Any action specific to lecture mode, e.g. disable microphone
     // Note that client will mute local audio and change layout to lecturer video automatically
 }
+
 
 - (void)client:(TeeVidClient *)client didLeaveLectureMode:(NSString *)roomId {
     // Restore to non-lecture mode
     // Note that client will unmute local audio and change layout to automatic
 }
 
+
 - (void)client:(TeeVidClient *)client didEnterWaitingForLecturer:(NSString *)roomId {
     // Wait for lecturer
     // Note that no video will be shown until lecturer arrives
 }
 
+
 - (void)client:(TeeVidClient *)client didReceiveLecturerDisconnectEvent:(NSString *)roomId {
     // Lecturer has disconnected. Perform whatever action is appropriate or ask user what to do
 }
 
+
 - (void)client:(TeeVidClient *)client didReceiveError:(NSString *)error {
     // Display error and perform disconnect segue
-    UIAlertController *alert = [UIAlertController
-                                alertControllerWithTitle:@"Error"
-                                message:error
-                                preferredStyle:UIAlertControllerStyleAlert];
-    
-    UIAlertAction *action = [UIAlertAction
-                             actionWithTitle:@"OK"
-                             style:UIAlertActionStyleDefault
-                             handler:^(UIAlertAction *action) {
+    UIAlertController *alert    = [UIAlertController alertControllerWithTitle:@"Error" message:error preferredStyle:UIAlertControllerStyleAlert];
+    UIAlertAction *action       = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
         [self disconnectPressed:nil];
-                             }];
+    }];
     [alert addAction:action];
-    
     [self presentViewController:alert animated:YES completion:nil];
 }
+
 
 - (void)client:(TeeVidClient *)client didRequestLayoutRefresh:(NSString *)reason {
     // Conference view layout changed - instruct client to show new layout
@@ -148,6 +147,7 @@
     } completion:nil];
 }
 
+
 - (void)client:(TeeVidClient *)client didAddParticipant:(NSString *)participantId withAttributes:(NSDictionary *)attributes {
     // New participant has been added
     // Application can use this call to update participant list
@@ -156,6 +156,7 @@
         [self addViewForParticipant:participantId withAttributes:attributes];
     }
 }
+
 
 - (void)client:(TeeVidClient *)client didUpdateParticipant:(NSString *)participantId withAttributes:(NSDictionary *)attributes {
     // Participant has been updated
@@ -166,6 +167,7 @@
     }
 }
 
+
 - (void)client:(TeeVidClient *)client didRemoveParticipant:(NSString *)participantId {
     // Participant has been removed
     // Application can use this call to update participant list
@@ -175,11 +177,13 @@
     }
 }
 
+
 - (void)client:(TeeVidClient *)client didChangeVideoSize:(CGSize)videoSize forParticipant:(NSString *)participantId inView:(UIView *)view {
     // Note that client will notify about video size change only if video layout is managed by application
     // Application must use this event to set correct aspect ratio of rendered video by adjusting view size, and,
     // hiding/masking part of the view or using any other appropriate technique
 }
+
 
 - (void)client:(TeeVidClient *)client didRemoveVideoView:(UIView *)view forParticipant:(NSString *)participantId {
     // Note that client will notify about video view removed only if video layout is managed by application
@@ -187,13 +191,15 @@
     [self removeView:view forParticipant:participantId];
 }
 
+
 - (void)client:(TeeVidClient *)client didRecieveUnmuteRequest:(NSDictionary*)request completionHandler:(void (^)(BOOL allowUnmute))completionHandler {
     // completionHandler should called when a user make a choice about approving or discard the request. allowUnmute is a BOOL value that represent a user's answer
     completionHandler(YES);
 }
 
-# pragma mark - Private
 
+
+# pragma mark - Private
 - (void)addViewForParticipant:(NSString *)participantId withAttributes:(NSDictionary *)attributes {
     BOOL refresh = NO;
     
@@ -233,6 +239,7 @@
     }
 }
 
+
 - (void)removeView:(UIView *)view forParticipant:(NSString *)participantId {
     BOOL refresh = NO;
     
@@ -262,6 +269,7 @@
         } completion:nil];
     }
 }
+
 
 // only used when video layout is managed by application
 // otherwise, [client refreshLayout] must be used
@@ -328,5 +336,6 @@
         }
     }
 }
+
 
 @end

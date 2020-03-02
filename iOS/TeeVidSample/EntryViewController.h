@@ -7,6 +7,7 @@
 
 #import <UIKit/UIKit.h>
 
+
 @interface EntryViewController : UIViewController
 
 @property (weak, nonatomic) IBOutlet UITextField *serverAddress;
