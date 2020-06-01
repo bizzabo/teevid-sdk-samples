@@ -3,17 +3,20 @@ import { connect } from 'react-redux';
 import Stream from './Stream';
 
 class Meeting extends Component {
+  componentWillUnmount() {
+    TeeVidSdk.actions.disconnect();
+  }
   render() {
     const { streams } = this.props;
 
     const renderStreams = Object.entries(streams).map(item => {
         const stream = item[1].stream;
-        return (<Stream 
+        return (<Stream
           stream={item[1]}
-          id={stream.id} 
+          id={stream.id}
           key={stream.id} />);
       }
-    ); 
+    );
 
     return (
       <div className='meeting'>

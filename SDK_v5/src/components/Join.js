@@ -13,7 +13,7 @@ const useStyles = makeStyles(theme => ({
   container: {
     display: 'flex',
     flexWrap: 'wrap',
-  }, 
+  },
   formControl: {
     margin: theme.spacing(1)
   },
@@ -69,7 +69,7 @@ const Join = (props) => {
       </FormControl>
       <Button variant="contained" color="primary" className='join' onClick={join}>
         Join
-      </Button> 
+      </Button>
     </Paper>
   );
 }

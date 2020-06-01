@@ -18,11 +18,11 @@ const routerMw = routerMiddleware(history);
 
 export const store = createStore(
   combineReducers({
+    teevid: TeeVidSdk.reducer,
     form: formReducer,
     router: routerReducer,
-    teevid: TeeVidSdk.reducer
   }),  composeEnhancers(applyMiddleware(sagaMw, routerMw)));
 
-sagaMw.run(saga);
 sagaMw.run(TeeVidSdk.saga);
+sagaMw.run(saga);
 TeeVidSdk.init(hostname, store, 'ENTER_SDK_KEY_HERE');

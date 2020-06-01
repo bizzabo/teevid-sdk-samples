@@ -9,10 +9,9 @@ class Stream extends Component {
 
   render () {
     const { id } = this.props;
-    
     return (
-      <div 
-        className='stream'  
+      <div
+        className='stream'
         id={id}
       >
       </div>

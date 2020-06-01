@@ -81,7 +81,11 @@
 
 .stream p {
   margin-top: -34px;
-  position: relative;
+  position: relative !important;
+}
+
+.stream video {
+  position: relative !important;
 }
 
 input {

@@ -1,17 +1,21 @@
 /** eslint-disable */
 import { put, takeEvery, select, all } from 'redux-saga/effects';
 import { push } from 'react-router-redux';
-import forEach from 'lodash.foreach';
 import types from '../ducks/actions/types';
-import actions from '../ducks/actions';
 const actionTypes = TeeVidSdk.actionTypes;
+const sdkActions = TeeVidSdk.cleanActions;
+
+export const Mute = {
+  NO_DEVICE: -1,
+  UNMUTED: 0,
+  MUTED: 1,
+  MUTED_BY_MODER: 2,
+};
 
 const createLocalStream = (
   connection,
-  mode = 'interactive',
   constraints) => { // checking for audio and video devices
-  if (connection
-    && connection.state === 2) {
+  if (connection && connection.state === 2) {
     /** @type {TeeVid.Stream} */
     const localStream = TeeVidSdk.Stream(constraints);
     return initLocalStream(localStream)
@@ -59,7 +63,7 @@ export const initLocalStream = (stream) =>
 
 function* participantWorker({ payload: { room, username, pin } }) {
   if (username && room) {
-    yield TeeVidSdk.actions.createParticipant(room, username, pin);
+    yield put(TeeVidSdk.actions.createParticipant(room, username, pin));
   } else {
     if (!username) TeeVidSdk.actions.generalError({ message: 'connection-username-err' });
     if (!room) TeeVidSdk.actions.generalError({ message: 'connection-room-id-err' });
@@ -84,28 +88,29 @@ export function* connectSaga() {
       }),
     // connect
     takeEvery(actionTypes.CONNECTION_READY, function* () {
-      const connection = yield select((state) => state.teevid.meeting
-        .connection);
+      const connection = yield select((state) => state.teevid.meeting.connection);
       connection.connect();
     }),
     // room is connected
     takeEvery(actionTypes.ROOM_READY, function* () {
       // get constraints
-      const connection = yield select((state) => state.teevid.meeting
-        .connection);
-      const options = yield select((state) => state.teevid.meeting
-        .participant.status);
+      const connection = yield select((state) => state.teevid.meeting.connection);
+      const options = yield select((state) => state.teevid.meeting.participant.status);
       const room = yield select((state) => state.teevid.meeting.room);
       // create streams
       try {
-        yield createLocalStream(connection,
-          null, { audio: options.hasMic, video: options.hasCam }, room)
-          .then(stream => {
-            TeeVidSdk.actions.localStreamAdded(stream);
-            TeeVidSdk.actions.setConnectionState(2);
-          });
+        const stream = yield createLocalStream(connection,
+          {
+            audio: options.audio !== Mute.NO_DEVICE,
+            video: options.video !== Mute.NO_DEVICE
+          }, room)
+        yield all([
+          put(sdkActions.localStreamAdded(stream)),
+          put(sdkActions.setConnectionState(2)),
+        ]);
         // publish streams
       } catch (error) {
+        console.error(error);
         TeeVidSdk.actions.disconnect();
       }
     })
@@ -121,7 +126,6 @@ export function* disconnectSaga() {
 
 export function* disconnectedSaga() {
   yield takeEvery(actionTypes.CONNECTION_DISCONNECTED, function* () {
-    yield put(actions.clearRoomAudioContext());
       yield put(push('/join'));
     }
   );
