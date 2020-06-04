@@ -1,10 +1,10 @@
 # How to build and run demo UI application
 
 #### 1. Install Qt framework and IDE (Qt Creator):	
-	```
-	sudo apt install qt5-default
-	sudo apt install qtcreator
-	```
+```
+sudo apt install qt5-default
+sudo apt install qtcreator
+```
 
 #### 2. Install Gstreamer (otherwise the demo app will work but not dispay any streams)
 ```
