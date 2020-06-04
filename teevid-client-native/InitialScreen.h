@@ -54,6 +54,7 @@ public:
 
 protected slots:
     void onConnectParamsApplied();
+    void onConnectParamsCancelled();
 
     void onModeSelected(int modeId);
     void onCameraChecked(int state);
@@ -85,7 +86,7 @@ private:
 
     QButtonGroup* _modeGroup = nullptr;
     std::vector<Contact> _friends;
-    ITeeVidClientPtr teeVidClient_;
+    ITeeVidClientPtr teeVidClient_ = nullptr;
     std::vector<CallItemVideoView*> callItems_;
 
     ServerSimulationDialog* _serverSimulationDialog = nullptr;

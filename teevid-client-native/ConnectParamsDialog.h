@@ -22,6 +22,7 @@ public:
 
 signals:
     void paramsApplied();
+    void paramsCancelled();
 
 protected slots:
     void OnBtnApply();
@@ -32,6 +33,7 @@ protected:
 
 private:
     Ui::ConnectParamsDialog *ui;
+    bool _paramsApplied = false;
 };
 
 #endif // CONNECTPARAMSDIALOG_H
