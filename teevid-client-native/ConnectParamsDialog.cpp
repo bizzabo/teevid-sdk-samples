@@ -77,17 +77,17 @@ void ConnectParamsDialog::OnBtnApply()
     settings.setValue("user", user);
     settings.endGroup();
 
-    emit paramsApplied();
+    _paramsApplied = true;
     close();
 }
 
 void ConnectParamsDialog::OnBtnCancel()
 {
-    close();
+    exit(0);
 }
 
 void ConnectParamsDialog::closeEvent(QCloseEvent *event)
 {
-    emit paramsApplied();
+    emit _paramsApplied ? paramsApplied() : paramsCancelled();
     QDialog::closeEvent(event);
 }

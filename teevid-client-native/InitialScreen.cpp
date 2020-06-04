@@ -30,13 +30,21 @@ InitialScreen::~InitialScreen()
 
 void InitialScreen::InitSDK()
 {
+    if (nullptr != teeVidClient_)
+    {
+        // already initialized
+        return;
+    }
+
     std::string teevidServer = _connectParamsDialog->GetHost().toStdString();
     std::string room = _connectParamsDialog->GetRoom().toStdString();
     std::string user = _connectParamsDialog->GetUser().toStdString();
 
     if (teevidServer.empty() || room.empty() || user.empty())
     {
-        exit(0);
+        QMessageBox mb(QMessageBox::Critical, "Error", "Streaming component initialization has failed.\nPlease relaunch the app");
+        mb.exec();
+        return;
     }
 
     teeVidClient_ = TeeVidFactory::CreateTeeVidClient();
@@ -109,6 +117,7 @@ void InitialScreen::InitUI()
     _connectParamsDialog->show();
 
     connect(_connectParamsDialog, SIGNAL(paramsApplied()), this, SLOT(onConnectParamsApplied()));
+    connect(_connectParamsDialog, SIGNAL(paramsCancelled()), this, SLOT(onConnectParamsCancelled()));
 }
 
 void InitialScreen::setFriendsData(std::vector<Contact> friends)
@@ -155,7 +164,7 @@ void InitialScreen::OnConnectionError (const std::string& )
 void InitialScreen::OnStreamAdded (long streamId, const std::string& participantId, const std::string& name, int type)
 {
     CallItemVideoView* callItem = GetVacantVideoView();
-    if (callItem)
+    if (teeVidClient_ && callItem)
     {
         callItem->setStreamId(streamId);
         teeVidClient_->Subscribe(streamId, callItem);
@@ -165,7 +174,7 @@ void InitialScreen::OnStreamAdded (long streamId, const std::string& participant
 void InitialScreen::OnStreamRemoved(long streamId)
 {
     CallItemVideoView* callItem = GetVideoViewById(streamId);
-    if (callItem)
+    if (teeVidClient_ && callItem)
     {
         teeVidClient_->Unsubscribe(streamId);
         callItem->setStreamId(0);
@@ -199,6 +208,11 @@ void InitialScreen::onConnectParamsApplied()
     InitSDK();
 }
 
+void InitialScreen::onConnectParamsCancelled()
+{
+    exit(0);
+}
+
 void InitialScreen::onModeSelected(int modeId)
 {
     ui->stackedWidget->setCurrentIndex(modeId);
@@ -222,6 +236,13 @@ void InitialScreen::onTanslationChecked(int state)
 
 void InitialScreen::onInvitePressed()
 {
+    if (nullptr == teeVidClient_)
+    {
+        QMessageBox mb(QMessageBox::Critical, "Error", "Streaming component initialization has failed.\nPlease relaunch the app");
+        mb.exec();
+        return;
+    }
+
     QItemSelectionModel *model = dynamic_cast<QItemSelectionModel*>(ui->listViewFriends->selectionModel());
     if (!model)
         return;
