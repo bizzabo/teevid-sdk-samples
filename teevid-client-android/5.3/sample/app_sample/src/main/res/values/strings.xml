@@ -1,0 +1,7 @@
+<resources>
+
+    <string name="app_name">TeeVid Sample</string>
+
+    <string name="error_server_address_not_valid">Server address is not valid</string>
+
+</resources>
