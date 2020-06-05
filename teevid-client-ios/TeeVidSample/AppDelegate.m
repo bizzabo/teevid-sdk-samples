@@ -2,19 +2,17 @@
 //  AppDelegate.m
 //  TeeVidSample
 //
-//  Copyright © 2016-2017 cloudAYI. All rights reserved.
+//  Copyright © 2016-2019 cloudAYI. All rights reserved.
 //
 
 #import "AppDelegate.h"
-
 
 @interface AppDelegate ()
 
 @end
 
-
-
 @implementation AppDelegate
+
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     // Override point for customization after application launch.

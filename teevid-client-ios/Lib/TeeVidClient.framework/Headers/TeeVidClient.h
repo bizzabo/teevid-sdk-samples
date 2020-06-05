@@ -84,6 +84,18 @@ FOUNDATION_EXPORT NSString *const TEEVID_ATTRIBUTE_BY_MODERATOR;
  */
 FOUNDATION_EXPORT NSString *const TEEVID_ERR_ROOM_NOT_FOUND;
 
+/*!
+@brief Bad access pin error message.
+@discussion Error message indicating that user provided incorrect room access pin.
+*/
+FOUNDATION_EXPORT NSString *const TEEVID_ERR_BAD_ACCESS_PIN;
+
+/*!
+@brief No slots available error message.
+@discussion Error message indicating current participants number reached "maximum participants" room's setting.
+*/
+FOUNDATION_EXPORT NSString *const TEEVID_ERR_NO_SLOTS;
+
 
 /*!
  @brief Enumeration of local video view positions.
@@ -100,8 +112,23 @@ typedef enum {
 } TeeVidClientLocalViewPosition;
 
 
-@class TeeVidClient;
+/*!
+@brief Enumeration of recording state.
+@discussion This enumeration defines recording state.
+*/
+typedef enum {
+    TeeVidClientRecordingStateInactive,
+    TeeVidClientRecordingStateStarting,
+    TeeVidClientRecordingStateRecording,
+    TeeVidClientRecordingStateStopping,
+    TeeVidClientRecordingStateStopped,
+    TeeVidClientRecordingStateError
+} TeeVidClientRecordingState;
 
+
+
+
+@class TeeVidClient;
 /*!
  @brief TeeVidClient delegate used to notify application about various events.
  @discussion This delegate is required and must be implemented by application which utilizes TeeVidClient. Client will use delegate methods to inform application when specific phases of call setup reached and/or conference state changes.
@@ -350,7 +377,44 @@ Note that this selector is optional.
  */
 - (void)client:(TeeVidClient *)client didLeaveStoryboardMode:(NSString *)roomId;
 
+/*!
+@brief Notifies application about measured audio input level.
+@discussion Notifies application about measured audio input level.
+
+Note that this selector is optional and is being fired only when video layout is managed by application (and not by TeeVidClient itself).
+
+@param client instance of the client this call came from
+@param linearInputLevel audio input linear level in float value
+*/
+- (void)client:(TeeVidClient *)client didMeasureAudioInputLevel:(float)linearInputLevel;
+
+
+/*!
+@brief Notifies application about recording state.
+@discussion Notifies application about started / stopped recording.
+
+Note that this selector is optional.
+
+@param client instance of the client this call came from
+@param state recording state enum value
+*/
+- (void)client:(TeeVidClient *)client didUpdateRecordingState:(TeeVidClientRecordingState)state;
+
+
+/*!
+@brief Notifies application about updated user image.
+@discussion Notifies application about updated user image (avatar thumbnail).
+
+Note that this selector is optional.
+
+@param client instance of the client this call came from
+@param userImage prepared user avatar thumbnail
+*/
+- (void)client:(TeeVidClient *)client didUpdateUserImage:(UIImage *)userImage;
+
+
 @end
+
 
 
 /*!
@@ -533,6 +597,12 @@ Note that this selector is optional.
  */
 @property (nonatomic, readonly) BOOL managingVideoLayout;
 
+/*!
+@brief Contains prepared user avatar thumbnail.
+@discussion Application can use this image to tisplay user image thumbnail.
+*/
+@property (strong, nonatomic, readonly) UIImage *localUserAvatar;
+
 
 /*!
  @brief Creates new instance of TeeVidClient.
@@ -585,6 +655,14 @@ Note that this selector is optional.
  @param invitationToken invitation token
  */
 - (void)connectTo:(NSString *)roomId at:(NSString *)serverAddress as:(NSString *)userName withInvitationToken:(NSString *)invitationToken;
+
+/*!
+@brief Connects to a conference via intermediate SmartJoin room.
+@discussion This method is typically used to show user the intermediate room (before being connected to actual conference). Here user can set up and check audio level, local camera picture, change camera (front <> back), turn off/on camera or video. After SmartJoin room the main "connectTo:" method should be used to actually connect to the conference room.
+
+@param userName userName participant name
+*/
+- (void)connectToSmartJoinScreenAs:(NSString *)username;
 
 /*!
  @brief Creates invitation token.
@@ -703,5 +781,46 @@ Note that this selector is optional.
  @return list of participant ids to included in video layout during lecture mode
  */
 - (NSArray *)getLecturerSelectedParticipants;
+
+/*!
+@brief Mutes client's audio in SmartJoin room.
+@discussion Application can use this method to mute local audio in SmartJoin room. This state will be used furhter after user connected to the meeting
+*/
+- (void)smartJoinMuteMic;
+
+/*!
+@brief Unmutes client's audio in SmartJoin room.
+@discussion Application can use this method to unmute local audio in SmartJoin room. This state will be used furhter after user connected to the meeting
+*/
+- (void)smartJoinUnmuteMic;
+
+/*!
+@brief Stops client's video in SmartJoin room.
+@discussion Application can use this method to stop local video in SmartJoin room. This state will be used furhter after user connected to the meeting
+*/
+- (void)smartJoinStopVideo;
+
+/*!
+@brief Resumes client's video in SmartJoin room.
+@discussion Application can use this method to resume local video in SmartJoin room. This state will be used furhter after user connected to the meeting
+*/
+- (void)smartJoinResumeVideo;
+
+/*!
+@brief Switches front and back cameras in SmartJoin room.
+@discussion Application can use this method to switch video from front to back camera (or backward). Initially from camera is being used. This selected camera will be used furhter after user connected to the meeting
+*/
+- (void)smartJoinSwitchCamera;
+
+
+/*!
+@brief Notifies client about request to update user image thumbnail
+@discussion Application can use this method to request user image update. Actual avatar update will no be performed if local video is stopped.
+
+@return Current methods doesn't return the generated thumbnail
+Hovewer the resulted image thumbnail will be returned via TeeVidClientDelegate protocol's method [client: didUpdateUserImage:]
+*/
+- (void)userImageUpdateRequested;
+
 
 @end

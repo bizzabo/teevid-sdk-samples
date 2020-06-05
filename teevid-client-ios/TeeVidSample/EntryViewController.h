@@ -2,11 +2,10 @@
 //  EntryViewController.h
 //  TeeVidSample
 //
-//  Copyright © 2016-2017 cloudAYI. All rights reserved.
+//  Copyright © 2016-2019 cloudAYI. All rights reserved.
 //
 
 #import <UIKit/UIKit.h>
-
 
 @interface EntryViewController : UIViewController
 

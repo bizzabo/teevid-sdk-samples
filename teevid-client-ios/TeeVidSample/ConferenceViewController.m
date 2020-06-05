@@ -27,22 +27,26 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+    
     // Initialize TeeVidClient
     // Two modes are available: video layout is managed by client, or by application
     // To use mode when video layout is managed by application, set clientManagedLayout to NO
     clientManagedLayout = YES;
+    
     if (clientManagedLayout) {
         // Pass whatever view you want video to be rendered in
-        CGRect bounds = self.view.frame;
-        CGRect frame = CGRectMake(bounds.origin.x, bounds.origin.y + 20, bounds.size.width, bounds.size.height - 64);
-        conferenceView = [[UIView alloc] initWithFrame:frame];
+        CGRect bounds   = self.view.frame;
+        CGRect frame    = CGRectMake(bounds.origin.x, bounds.origin.y, bounds.size.width, bounds.size.height);
+        conferenceView  = [[UIView alloc] initWithFrame:frame];
         conferenceView.autoresizingMask = self.view.autoresizingMask;
         [self.view addSubview:conferenceView];
-        teeVidClient = [[TeeVidClient alloc] initWithView:conferenceView options:nil andDelegate:self];
-    } else {
+        [self.view sendSubviewToBack:conferenceView];
+        teeVidClient    = [[TeeVidClient alloc] initWithView:conferenceView options:nil andDelegate:self];
+    }
+    else {
         // Create client without passing view, instead get and manage individual participant video views directly
-        teeVidClient = [[TeeVidClient alloc] initWithOptions:nil andDelegate:self];
-        videoViews = [[NSMutableDictionary alloc] init];
+        teeVidClient    = [[TeeVidClient alloc] initWithOptions:nil andDelegate:self];
+        videoViews      = [[NSMutableDictionary alloc] init];
         screenSharingViews = [[NSMutableDictionary alloc] init];
     }
     
@@ -53,90 +57,63 @@
     [[UIApplication sharedApplication] setIdleTimerDisabled: YES];
 }
 
-- (void)didReceiveMemoryWarning {
-    [super didReceiveMemoryWarning];
-    // Dispose of any resources that can be recreated
-}
 
 
-- (IBAction)disconnectPressed:(id)sender {
-    [teeVidClient disconnect];
-    
-    // Restore application idle timer
-    [[UIApplication sharedApplication] setIdleTimerDisabled: NO];
-    
-    // Disconnect button was tapped
-    disconnecing = YES;
-    
-    if (self.roomDelegate && [self.roomDelegate respondsToSelector:@selector(didExitRoom:)])
-        [self.roomDelegate didExitRoom:self];
-}
-
-
-
-# pragma mark - TeeVidClientDelegate
+#pragma mark - TeeVidClientDelegate
 - (void)client:(TeeVidClient *)client didRequestAccessPIN:(NSString *)roomId {
     // Prompt for access PIN
 }
-
 
 - (void)client:(TeeVidClient *)client didEnterWaitingRoom:(NSString *)roomId {
     // Prompt for owner PIN to unlock waiting room, or wait until owner joins
 }
 
-
 - (void)client:(TeeVidClient *)client didLeaveWaitingRoom:(NSString *)roomId {
     // Dismiss prompt for owner PIN if still shown
 }
-
 
 - (void)client:(TeeVidClient *)client didConnect:(NSString *)roomId {
     // Client has connected to the conference room
     // Perform any appropriate actions - enable controls, etc.
 }
 
-
 - (void)client:(TeeVidClient *)client didDisconnect:(NSString *)roomId {
     // Client has disconnected from the conference room
     // Note that this can be result of disconnect segue, or disconnect on remote end
     // If disconnected remotely, need to perform disconnect seque to return to entry screen
-    if (!disconnecing) [self disconnectPressed:nil];
+    if (!disconnecing) {
+        [self quitMeeting];
+    }
 }
-
 
 - (void)client:(TeeVidClient *)client didEnterLectureMode:(NSString *)roomId {
     // Any action specific to lecture mode, e.g. disable microphone
     // Note that client will mute local audio and change layout to lecturer video automatically
 }
 
-
 - (void)client:(TeeVidClient *)client didLeaveLectureMode:(NSString *)roomId {
     // Restore to non-lecture mode
     // Note that client will unmute local audio and change layout to automatic
 }
-
 
 - (void)client:(TeeVidClient *)client didEnterWaitingForLecturer:(NSString *)roomId {
     // Wait for lecturer
     // Note that no video will be shown until lecturer arrives
 }
 
-
 - (void)client:(TeeVidClient *)client didReceiveLecturerDisconnectEvent:(NSString *)roomId {
     // Lecturer has disconnected. Perform whatever action is appropriate or ask user what to do
 }
-
 
 - (void)client:(TeeVidClient *)client didReceiveError:(NSString *)error {
     // Display error and perform disconnect segue
     UIAlertController *alert    = [UIAlertController alertControllerWithTitle:@"Error" message:error preferredStyle:UIAlertControllerStyleAlert];
     UIAlertAction *action       = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
-        [self disconnectPressed:nil];
+        [self quitMeeting];
     }];
     [alert addAction:action];
     [self presentViewController:alert animated:YES completion:nil];
 }
-
 
 - (void)client:(TeeVidClient *)client didRequestLayoutRefresh:(NSString *)reason {
     // Conference view layout changed - instruct client to show new layout
@@ -147,7 +124,6 @@
     } completion:nil];
 }
 
-
 - (void)client:(TeeVidClient *)client didAddParticipant:(NSString *)participantId withAttributes:(NSDictionary *)attributes {
     // New participant has been added
     // Application can use this call to update participant list
@@ -156,7 +132,6 @@
         [self addViewForParticipant:participantId withAttributes:attributes];
     }
 }
-
 
 - (void)client:(TeeVidClient *)client didUpdateParticipant:(NSString *)participantId withAttributes:(NSDictionary *)attributes {
     // Participant has been updated
@@ -167,7 +142,6 @@
     }
 }
 
-
 - (void)client:(TeeVidClient *)client didRemoveParticipant:(NSString *)participantId {
     // Participant has been removed
     // Application can use this call to update participant list
@@ -177,20 +151,17 @@
     }
 }
 
-
 - (void)client:(TeeVidClient *)client didChangeVideoSize:(CGSize)videoSize forParticipant:(NSString *)participantId inView:(UIView *)view {
     // Note that client will notify about video size change only if video layout is managed by application
     // Application must use this event to set correct aspect ratio of rendered video by adjusting view size, and,
     // hiding/masking part of the view or using any other appropriate technique
 }
 
-
 - (void)client:(TeeVidClient *)client didRemoveVideoView:(UIView *)view forParticipant:(NSString *)participantId {
     // Note that client will notify about video view removed only if video layout is managed by application
     // Application should use this call to remove view from video layout
     [self removeView:view forParticipant:participantId];
 }
-
 
 - (void)client:(TeeVidClient *)client didRecieveUnmuteRequest:(NSDictionary*)request completionHandler:(void (^)(BOOL allowUnmute))completionHandler {
     // completionHandler should called when a user make a choice about approving or discard the request. allowUnmute is a BOOL value that represent a user's answer
@@ -199,7 +170,27 @@
 
 
 
-# pragma mark - Private
+#pragma mark - Navigation
+- (IBAction)disconnectButtonTapped:(id)sender {
+    [self quitMeeting];
+}
+
+
+- (void)quitMeeting {
+    if (self.roomDelegate && [self.roomDelegate respondsToSelector:@selector(didExitRoom:)]) {
+        disconnecing = YES;
+        [teeVidClient disconnect];
+        
+        // Restore application idle timer
+        [[UIApplication sharedApplication] setIdleTimerDisabled: NO];
+        
+        [self.roomDelegate didExitRoom:self];
+    }
+}
+
+
+
+#pragma mark - Private
 - (void)addViewForParticipant:(NSString *)participantId withAttributes:(NSDictionary *)attributes {
     BOOL refresh = NO;
     
@@ -308,7 +299,8 @@
         screenSharingView.frame = CGRectMake(0, singleViewHeight + 40, singleViewWidth * 2, singleViewHeight);
         screenSharingView.hidden = NO;
         [self.view bringSubviewToFront:screenSharingView];
-    } else {
+    }
+    else {
         unsigned long start = count > 4 ? count - 4 : 0;
         for (unsigned long i = 0; i < count; ++i) {
             UIView *videoView = videoViews[keys[i]];

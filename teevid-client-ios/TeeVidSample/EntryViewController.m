@@ -2,7 +2,7 @@
 //  EntryViewController.h
 //  TeeVidSample
 //
-//  Copyright © 2016-2017 cloudAYI. All rights reserved.
+//  Copyright © 2016-2019 cloudAYI. All rights reserved.
 //
 
 #import "EntryViewController.h"
@@ -10,7 +10,6 @@
 
 
 @interface EntryViewController () <ConferenceViewControllerDelegate>
-
 @end
 
 
@@ -19,6 +18,7 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+    
     // Add tap recognizer to hide the keyboard
     UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(dismissKeyboard)];
     tap.cancelsTouchesInView = NO;
@@ -26,14 +26,19 @@
 }
 
 
-- (void)didReceiveMemoryWarning {
-    [super didReceiveMemoryWarning];
-    // Dispose of any resources that can be recreated
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    if (![segue.identifier isEqualToString:@"connectSegue"]) return;
+    
+    // Pass input parameters to ConferenceViewController
+    ConferenceViewController *conferenceViewController = segue.destinationViewController;
+    conferenceViewController.serverAddress  = self.serverAddress.text;
+    conferenceViewController.roomId         = self.roomId.text;
+    conferenceViewController.roomDelegate   = self;
 }
 
 
 - (BOOL)shouldPerformSegueWithIdentifier:(NSString *)segue sender:(id)sender {
-    if ([segue isEqualToString:@"ConnectSegue"]) {
+    if ([segue isEqualToString:@"connectSegue"]) {
         // Check for required input parameters
         if (self.serverAddress.text.length == 0) {
             [self showAlert:@"Server address is missing"];
@@ -46,18 +51,6 @@
     }
     return YES;
 }
-
-
-- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
-    if ([segue.identifier isEqualToString:@"ConnectSegue"]) {
-        // Pass input parameters to ConferenceViewController
-        ConferenceViewController *conferenceViewController = segue.destinationViewController;
-        conferenceViewController.serverAddress  = self.serverAddress.text;
-        conferenceViewController.roomId         = self.roomId.text;
-        conferenceViewController.roomDelegate   = self;
-    }
-}
-
 
 
 - (void)dismissKeyboard {
