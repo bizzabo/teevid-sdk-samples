@@ -28,6 +28,8 @@ typedef struct {
     AudioFormatType audioFormatType;
     CodecType videoCodecType;
     CodecType audioCodecType;
+    int audioChannels = 2;
+    int audioBps = 16;
 } MediaSettings;
 
 }

@@ -26,7 +26,7 @@ class ITeeVidClientObserver {
   // OnStreamAdded N times
   // It contains parameters for identifying stream: streamId, participantId (one participant may have several streams),
   // name and StreamType
-  virtual void OnStreamAdded (long streamId, const std::string& participantId, const std::string& name, int type) = 0;
+  virtual void OnStreamAdded (long streamId, const std::string& participantId, const std::string& name, int type, bool isLocal) = 0;
 
   // Raied when one of observed streams has ended
   virtual void OnStreamRemoved (long streamId) = 0;

@@ -57,9 +57,6 @@ namespace teevid_sdk {
         // In lecture mode, send special signal to the lecturer to start speaking
         virtual bool RaiseHand(bool) = 0;
 
-        // Client can show or hide local video. Also client can choose size of this video
-        virtual bool ShowLocalVideo(LocalVideoMode) = 0;
-
         // By default, first video/audio  source is using for publishing.
         // Client can select media sources from the list of available sources.
         // This method allows to show list of available resources
@@ -67,6 +64,11 @@ namespace teevid_sdk {
 
         // This method allows to select source from the list, returned by GetSources()
         virtual bool ChangeSource(SourceType, int deviceId) = 0;
+
+        // Those methods take raw media data and it's size to deliver it to the server
+        // Application should provide data in format which has been configured by Configure method
+        virtual void PutVideoFrame(unsigned char *data, size_t size, size_t stride) = 0;
+        virtual void PutAudioFrame(unsigned char *data, size_t size) = 0;
     };
 
     typedef std::shared_ptr<ITeeVidClient> ITeeVidClientPtr;
