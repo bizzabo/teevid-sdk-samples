@@ -1,9 +1,0 @@
-<RCC>
-    <qresource prefix="/">
-        <file>camera_off.png</file>
-        <file>camera_on.png</file>
-        <file>microphone_off.png</file>
-        <file>microphone_on.png</file>
-        <file>end_call.png</file>
-    </qresource>
-</RCC>
