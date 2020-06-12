@@ -8,18 +8,25 @@
 class QImage;
 class VideoQualityDialog;
 
+namespace Ui {
+class CallItemVideoView;
+}
+
 using namespace teevid_sdk;
 
 class CallItemVideoView : public QFrame, public IStreamSubscriber
 {
     Q_OBJECT
+
 public:
     explicit CallItemVideoView(QWidget *parent = nullptr);
+    ~CallItemVideoView();
 
     void setStreamId(long id);
     long getStreamId() const;
 
     void setImage(QImage image);
+    void clear();
 
     // IStreamSubscriber
     virtual void OnVideoFrame(unsigned char *data, size_t size, size_t stride) override;
@@ -39,6 +46,7 @@ protected slots:
     void onHighQualitySelected();
 
 private:
+    Ui::CallItemVideoView *ui;
     long _streamId = 0;
     QImage _image;
     VideoQualityDialog* _qualityDialog = nullptr;

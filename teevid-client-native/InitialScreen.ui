@@ -653,6 +653,19 @@
             </rect>
            </property>
            <layout class="QHBoxLayout" name="horizontalLayout_3">
+            <property name="leftMargin">
+             <number>5</number>
+            </property>
+            <item>
+             <widget class="QCheckBox" name="checkBoxLocalVideo">
+              <property name="text">
+               <string>Display local video</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
             <item>
              <spacer name="horizontalSpacer">
               <property name="orientation">
@@ -794,11 +807,117 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>821</width>
+                 <width>828</width>
                  <height>251</height>
                 </rect>
                </property>
                <layout class="QHBoxLayout" name="horizontalLayout_6">
+                <property name="spacing">
+                 <number>10</number>
+                </property>
+                <item>
+                 <spacer name="horizontalSpacer_7">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>40</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+                <item>
+                 <widget class="QFrame" name="frameLocalVideo">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="minimumSize">
+                   <size>
+                    <width>256</width>
+                    <height>244</height>
+                   </size>
+                  </property>
+                  <property name="maximumSize">
+                   <size>
+                    <width>256</width>
+                    <height>244</height>
+                   </size>
+                  </property>
+                  <property name="frameShape">
+                   <enum>QFrame::StyledPanel</enum>
+                  </property>
+                  <property name="frameShadow">
+                   <enum>QFrame::Raised</enum>
+                  </property>
+                  <widget class="QWidget" name="verticalLayoutWidget_9">
+                   <property name="geometry">
+                    <rect>
+                     <x>0</x>
+                     <y>-4</y>
+                     <width>258</width>
+                     <height>251</height>
+                    </rect>
+                   </property>
+                   <layout class="QVBoxLayout" name="verticalLayout_4">
+                    <property name="spacing">
+                     <number>0</number>
+                    </property>
+                    <item>
+                     <widget class="QLabel" name="label">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="minimumSize">
+                       <size>
+                        <width>0</width>
+                        <height>20</height>
+                       </size>
+                      </property>
+                      <property name="maximumSize">
+                       <size>
+                        <width>16777215</width>
+                        <height>20</height>
+                       </size>
+                      </property>
+                      <property name="text">
+                       <string>Local video</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="CallItemVideoView" name="frameCallPart_Local">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="minimumSize">
+                       <size>
+                        <width>256</width>
+                        <height>222</height>
+                       </size>
+                      </property>
+                      <property name="frameShape">
+                       <enum>QFrame::StyledPanel</enum>
+                      </property>
+                      <property name="frameShadow">
+                       <enum>QFrame::Raised</enum>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                 </widget>
+                </item>
                 <item>
                  <widget class="CallItemVideoView" name="frameCallPart_1">
                   <property name="sizePolicy">
@@ -810,7 +929,7 @@
                   <property name="minimumSize">
                    <size>
                     <width>256</width>
-                    <height>192</height>
+                    <height>222</height>
                    </size>
                   </property>
                   <property name="frameShape">
@@ -832,7 +951,7 @@
                   <property name="minimumSize">
                    <size>
                     <width>256</width>
-                    <height>192</height>
+                    <height>222</height>
                    </size>
                   </property>
                   <property name="frameShape">
@@ -844,26 +963,17 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="CallItemVideoView" name="frameCallPart_3">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
+                 <spacer name="horizontalSpacer_6">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
                   </property>
-                  <property name="minimumSize">
+                  <property name="sizeHint" stdset="0">
                    <size>
-                    <width>256</width>
-                    <height>192</height>
+                    <width>40</width>
+                    <height>20</height>
                    </size>
                   </property>
-                  <property name="frameShape">
-                   <enum>QFrame::StyledPanel</enum>
-                  </property>
-                  <property name="frameShadow">
-                   <enum>QFrame::Raised</enum>
-                  </property>
-                 </widget>
+                 </spacer>
                 </item>
                </layout>
               </widget>
@@ -888,7 +998,7 @@
                </property>
                <layout class="QHBoxLayout" name="horizontalLayout_7">
                 <property name="spacing">
-                 <number>25</number>
+                 <number>10</number>
                 </property>
                 <item>
                  <spacer name="horizontalSpacer_4">
@@ -907,7 +1017,7 @@
                  </spacer>
                 </item>
                 <item>
-                 <widget class="CallItemVideoView" name="frameCallPart_4">
+                 <widget class="CallItemVideoView" name="frameCallPart_3">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                     <horstretch>0</horstretch>
@@ -917,7 +1027,7 @@
                   <property name="minimumSize">
                    <size>
                     <width>256</width>
-                    <height>192</height>
+                    <height>222</height>
                    </size>
                   </property>
                   <property name="frameShape">
@@ -929,7 +1039,7 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="CallItemVideoView" name="frameCallPart_5">
+                 <widget class="CallItemVideoView" name="frameCallPart_4">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                     <horstretch>0</horstretch>
@@ -939,7 +1049,7 @@
                   <property name="minimumSize">
                    <size>
                     <width>256</width>
-                    <height>192</height>
+                    <height>222</height>
                    </size>
                   </property>
                   <property name="frameShape">
@@ -1129,7 +1239,7 @@
   <customwidget>
    <class>CallItemVideoView</class>
    <extends>QFrame</extends>
-   <header>CallItemVideoView.h</header>
+   <header location="global">CallItemVideoView.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

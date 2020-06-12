@@ -8,7 +8,7 @@ QT       += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-TARGET = teevid-client-native
+TARGET = hisense_demo
 TEMPLATE = app
 
 # The following define makes your compiler emit warnings if you use
@@ -35,13 +35,13 @@ SOURCES += \
     VideoQualityDialog.cpp
 
 HEADERS += \
+    CallItemVideoView.h \
     ConnectParamsDialog.h \
         mainwindow.h \
     InitialScreen.h \
     FriendItem.h \
     Contact.h \
     IVideoProvider.h \
-    CallItemVideoView.h \
     ServerSimulationDialog.h \
     VideoQualityDialog.h
 
@@ -57,22 +57,10 @@ FORMS += \
 RESOURCES += \
     resourses.qrc
 
-INCLUDEPATH += $$PWD/include \
+INCLUDEPATH += ../desktop-client-sdk/include \
 
-UNAME = $$system(uname -p)
-
-contains( UNAME, x86_64 ):{
-    CONFIG(debug, debug|release){
-        LIBS += -L"$$PWD/libs/desktop/debug" -lteevid_sdk
-    } else {
-        LIBS += -L"$$PWD/libs/desktop/release" -lteevid_sdk
-    }
-}
-
-contains( UNAME, aarch64 ):{
-    CONFIG(debug, debug|release){
-        LIBS += -L"$$PWD/libs/jetson/debug" -lteevid_sdk
-    } else {
-        LIBS += -L"$$PWD/libs/jetson/release" -lteevid_sdk
-    }
+CONFIG(debug, debug|release){
+    LIBS += -L"$$PWD/../desktop-client-sdk/cmake-build-debug" -lteevid_sdk
+} else {
+    LIBS += -L"$$PWD/../desktop-client-sdk/cmake-build-release" -lteevid_sdk
 }

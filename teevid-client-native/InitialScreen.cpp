@@ -13,8 +13,6 @@
 #include <QTimer>
 #include <memory>
 
-static const std::string kToken = "token_provided_by_teevid_support";
-
 using namespace teevid_sdk;
 InitialScreen::InitialScreen(QWidget *parent) : QWidget(parent), ui(new Ui::InitialScreen)
 {
@@ -37,18 +35,31 @@ void InitialScreen::InitSDK()
     }
 
     std::string teevidServer = _connectParamsDialog->GetHost().toStdString();
+    std::string validationToken = _connectParamsDialog->GetToken().toStdString();
     std::string room = _connectParamsDialog->GetRoom().toStdString();
     std::string user = _connectParamsDialog->GetUser().toStdString();
 
-    if (teevidServer.empty() || room.empty() || user.empty())
+    if (teevidServer.empty() || validationToken.empty() || room.empty() || user.empty())
     {
         QMessageBox mb(QMessageBox::Critical, "Error", "Streaming component initialization has failed.\nPlease relaunch the app");
         mb.exec();
         return;
     }
 
-    teeVidClient_ = TeeVidFactory::CreateTeeVidClient();
-    teeVidClient_->Initialize(kToken, teevidServer, (ITeeVidClientObserver*)this);
+    try
+    {
+        teeVidClient_ = TeeVidFactory::CreateTeeVidClient();
+        teeVidClient_->Initialize(validationToken, teevidServer, (ITeeVidClientObserver*)this);
+    }
+    catch (std::exception& e)
+    {
+        QString errorMsg = "Streaming component initialization has failed.\n" + QString::fromStdString(e.what());
+        QMessageBox mb(QMessageBox::Critical, "Error", errorMsg);
+        mb.exec();
+
+        // TODO: do we need to quit the app here?
+        exit(0);
+    }
 }
 
 void InitialScreen::InitUI()
@@ -96,11 +107,14 @@ void InitialScreen::InitUI()
 
     ui->listViewFriends->setSelectionMode(QAbstractItemView::ExtendedSelection);
 
+    // add all video items except local
     callItems_.push_back(ui->frameCallPart_1);
     callItems_.push_back(ui->frameCallPart_2);
     callItems_.push_back(ui->frameCallPart_3);
     callItems_.push_back(ui->frameCallPart_4);
-    callItems_.push_back(ui->frameCallPart_5);
+
+    connect(ui->frameCallPart_Local, SIGNAL(lowQualitySelected(long)), this, SLOT(onLowQualitySelected(long)));
+    connect(ui->frameCallPart_Local, SIGNAL(highQualitySelected(long)), this, SLOT(onHighQualitySelected(long)));
 
     connect(ui->frameCallPart_1, SIGNAL(lowQualitySelected(long)), this, SLOT(onLowQualitySelected(long)));
     connect(ui->frameCallPart_1, SIGNAL(highQualitySelected(long)), this, SLOT(onHighQualitySelected(long)));
@@ -110,8 +124,9 @@ void InitialScreen::InitUI()
     connect(ui->frameCallPart_3, SIGNAL(highQualitySelected(long)), this, SLOT(onHighQualitySelected(long)));
     connect(ui->frameCallPart_4, SIGNAL(lowQualitySelected(long)), this, SLOT(onLowQualitySelected(long)));
     connect(ui->frameCallPart_4, SIGNAL(highQualitySelected(long)), this, SLOT(onHighQualitySelected(long)));
-    connect(ui->frameCallPart_5, SIGNAL(lowQualitySelected(long)), this, SLOT(onLowQualitySelected(long)));
-    connect(ui->frameCallPart_5, SIGNAL(highQualitySelected(long)), this, SLOT(onHighQualitySelected(long)));
+
+    ui->checkBoxLocalVideo->setChecked(true);
+    connect(ui->checkBoxLocalVideo, SIGNAL(stateChanged(int)), this, SLOT(onDisplayLocalVideoChecked(int)));
 
     _connectParamsDialog = new ConnectParamsDialog(this);
     _connectParamsDialog->show();
@@ -161,13 +176,24 @@ void InitialScreen::OnConnectionError (const std::string& )
 {
 }
 
-void InitialScreen::OnStreamAdded (long streamId, const std::string& participantId, const std::string& name, int type)
+void InitialScreen::OnStreamAdded (long streamId, const std::string& participantId, const std::string& name, int type, bool isOwn)
 {
-    CallItemVideoView* callItem = GetVacantVideoView();
-    if (teeVidClient_ && callItem)
+    if (isOwn)
     {
-        callItem->setStreamId(streamId);
-        teeVidClient_->Subscribe(streamId, callItem);
+        ui->frameCallPart_Local->setStreamId(streamId);
+        if (ui->checkBoxLocalVideo->isChecked())
+        {
+            teeVidClient_->Subscribe(streamId, ui->frameCallPart_Local);
+        }
+    }
+    else
+    {
+        CallItemVideoView* callItem = GetVacantVideoView();
+        if (teeVidClient_ && callItem)
+        {
+            callItem->setStreamId(streamId);
+            teeVidClient_->Subscribe(streamId, callItem);
+        }
     }
 }
 
@@ -286,16 +312,32 @@ void InitialScreen::onBtnEndCallPressed()
 
 void InitialScreen::onBtnMicrophonePressed()
 {
+    // get the current state and invert it
     bool enabled = ui->btnMicrophone->property("turn_on").toBool();
-    ui->btnMicrophone->setProperty("turn_on", !enabled);
+    enabled = !enabled;
+
+    ui->btnMicrophone->setProperty("turn_on", enabled);
     style()->polish(ui->btnMicrophone);
+
+    if (teeVidClient_)
+    {
+        teeVidClient_->SendAudio(enabled);
+    }
 }
 
 void InitialScreen::onBtnCameraPressed()
 {
+    // get the current state and invert it
     bool enabled = ui->btnCamera->property("turn_on").toBool();
-    ui->btnCamera->setProperty("turn_on", !enabled);
+    enabled = !enabled;
+
+    ui->btnCamera->setProperty("turn_on", enabled);
     style()->polish(ui->btnCamera);
+
+    if (teeVidClient_)
+    {
+        teeVidClient_->SendVideo(enabled);
+    }
 }
 
 void InitialScreen::onRoomNameSubmitted(const std::string& roomId)
@@ -311,8 +353,29 @@ void InitialScreen::onHighQualitySelected(long streamId)
 {
 }
 
+void InitialScreen::onDisplayLocalVideoChecked(int state)
+{
+    bool showVideo = (state == Qt::Checked);
+    if (teeVidClient_)
+    {
+        if (showVideo)
+        {
+            teeVidClient_->Subscribe(ui->frameCallPart_Local->getStreamId(), ui->frameCallPart_Local);
+        }
+        else
+        {
+            teeVidClient_->Unsubscribe(ui->frameCallPart_Local->getStreamId());
+            ui->frameCallPart_Local->clear();
+        }
+    }
+    ui->frameLocalVideo->setVisible(showVideo);
+}
+
 void InitialScreen::UnsubscribeFromVideo()
 {
+    if (!teeVidClient_)
+        return;
+
     for (auto iter = callItems_.begin(); iter != callItems_.end(); ++iter)
     {
         CallItemVideoView* callItem = *iter;
@@ -322,6 +385,10 @@ void InitialScreen::UnsubscribeFromVideo()
             callItem->setStreamId(0);
         }
     }
+
+    // unsubscribe from local video
+    teeVidClient_->Unsubscribe(ui->frameCallPart_Local->getStreamId());
+    ui->frameCallPart_Local->setStreamId(0);
 }
 
 CallItemVideoView* InitialScreen::GetVacantVideoView() const
@@ -330,7 +397,7 @@ CallItemVideoView* InitialScreen::GetVacantVideoView() const
     for (auto iter = callItems_.begin(); iter != callItems_.end(); ++iter)
     {
         CallItemVideoView* callItem = *iter;
-        if (callItem && callItem->getStreamId() == 0)
+        if (callItem && (callItem->getStreamId() == 0))
         {
             view = callItem;
             break;

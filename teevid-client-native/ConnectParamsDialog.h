@@ -17,6 +17,7 @@ public:
     ~ConnectParamsDialog();
 
     QString GetHost() const;
+    QString GetToken() const;
     QString GetRoom() const;
     QString GetUser() const;
 

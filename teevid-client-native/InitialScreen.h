@@ -39,7 +39,7 @@ public:
 
     void OnConnected (long streamId, const std::string& invitationToken) override;
     void OnConnectionError (const std::string& reason) override;
-    void OnStreamAdded (long streamId, const std::string& participantId, const std::string& name, int type) override;
+    void OnStreamAdded (long streamId, const std::string& participantId, const std::string& name, int type, bool isOwn) override;
     void OnStreamRemoved(long streamId) override;
     void OnDisconnected () override;
     void OnRoomModeChanged (RoomMode mode) override;
@@ -70,6 +70,8 @@ protected slots:
 
     void onLowQualitySelected(long streamId);
     void onHighQualitySelected(long streamId);
+
+    void onDisplayLocalVideoChecked(int state);
 
 protected:
     void UnsubscribeFromVideo();

@@ -52,12 +52,12 @@
          <x>0</x>
          <y>0</y>
          <width>401</width>
-         <height>201</height>
+         <height>210</height>
         </rect>
        </property>
        <layout class="QFormLayout" name="formLayout">
         <property name="horizontalSpacing">
-         <number>10</number>
+         <number>5</number>
         </property>
         <property name="verticalSpacing">
          <number>20</number>
@@ -66,7 +66,7 @@
          <number>20</number>
         </property>
         <property name="topMargin">
-         <number>30</number>
+         <number>20</number>
         </property>
         <property name="rightMargin">
          <number>20</number>
@@ -84,8 +84,14 @@
           </property>
           <property name="minimumSize">
            <size>
-            <width>80</width>
+            <width>60</width>
             <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>60</width>
+            <height>16777215</height>
            </size>
           </property>
           <property name="text">
@@ -96,7 +102,7 @@
         <item row="0" column="1">
          <widget class="QLineEdit" name="lineEditHost"/>
         </item>
-        <item row="1" column="0">
+        <item row="2" column="0">
          <widget class="QLabel" name="label_2">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
@@ -106,8 +112,14 @@
           </property>
           <property name="minimumSize">
            <size>
-            <width>80</width>
+            <width>60</width>
             <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>60</width>
+            <height>16777215</height>
            </size>
           </property>
           <property name="text">
@@ -115,10 +127,10 @@
           </property>
          </widget>
         </item>
-        <item row="1" column="1">
+        <item row="2" column="1">
          <widget class="QLineEdit" name="lineEditRoom"/>
         </item>
-        <item row="2" column="0">
+        <item row="3" column="0">
          <widget class="QLabel" name="label_3">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
@@ -128,8 +140,14 @@
           </property>
           <property name="minimumSize">
            <size>
-            <width>80</width>
+            <width>60</width>
             <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>60</width>
+            <height>16777215</height>
            </size>
           </property>
           <property name="text">
@@ -137,8 +155,36 @@
           </property>
          </widget>
         </item>
-        <item row="2" column="1">
+        <item row="3" column="1">
          <widget class="QLineEdit" name="lineEditUser"/>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="label_4">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>60</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>60</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>Token:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QLineEdit" name="lineEditToken"/>
         </item>
        </layout>
       </widget>

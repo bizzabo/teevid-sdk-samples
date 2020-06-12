@@ -1,4 +1,6 @@
 #include "CallItemVideoView.h"
+#include "ui_CallItemVideoView.h"
+
 #include "VideoQualityDialog.h"
 
 #include <QPainter>
@@ -13,9 +15,19 @@ const size_t cDummyVideoSize = cDummyVideoFrameWidth * cDummyVideoFrameHeight * 
 
 std::mutex mt;
 
-CallItemVideoView::CallItemVideoView(QWidget *parent) : QFrame(parent)
+CallItemVideoView::CallItemVideoView(QWidget *parent) :
+    QFrame(parent),
+    ui(new Ui::CallItemVideoView)
 {
-    setFixedSize(256, 192);
+    ui->setupUi(this);
+
+    ui->labelParticipant->clear();
+    ui->labelSize->clear();
+}
+
+CallItemVideoView::~CallItemVideoView()
+{
+    delete ui;
 }
 
 void CallItemVideoView::setStreamId(long id)
@@ -24,6 +36,7 @@ void CallItemVideoView::setStreamId(long id)
     if (_streamId == 0)
     {
         setImage(QImage());
+        ui->labelSize->clear();
     }
 }
 
@@ -35,6 +48,9 @@ long CallItemVideoView::getStreamId() const
 void CallItemVideoView::OnVideoFrame(unsigned char *data, size_t size, size_t stride)
 {
     // TODO: check whether this could be parallel
+    if (!data)
+        return;
+
     std::unique_lock<std::mutex> lock(mt, std::defer_lock);
     lock.lock();
     uchar udata[cDummyVideoSize];
@@ -46,12 +62,15 @@ void CallItemVideoView::OnVideoFrame(unsigned char *data, size_t size, size_t st
     if (_streamId > 0)
     {
         QImage image(udata, width, height, stride, QImage::Format_RGB888);
-        image = image.scaled(this->size());
+        image = image.scaled(ui->frameContainer->size());
         setImage(image);
+        QString sizeStr = QString::number(width) + "x" + QString::number(height);
+        ui->labelSize->setText(sizeStr);
     }
     else
     {
         setImage(QImage());
+        ui->labelSize->clear();
     }
     lock.unlock();
 }
@@ -69,13 +88,19 @@ void CallItemVideoView::OnVideoSizeChanged(const std::string &participantId, con
 void CallItemVideoView::setImage(QImage image)
 {
     _image = image;
-    update();
+    ui->frameContainer->update();
+}
+
+void CallItemVideoView::clear()
+{
+    // set an empty image
+    setImage(QImage());
 }
 
 void CallItemVideoView::paintEvent(QPaintEvent *event)
 {
     QPainter widgetPainter(this);
-    widgetPainter.drawImage(0, 0, _image);
+    widgetPainter.drawImage(ui->frameContainer->rect(), _image);
 
     QFrame::paintEvent(event);
 }

@@ -16,6 +16,7 @@ ConnectParamsDialog::ConnectParamsDialog(QWidget *parent) :
     QSettings settings("teevid-client-native", "connect_params");
     settings.beginGroup("teevid-client-native");
     ui->lineEditHost->setText(settings.value("host", "").toString());
+    ui->lineEditToken->setText(settings.value("token", "").toString());
     ui->lineEditRoom->setText(settings.value("room", "").toString());
     ui->lineEditUser->setText(settings.value("user", "").toString());
     settings.endGroup();
@@ -34,6 +35,11 @@ QString ConnectParamsDialog::GetHost() const
     return ui->lineEditHost->text();
 }
 
+QString ConnectParamsDialog::GetToken() const
+{
+    return ui->lineEditToken->text();
+}
+
 QString ConnectParamsDialog::GetRoom() const
 {
     return ui->lineEditRoom->text();
@@ -50,6 +56,14 @@ void ConnectParamsDialog::OnBtnApply()
     if (host.isEmpty())
     {
         QMessageBox mb(QMessageBox::Critical, "Error", "Please enter server host");
+        mb.exec();
+        return;
+    }
+
+    QString token = ui->lineEditToken->text();
+    if (token.isEmpty())
+    {
+        QMessageBox mb(QMessageBox::Critical, "Error", "Please enter validation token for the server");
         mb.exec();
         return;
     }
@@ -73,6 +87,7 @@ void ConnectParamsDialog::OnBtnApply()
     QSettings settings("teevid-client-native", "connect_params");
     settings.beginGroup("teevid-client-native");
     settings.setValue("host", host);
+    settings.setValue("token", token);
     settings.setValue("room", room);
     settings.setValue("user", user);
     settings.endGroup();
