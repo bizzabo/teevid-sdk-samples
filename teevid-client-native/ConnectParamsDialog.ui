@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>300</height>
+    <width>450</width>
+    <height>340</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,8 +18,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>401</width>
-     <height>301</height>
+     <width>451</width>
+     <height>341</height>
     </rect>
    </property>
    <layout class="QVBoxLayout" name="verticalLayout">
@@ -37,7 +37,13 @@
       <property name="minimumSize">
        <size>
         <width>0</width>
-        <height>200</height>
+        <height>280</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>280</height>
        </size>
       </property>
       <property name="frameShape">
@@ -51,8 +57,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>401</width>
-         <height>210</height>
+         <width>451</width>
+         <height>290</height>
         </rect>
        </property>
        <layout class="QFormLayout" name="formLayout">
@@ -66,7 +72,7 @@
          <number>20</number>
         </property>
         <property name="topMargin">
-         <number>20</number>
+         <number>10</number>
         </property>
         <property name="rightMargin">
          <number>20</number>
@@ -101,6 +107,34 @@
         </item>
         <item row="0" column="1">
          <widget class="QLineEdit" name="lineEditHost"/>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="label_4">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>80</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>80</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>SDK Token:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QLineEdit" name="lineEditToken"/>
         </item>
         <item row="2" column="0">
          <widget class="QLabel" name="label_2">
@@ -158,8 +192,8 @@
         <item row="3" column="1">
          <widget class="QLineEdit" name="lineEditUser"/>
         </item>
-        <item row="1" column="0">
-         <widget class="QLabel" name="label_4">
+        <item row="4" column="0">
+         <widget class="QLabel" name="label_5">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
             <horstretch>0</horstretch>
@@ -168,23 +202,41 @@
           </property>
           <property name="minimumSize">
            <size>
-            <width>60</width>
+            <width>70</width>
             <height>0</height>
            </size>
           </property>
           <property name="maximumSize">
            <size>
-            <width>60</width>
-            <height>16777215</height>
+            <width>16777215</width>
+            <height>70</height>
            </size>
           </property>
           <property name="text">
-           <string>Token:</string>
+           <string>Password:</string>
           </property>
          </widget>
         </item>
-        <item row="1" column="1">
-         <widget class="QLineEdit" name="lineEditToken"/>
+        <item row="4" column="1">
+         <widget class="QLineEdit" name="lineEditPassword">
+          <property name="echoMode">
+           <enum>QLineEdit::Password</enum>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="0">
+         <widget class="QLabel" name="label_6">
+          <property name="text">
+           <string>Access PIN:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="1">
+         <widget class="QLineEdit" name="lineEditAccessPin">
+          <property name="echoMode">
+           <enum>QLineEdit::Password</enum>
+          </property>
+         </widget>
         </item>
        </layout>
       </widget>
@@ -215,7 +267,7 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>401</width>
+         <width>451</width>
          <height>51</height>
         </rect>
        </property>

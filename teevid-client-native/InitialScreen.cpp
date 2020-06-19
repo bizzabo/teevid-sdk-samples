@@ -5,6 +5,7 @@
 #include "CallItemVideoView.h"
 #include "ServerSimulationDialog.h"
 #include "ConnectParamsDialog.h"
+#include "InvitationManager.h"
 
 #include <QButtonGroup>
 #include <QStandardItemModel>
@@ -14,6 +15,11 @@
 #include <memory>
 
 using namespace teevid_sdk;
+
+const int cVideoFps = 30;
+const int cVideoTimerInterval = 1000 / cVideoFps;
+const int cDummyFrameSetsCount = 32;
+
 InitialScreen::InitialScreen(QWidget *parent) : QWidget(parent), ui(new Ui::InitialScreen)
 {
     InitUI();
@@ -22,7 +28,14 @@ InitialScreen::InitialScreen(QWidget *parent) : QWidget(parent), ui(new Ui::Init
 
 InitialScreen::~InitialScreen()
 {
+    _dummyFramesTimer.stop();
     UnsubscribeFromVideo();
+
+    if (teeVidClient_)
+    {
+        teeVidClient_->Disconnect();
+    }
+
     delete ui;
 }
 
@@ -128,11 +141,21 @@ void InitialScreen::InitUI()
     ui->checkBoxLocalVideo->setChecked(true);
     connect(ui->checkBoxLocalVideo, SIGNAL(stateChanged(int)), this, SLOT(onDisplayLocalVideoChecked(int)));
 
+    connect(this, SIGNAL(sdkOnConnectedRecieved(QString)), this, SLOT(OnSdkOnConnectedReceived(QString)));
+
     _connectParamsDialog = new ConnectParamsDialog(this);
     _connectParamsDialog->show();
 
     connect(_connectParamsDialog, SIGNAL(paramsApplied()), this, SLOT(onConnectParamsApplied()));
     connect(_connectParamsDialog, SIGNAL(paramsCancelled()), this, SLOT(onConnectParamsCancelled()));
+
+    // TODO: should it be called only at first successful publish?
+    GenerateDummyVideoFrames();
+    GenerateDummyAudioFrames();
+
+    _dummyFramesTimer.setInterval(cVideoTimerInterval);
+    _dummyFramesTimer.setSingleShot(false);
+    connect(&_dummyFramesTimer, SIGNAL(timeout()), this, SLOT(OnDummyFrameTimer()));
 }
 
 void InitialScreen::setFriendsData(std::vector<Contact> friends)
@@ -169,9 +192,13 @@ bool InitialScreen::isCameraOn() const
     return ui->btnCamera->property("enabled").toBool();
 }
 
-void InitialScreen::OnConnected (long , const std::string& )
+void InitialScreen::OnConnected (long streamId, const std::string& invitationToken)
 {
+    // invitation token receive notification is implemented via SIGNAL-SLOT connection because this logic is in different thread (not GUI)
+    QString token = QString::fromStdString(invitationToken);
+    emit sdkOnConnectedRecieved(token);
 }
+
 void InitialScreen::OnConnectionError (const std::string& )
 {
 }
@@ -291,7 +318,19 @@ void InitialScreen::onInvitePressed()
 
     std::string room = _connectParamsDialog->GetRoom().toStdString();
     std::string user = _connectParamsDialog->GetUser().toStdString();
-    teeVidClient_->ConnectTo(room, user, 0, 0);
+    std::string password = _connectParamsDialog->GetPassword().toStdString();
+    int accessPin = _connectParamsDialog->GetAccessPin();
+    try
+    {
+         _dummyFramesTimer.start();
+        teeVidClient_->ConnectTo(room, user, password, accessPin, 0);
+    }
+    catch (std::exception& e)
+    {
+        QString errorMsg = "Room connection has failed.\n" + QString::fromStdString(e.what());
+        QMessageBox mb(QMessageBox::Critical, "Error", errorMsg);
+        mb.exec();
+    }
 }
 
 void InitialScreen::onServerSimulationPressed()
@@ -299,13 +338,23 @@ void InitialScreen::onServerSimulationPressed()
     if (!_serverSimulationDialog)
     {
         _serverSimulationDialog = new ServerSimulationDialog(this);
-        connect(_serverSimulationDialog, SIGNAL(roomNameSubmitted(std::string)), this, SLOT(onRoomNameSubmitted(std::string)));
+        connect(_serverSimulationDialog, SIGNAL(roomSubmitted(const QString&, const QString&)), this, SLOT(onRoomSubmitted(const QString&, const QString&)));
     }
     _serverSimulationDialog->show();
 }
 
 void InitialScreen::onBtnEndCallPressed()
 {
+    _dummyFramesTimer.stop();
+    _dummyTimerIteration = 0;
+    ui->textEditInvitationToken->clear();
+
+    UnsubscribeFromVideo();
+    if (teeVidClient_)
+    {
+        teeVidClient_->Disconnect();
+    }
+
     QMessageBox mb(QMessageBox::Information, "Invitation", "Call ended");
     mb.exec();
 }
@@ -340,9 +389,43 @@ void InitialScreen::onBtnCameraPressed()
     }
 }
 
-void InitialScreen::onRoomNameSubmitted(const std::string& roomId)
+void InitialScreen::onRoomSubmitted(const QString &caller, const QString &invitationUrl)
 {
-    teeVidClient_->ConnectTo(roomId, "guest", 0, 0);
+    InvitationParams inviteParams = InvitationManager::GetInvitationParams(invitationUrl);
+    std::string currentHost = _connectParamsDialog->GetHost().toStdString();
+
+    // TODO: for now accept invitation only if it is for the same domain
+    if (inviteParams.host_.compare(currentHost) != 0)
+    {
+        QString errorMsg = "The domain in the invitation link is different from currently connected.\nPlease relaunch the app and connec to an appropriate domain";
+        QMessageBox mb(QMessageBox::Critical, "Invitation failed", errorMsg);
+        mb.exec();
+        return;
+    }
+
+    QMessageBox msgBox;
+    msgBox.setText("Incoming call from " + caller);
+    QAbstractButton* btnAccept = msgBox.addButton("Accept", QMessageBox::YesRole);
+    msgBox.addButton("Decline", QMessageBox::NoRole);
+
+    msgBox.exec();
+
+    if (msgBox.clickedButton() == btnAccept && teeVidClient_)
+    {
+        try
+        {
+            _dummyFramesTimer.start();
+            std::string user = _connectParamsDialog->GetUser().toStdString();
+            std::string password = _connectParamsDialog->GetPassword().toStdString();
+            teeVidClient_->ConnectTo(inviteParams.token_, inviteParams.room_, user, password);
+        }
+        catch (std::exception& e)
+        {
+            QString errorMsg = "Room connection has failed.\n" + QString::fromStdString(e.what());
+            QMessageBox mb(QMessageBox::Critical, "Error", errorMsg);
+            mb.exec();
+        }
+    }
 }
 
 void InitialScreen::onLowQualitySelected(long streamId)
@@ -356,19 +439,43 @@ void InitialScreen::onHighQualitySelected(long streamId)
 void InitialScreen::onDisplayLocalVideoChecked(int state)
 {
     bool showVideo = (state == Qt::Checked);
+    ui->frameLocalVideo->setVisible(showVideo);
+}
+
+void InitialScreen::OnSdkOnConnectedReceived(QString token)
+{
+    InvitationParams inviteParams;
+    inviteParams.host_ = _connectParamsDialog->GetHost().toStdString();
+    inviteParams.room_ = _connectParamsDialog->GetRoom().toStdString();
+    inviteParams.token_ = token.toStdString();
+    ui->textEditInvitationToken->setPlainText(InvitationManager::MakeInvitationUrl(inviteParams));
+}
+
+void InitialScreen::OnDummyFrameTimer()
+{
+    if (_videoFrames.empty() || !_audioFrame)
+        return;
+
+    if (++_dummyTimerIteration == cDummyFrameSetsCount)
+    {
+        _dummyTimerIteration = 0;
+    }
     if (teeVidClient_)
     {
-        if (showVideo)
+        std::shared_ptr<VideoFrameData> video_frame = _videoFrames[_dummyTimerIteration];
+
+        size_t stride = video_frame->GetWidth() * video_frame->GetBytesPerPixel();
+
+        // play dummy local video
+        if (ui->checkBoxLocalVideo->isChecked())
         {
-            teeVidClient_->Subscribe(ui->frameCallPart_Local->getStreamId(), ui->frameCallPart_Local);
+            ui->frameCallPart_Local->OnVideoFrame(video_frame->GetData(), video_frame->GetSize(), stride);
+            ui->frameCallPart_Local->OnAudioFrame(_audioFrame->GetData(), _audioFrame->GetSize(), _audioFrame->GetChannelsCount(), _audioFrame->GetSampleSize());
         }
-        else
-        {
-            teeVidClient_->Unsubscribe(ui->frameCallPart_Local->getStreamId());
-            ui->frameCallPart_Local->clear();
-        }
+
+        teeVidClient_->PutVideoFrame(video_frame->GetData(), video_frame->GetSize(), stride);
+        teeVidClient_->PutAudioFrame(_audioFrame->GetData(), _audioFrame->GetSize());
     }
-    ui->frameLocalVideo->setVisible(showVideo);
 }
 
 void InitialScreen::UnsubscribeFromVideo()
@@ -419,4 +526,19 @@ CallItemVideoView* InitialScreen::GetVideoViewById(long streamId) const
         }
     }
     return view;
+}
+
+
+void InitialScreen::GenerateDummyVideoFrames()
+{
+    _videoFrames.clear();
+    for (unsigned char i = 0; i < cDummyFrameSetsCount; ++i)
+    {
+        _videoFrames.push_back(std::make_shared<VideoFrameData>(i));
+    }
+}
+
+void InitialScreen::GenerateDummyAudioFrames()
+{
+    _audioFrame = std::make_shared<AudioFrameData>();
 }

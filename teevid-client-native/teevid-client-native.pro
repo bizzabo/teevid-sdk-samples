@@ -24,31 +24,37 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 
 SOURCES += \
+    AudioFrameData.cpp \
     ConnectParamsDialog.cpp \
-        main.cpp \
-        mainwindow.cpp \
+    VideoFrameData.cpp \
+    main.cpp \
+    mainwindow.cpp \
     InitialScreen.cpp \
     FriendItem.cpp \
     Contact.cpp \
     CallItemVideoView.cpp \
     ServerSimulationDialog.cpp \
-    VideoQualityDialog.cpp
+    VideoQualityDialog.cpp \
+    InvitationManager.cpp
 
 HEADERS += \
+    AudioFrameData.h \
+    CallItemVideoView.h \
     ConnectParamsDialog.h \
-        mainwindow.h \
+    VideoFrameData.h \
+    mainwindow.h \
     InitialScreen.h \
     FriendItem.h \
     Contact.h \
     IVideoProvider.h \
-    CallItemVideoView.h \
     ServerSimulationDialog.h \
-    VideoQualityDialog.h
+    VideoQualityDialog.h \
+    InvitationManager.h
 
 FORMS += \
     CallItemVideoView.ui \
     ConnectParamsDialog.ui \
-        mainwindow.ui \
+    mainwindow.ui \
     InitialScreen.ui \
     FriendItem.ui \
     ServerSimulationDialog.ui \

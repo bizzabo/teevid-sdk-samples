@@ -30,6 +30,7 @@ typedef struct {
     CodecType audioCodecType;
     int audioChannels = 2;
     int audioBps = 16;
+    int audioSampleRate = 48000;
 } MediaSettings;
 
 }
