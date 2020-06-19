@@ -5,15 +5,19 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
+import androidx.core.util.Consumer;
 import androidx.fragment.app.Fragment;
 
 import com.teevid.sdk.TeeVidClient;
 import com.teevid.sdk.TeeVidEventListener;
+import com.teevid.sdk.api.SdkErrors;
 import com.teevid.sdk.log.LogLevel;
 import com.teevid.sdk.view.TeeVidView;
 
@@ -95,13 +99,66 @@ public class CallFragment extends Fragment {
         }
     }
 
+    private void showEnterPinDialog(Consumer<String> pinConsumer) {
+        View view = LayoutInflater.from(getContext()).inflate(R.layout.dialog_edit_text, null);
+        EditText editText = view.findViewById(R.id.et_input);
+        editText.setHint(R.string.enter_pin);
+
+        AlertDialog dialog = new AlertDialog.Builder(getContext())
+                .setTitle(R.string.enter_pin_title)
+                .setPositiveButton(R.string.dialog_btn_connect, (dialog1, which) -> {
+                    String pin = editText.getText().toString();
+                    pinConsumer.accept(pin);
+                })
+                .setNegativeButton(R.string.dialog_btn_cancel, null)
+                .setCancelable(false)
+                .setView(view)
+                .create();
+
+        dialog.show();
+    }
+
     private TeeVidEventListener getEventListener() {
         return new TeeVidEventListener() {
+
+            @Override
+            public void onConnect() {
+                Log.d(TAG, "onConnect");
+            }
+
+            @Override
+            public void onDisconnect() {
+                Log.d(TAG, "onDisconnect");
+            }
+
+            @Override
+            public void onAddParticipant(String participantId) {
+                Log.d(TAG, "onAddParticipant: " + participantId);
+            }
+
+            @Override
+            public void onRemoveParticipant(String participantId) {
+                Log.d(TAG, "onRemoveParticipant: " + participantId);
+            }
 
             @Override
             public void onReceiveError(Throwable throwable) {
                 Log.e(TAG, "onReceiveError: ", throwable);
                 Toast.makeText(getContext(), throwable.getMessage(), Toast.LENGTH_LONG).show();
+            }
+
+            @Override
+            public void onRequestAccessPin(String reason, Consumer<String> pinConsumer) {
+                Log.d(TAG, "onRequestAccessPin: " + reason);
+                if (SdkErrors.BAD_PIN.equals(reason)) {
+                    Toast.makeText(getContext(), R.string.invalid_pin, Toast.LENGTH_LONG).show();
+                }
+                showEnterPinDialog(pinConsumer);
+            }
+
+            @Override
+            public void onChangeVoiceActivationState(boolean activated) {
+                Log.d(TAG, "onChangeVoiceActivationState: " + activated);
             }
         };
     }

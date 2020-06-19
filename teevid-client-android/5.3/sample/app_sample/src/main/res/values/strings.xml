@@ -2,6 +2,11 @@
 
     <string name="app_name">TeeVid Sample</string>
 
-    <string name="error_server_address_not_valid">Server address is not valid</string>
+    <string name="dialog_btn_cancel">Cancel</string>
+    <string name="dialog_btn_connect">Connect</string>
+
+    <string name="enter_pin">Enter PIN</string>
+    <string name="enter_pin_title">Enter the PIN to access this meeting</string>
+    <string name="invalid_pin">Invalid PIN</string>
 
 </resources>
