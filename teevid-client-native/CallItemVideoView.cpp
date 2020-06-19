@@ -10,7 +10,9 @@
 
 const int cDummyVideoFrameWidth = 1920;
 const int cDummyVideoFrameHeight = 1080;
-const int cBytesPerPixel = 3;
+
+// each pixel is coded via 4 bytes: red, green, blue and alpha channel
+const int cBytesPerPixel = 4;
 const size_t cDummyVideoSize = cDummyVideoFrameWidth * cDummyVideoFrameHeight * cBytesPerPixel;
 
 std::mutex mt;
@@ -53,15 +55,13 @@ void CallItemVideoView::OnVideoFrame(unsigned char *data, size_t size, size_t st
 
     std::unique_lock<std::mutex> lock(mt, std::defer_lock);
     lock.lock();
-    uchar udata[cDummyVideoSize];
-    memcpy(udata, data, sizeof(udata));
 
     int width = stride / cBytesPerPixel;
     int height = size / stride;
 
     if (_streamId > 0)
     {
-        QImage image(udata, width, height, stride, QImage::Format_RGB888);
+        QImage image(data, width, height, stride, QImage::Format_RGBA8888);
         image = image.scaled(ui->frameContainer->size());
         setImage(image);
         QString sizeStr = QString::number(width) + "x" + QString::number(height);

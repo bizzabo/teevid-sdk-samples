@@ -29,14 +29,16 @@ namespace teevid_sdk {
         // This method performs connection to the room. Need to provide:
         // roomName - uniq name of room, room should be already created from admin panel
         // name - name of caller
+        // password - caller's password
         // accessPin - pin for entering the room (can be empty)
         // ownerPin - pin for obtaining owner role (can be empty)
-        virtual void ConnectTo(const std::string& roomName, const std::string& name,
+        virtual void ConnectTo(const std::string& roomName, const std::string& name, const std::string& password,
                                int accessPin, int ownerPin) = 0;
 
         // By this method, client can enter the room by invitation token received from another client
         // Need to provide invitation token and own name
-        virtual void ConnectTo(const std::string& invitationToken, const std::string& name) = 0;
+        virtual void ConnectTo(const std::string& invitationToken, const std::string& roomName,
+                const std::string& name, const std::string& password) = 0;
 
         // Each stream which return by OnStreamAdded callback can e subscribed by client's application
         // Subscriber provides callback interface which wil be used to deliver media data

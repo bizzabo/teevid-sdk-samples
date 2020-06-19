@@ -16,7 +16,7 @@ public:
     ~ServerSimulationDialog();
 
 signals:
-    void roomNameSubmitted(const std::string& roomId);
+    void roomSubmitted(const QString& caller, const QString& invitationUrl);
 
 protected slots:
     void onIncomingCallPressed();

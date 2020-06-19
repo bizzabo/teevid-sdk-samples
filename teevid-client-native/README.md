@@ -45,16 +45,19 @@ libsrtp2-dev
 ```
 
 #### 4. In order to build demo UI app do the following:
-	1.	Navigate to the directory where yoour sources are stored
+	1.	Navigate to the directory where your sources are stored
 		cd <your_source_dir>
 
 	2. 	Download sources:
 		git clone https://github.com/TeeVid/sdk_samples.git
 
-	3.	Launch Qt creator
-	4.	Choose "Projects" -> "Open project" -> <your_source_dir>/sdk_samples/desktop/teevid-client-native/teevid-client-native.pro
-	5.	Select configuration (Debug or Release)
-	6.	In menu bar select:
+	3.	Run script to fix library issues:
+		./install.sh
+
+	4.	Launch Qt creator
+	5.	Choose "Projects" -> "Open project" -> <your_source_dir>/sdk_samples/desktop/teevid-client-native/teevid-client-native.pro
+	6.	Select configuration (Debug or Release)
+	7.	In menu bar select:
 		*	"Project" -> "Clean all"
 		*	"Project" -> "Run qmake"
 		*	"Project" -> "Build all" or "Rebuild all"

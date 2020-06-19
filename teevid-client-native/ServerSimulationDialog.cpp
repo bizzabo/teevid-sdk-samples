@@ -20,13 +20,21 @@ ServerSimulationDialog::~ServerSimulationDialog()
 
 void ServerSimulationDialog::onIncomingCallPressed()
 {
-    std::string roomName = ui->lineEditRoomId->text().toUtf8().constData();
-    if (roomName.empty())
+    QString caller = ui->lineEditCaller->text();
+    if (caller.isEmpty())
     {
-        QMessageBox mb(QMessageBox::Critical, "Error", "Please enter a valid room ID");
+        QMessageBox mb(QMessageBox::Critical, "Error", "Please enter caller name");
         mb.exec();
         return;
     }
-    emit roomNameSubmitted(roomName);
+
+    QString invitationUrl = ui->textEditToken->toPlainText();
+    if (invitationUrl.isEmpty())
+    {
+        QMessageBox mb(QMessageBox::Critical, "Error", "Please enter your invitation URL");
+        mb.exec();
+        return;
+    }
+    emit roomSubmitted(caller, invitationUrl);
     close();
 }

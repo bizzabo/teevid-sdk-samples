@@ -2,9 +2,12 @@
 #define INITIALSCREEN_H
 
 #include <QWidget>
+#include <QTimer>
 #include <vector>
 
 #include "Contact.h"
+#include "VideoFrameData.h"
+#include "AudioFrameData.h"
 #include "teevid_sdk/ITeeVidClient.h"
 
 class QButtonGroup;
@@ -52,6 +55,9 @@ public:
     void OnParticipantUpdated (const std::string& participantId, const MuteAttributes& muteAttr) override;
     void OnRaiseHandStatusUpdated (bool allowed) override;
 
+signals:
+    void sdkOnConnectedRecieved(QString token);
+
 protected slots:
     void onConnectParamsApplied();
     void onConnectParamsCancelled();
@@ -66,18 +72,24 @@ protected slots:
     void onBtnMicrophonePressed();
     void onBtnCameraPressed();
 
-    void onRoomNameSubmitted(const std::string& roomId);
+    void onRoomSubmitted(const QString& caller, const QString& invitationUrl);
 
     void onLowQualitySelected(long streamId);
     void onHighQualitySelected(long streamId);
 
     void onDisplayLocalVideoChecked(int state);
 
+    void OnSdkOnConnectedReceived(QString token);
+
+    void OnDummyFrameTimer();
+
 protected:
     void UnsubscribeFromVideo();
 
     CallItemVideoView* GetVacantVideoView() const;
     CallItemVideoView* GetVideoViewById(long streamId) const;
+    void GenerateDummyVideoFrames();
+    void GenerateDummyAudioFrames();
 
 private:
     void InitSDK();
@@ -93,6 +105,12 @@ private:
 
     ServerSimulationDialog* _serverSimulationDialog = nullptr;
     ConnectParamsDialog* _connectParamsDialog = nullptr;
+
+    // dummy frames
+    std::vector<std::shared_ptr<VideoFrameData>> _videoFrames;
+    std::shared_ptr<AudioFrameData> _audioFrame;
+    QTimer _dummyFramesTimer;
+    int _dummyTimerIteration = 0;
 };
 
 #endif // INITIALSCREEN_H

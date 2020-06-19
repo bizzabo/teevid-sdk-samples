@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>300</height>
+    <width>440</width>
+    <height>320</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,14 +18,25 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>401</width>
-     <height>301</height>
+     <width>520</width>
+     <height>336</height>
     </rect>
    </property>
    <layout class="QVBoxLayout" name="verticalLayout">
     <property name="spacing">
      <number>0</number>
     </property>
+    <item>
+     <widget class="QLabel" name="label_3">
+      <property name="text">
+       <string>PLEASE NOTE: using invigation URL you can connect ONLY to
+the room on the same domain you are already connected</string>
+      </property>
+      <property name="margin">
+       <number>5</number>
+      </property>
+     </widget>
+    </item>
     <item>
      <widget class="QFrame" name="frame">
       <property name="sizePolicy">
@@ -37,13 +48,13 @@
       <property name="minimumSize">
        <size>
         <width>0</width>
-        <height>200</height>
+        <height>220</height>
        </size>
       </property>
       <property name="maximumSize">
        <size>
         <width>16777215</width>
-        <height>200</height>
+        <height>220</height>
        </size>
       </property>
       <property name="frameShape">
@@ -57,8 +68,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>401</width>
-         <height>271</height>
+         <width>441</width>
+         <height>221</height>
         </rect>
        </property>
        <layout class="QFormLayout" name="formLayout">
@@ -83,12 +94,41 @@
         <item row="0" column="0">
          <widget class="QLabel" name="label">
           <property name="text">
-           <string>Room ID:</string>
+           <string>Caller name:</string>
           </property>
          </widget>
         </item>
         <item row="0" column="1">
-         <widget class="QLineEdit" name="lineEditRoomId"/>
+         <widget class="QLineEdit" name="lineEditCaller"/>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="label_2">
+          <property name="text">
+           <string>Invitation URL:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QTextEdit" name="textEditToken">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>16</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>160</height>
+           </size>
+          </property>
+         </widget>
         </item>
        </layout>
       </widget>
@@ -105,13 +145,13 @@
       <property name="minimumSize">
        <size>
         <width>0</width>
-        <height>60</height>
+        <height>70</height>
        </size>
       </property>
       <property name="maximumSize">
        <size>
         <width>16777215</width>
-        <height>60</height>
+        <height>70</height>
        </size>
       </property>
       <property name="frameShape">
@@ -125,8 +165,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>401</width>
-         <height>61</height>
+         <width>441</width>
+         <height>51</height>
         </rect>
        </property>
        <layout class="QHBoxLayout" name="horizontalLayout">

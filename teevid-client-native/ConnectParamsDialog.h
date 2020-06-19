@@ -20,6 +20,8 @@ public:
     QString GetToken() const;
     QString GetRoom() const;
     QString GetUser() const;
+    QString GetPassword() const;
+    int GetAccessPin() const;
 
 signals:
     void paramsApplied();

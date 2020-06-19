@@ -19,6 +19,8 @@ ConnectParamsDialog::ConnectParamsDialog(QWidget *parent) :
     ui->lineEditToken->setText(settings.value("token", "").toString());
     ui->lineEditRoom->setText(settings.value("room", "").toString());
     ui->lineEditUser->setText(settings.value("user", "").toString());
+    ui->lineEditPassword->setText(settings.value("password", "").toString());
+    ui->lineEditAccessPin->setText(settings.value("access_pin", "").toString());
     settings.endGroup();
 
     connect(ui->btnApply, SIGNAL(pressed()), this, SLOT(OnBtnApply()));
@@ -48,6 +50,16 @@ QString ConnectParamsDialog::GetRoom() const
 QString ConnectParamsDialog::GetUser() const
 {
     return ui->lineEditUser->text();
+}
+
+QString ConnectParamsDialog::GetPassword() const
+{
+    return ui->lineEditPassword->text();
+}
+
+int ConnectParamsDialog::GetAccessPin() const
+{
+    return ui->lineEditAccessPin->text().toInt();
 }
 
 void ConnectParamsDialog::OnBtnApply()
@@ -84,12 +96,30 @@ void ConnectParamsDialog::OnBtnApply()
         return;
     }
 
+    QString password = ui->lineEditPassword->text();
+    if (password.isEmpty())
+    {
+        QMessageBox mb(QMessageBox::Critical, "Error", "Please enter your password");
+        mb.exec();
+        return;
+    }
+
+    QString accessPin = ui->lineEditAccessPin->text();
+    if (accessPin.isEmpty())
+    {
+        QMessageBox mb(QMessageBox::Critical, "Error", "Please enter your access PIN");
+        mb.exec();
+        return;
+    }
+
     QSettings settings("teevid-client-native", "connect_params");
     settings.beginGroup("teevid-client-native");
     settings.setValue("host", host);
     settings.setValue("token", token);
     settings.setValue("room", room);
     settings.setValue("user", user);
+    settings.setValue("password", password);
+    settings.setValue("access_pin", accessPin);
     settings.endGroup();
 
     _paramsApplied = true;
@@ -103,6 +133,6 @@ void ConnectParamsDialog::OnBtnCancel()
 
 void ConnectParamsDialog::closeEvent(QCloseEvent *event)
 {
-    emit _paramsApplied ? paramsApplied() : paramsCancelled();
+    emit (_paramsApplied ? paramsApplied() : paramsCancelled());
     QDialog::closeEvent(event);
 }
