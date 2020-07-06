@@ -3,11 +3,13 @@
 
 #include <string>
 #include <vector>
+#include <map>
 
 #include "ITeeVidConnection.h"
 #include "RoomMode.h"
 #include "Resolution.h"
 #include "MuteAttributes.h"
+#include "teevid_sdk/Participant.h"
 
 namespace teevid_sdk
 {
@@ -26,7 +28,7 @@ class ITeeVidClientObserver {
   // OnStreamAdded N times
   // It contains parameters for identifying stream: streamId, participantId (one participant may have several streams),
   // name and StreamType
-  virtual void OnStreamAdded (long streamId, const std::string& participantId, const std::string& name, int type, bool isLocal) = 0;
+  virtual void OnStreamAdded (long streamId, const std::string& name, const std::string& participantId, int type, bool isLocal, int order, const Participant::Status& status) = 0;
 
   // Raied when one of observed streams has ended
   virtual void OnStreamRemoved (long streamId) = 0;
@@ -43,13 +45,13 @@ class ITeeVidClientObserver {
   virtual void OnParticipantRemoved (const std::string& participantId) = 0;
 
   // Informs application that preview for this participant should be hide. It happens when he mute his audio and video
-  virtual void OnParticipantVideoViewRemoved (const std::string& participantId) = 0;
+  virtual void OnParticipantMute (long streamId, bool audioMuted, bool videoMuted) = 0;
 
   // Requests PIN from application to enter the room (if it was not provided in ConnectTo())
   virtual int OnAccessPinRequested () = 0;
 
   // Server detected that active speaker has changed, applications may change layouts
-  virtual void OnActiveSpeakerChanged (const std::string& streamId, const std::string& participantId) = 0;
+  virtual void OnActiveSpeakerChanged (const std::map<long, int>& order) = 0;
 
   // Informs application that his mute attributes has changed by moderator
   virtual void OnMuteAttributesUpdated (const MuteAttributes& muteAttr) = 0;

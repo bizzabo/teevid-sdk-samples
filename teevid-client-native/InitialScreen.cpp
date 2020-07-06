@@ -20,6 +20,8 @@ const int cVideoFps = 30;
 const int cVideoTimerInterval = 1000 / cVideoFps;
 const int cDummyFrameSetsCount = 32;
 
+const int cAudioSampleRate = 48000;
+
 InitialScreen::InitialScreen(QWidget *parent) : QWidget(parent), ui(new Ui::InitialScreen)
 {
     InitUI();
@@ -63,6 +65,14 @@ void InitialScreen::InitSDK()
     {
         teeVidClient_ = TeeVidFactory::CreateTeeVidClient();
         teeVidClient_->Initialize(validationToken, teevidServer, (ITeeVidClientObserver*)this);
+
+        TeeVidSettings settings;
+        settings.media_settings.audioSettings.audioChannels = kStereo;
+        settings.media_settings.audioSettings.audioBpsType = kS16LE;
+        settings.media_settings.audioSettings.audioSampleRate = cAudioSampleRate;
+        settings.media_settings.videoSettings.videoFormatType = VideoFormatType::kRGBA;
+        settings.media_settings.videoSettings.videoFps = cVideoFps;
+        teeVidClient_->Configure(settings);
     }
     catch (std::exception& e)
     {
@@ -120,23 +130,25 @@ void InitialScreen::InitUI()
 
     ui->listViewFriends->setSelectionMode(QAbstractItemView::ExtendedSelection);
 
+    ui->frameCallPart_Local->setAudioSampleRate(cAudioSampleRate);
+
     // add all video items except local
     callItems_.push_back(ui->frameCallPart_1);
     callItems_.push_back(ui->frameCallPart_2);
     callItems_.push_back(ui->frameCallPart_3);
     callItems_.push_back(ui->frameCallPart_4);
 
+    for (auto iterCallItem = callItems_.begin(); iterCallItem != callItems_.end(); ++iterCallItem)
+    {
+        CallItemVideoView* itemView = *iterCallItem;
+        itemView->setAudioSampleRate(cAudioSampleRate);
+        connect(itemView, SIGNAL(lowQualitySelected(long)), this, SLOT(onLowQualitySelected(long)));
+        connect(itemView, SIGNAL(highQualitySelected(long)), this, SLOT(onHighQualitySelected(long)));
+    }
+
+    ui->frameCallPart_Local->setAudioSampleRate(cAudioSampleRate);
     connect(ui->frameCallPart_Local, SIGNAL(lowQualitySelected(long)), this, SLOT(onLowQualitySelected(long)));
     connect(ui->frameCallPart_Local, SIGNAL(highQualitySelected(long)), this, SLOT(onHighQualitySelected(long)));
-
-    connect(ui->frameCallPart_1, SIGNAL(lowQualitySelected(long)), this, SLOT(onLowQualitySelected(long)));
-    connect(ui->frameCallPart_1, SIGNAL(highQualitySelected(long)), this, SLOT(onHighQualitySelected(long)));
-    connect(ui->frameCallPart_2, SIGNAL(lowQualitySelected(long)), this, SLOT(onLowQualitySelected(long)));
-    connect(ui->frameCallPart_2, SIGNAL(highQualitySelected(long)), this, SLOT(onHighQualitySelected(long)));
-    connect(ui->frameCallPart_3, SIGNAL(lowQualitySelected(long)), this, SLOT(onLowQualitySelected(long)));
-    connect(ui->frameCallPart_3, SIGNAL(highQualitySelected(long)), this, SLOT(onHighQualitySelected(long)));
-    connect(ui->frameCallPart_4, SIGNAL(lowQualitySelected(long)), this, SLOT(onLowQualitySelected(long)));
-    connect(ui->frameCallPart_4, SIGNAL(highQualitySelected(long)), this, SLOT(onHighQualitySelected(long)));
 
     ui->checkBoxLocalVideo->setChecked(true);
     connect(ui->checkBoxLocalVideo, SIGNAL(stateChanged(int)), this, SLOT(onDisplayLocalVideoChecked(int)));
@@ -203,9 +215,9 @@ void InitialScreen::OnConnectionError (const std::string& )
 {
 }
 
-void InitialScreen::OnStreamAdded (long streamId, const std::string& participantId, const std::string& name, int type, bool isOwn)
+void InitialScreen::OnStreamAdded (long streamId, const std::string& name, const std::string& participantId, int type, bool isLocal, int order, const Participant::Status &status)
 {
-    if (isOwn)
+    if (isLocal)
     {
         ui->frameCallPart_Local->setStreamId(streamId);
         if (ui->checkBoxLocalVideo->isChecked())
@@ -242,12 +254,39 @@ void InitialScreen::OnError (const std::string& ){
 }
 void InitialScreen::OnParticipantRemoved (const std::string& ){
 }
-void InitialScreen::OnParticipantVideoViewRemoved (const std::string& ){
+
+void InitialScreen::OnParticipantMute(long streamId, bool audioMuted, bool videoMuted)
+{
+    CallItemVideoView* callItem = GetVideoViewById(streamId);
+    if (!callItem)
+    {
+        callItem = ui->frameCallPart_Local;
+        if (callItem->getStreamId() != streamId)
+        {
+            return;
+        }
+    }
+
+    if (teeVidClient_)
+    {
+        if (audioMuted && videoMuted)
+        {
+            teeVidClient_->Unsubscribe(streamId);
+        }
+        else
+        {
+            teeVidClient_->Subscribe(streamId, callItem);
+        }
+    }
+
+    callItem->setAudioMuted(audioMuted);
+    callItem->setVideoMuted(videoMuted);
 }
+
 int InitialScreen::OnAccessPinRequested (){
     return 12345;
 }
-void InitialScreen::OnActiveSpeakerChanged (const std::string& , const std::string& ){
+void InitialScreen::OnActiveSpeakerChanged (const std::map<long, int> &order){
 }
 void InitialScreen::OnMuteAttributesUpdated (const MuteAttributes& ){
 }
@@ -444,11 +483,18 @@ void InitialScreen::onDisplayLocalVideoChecked(int state)
 
 void InitialScreen::OnSdkOnConnectedReceived(QString token)
 {
-    InvitationParams inviteParams;
-    inviteParams.host_ = _connectParamsDialog->GetHost().toStdString();
-    inviteParams.room_ = _connectParamsDialog->GetRoom().toStdString();
-    inviteParams.token_ = token.toStdString();
-    ui->textEditInvitationToken->setPlainText(InvitationManager::MakeInvitationUrl(inviteParams));
+    // empty invitation token means no invitation URL can be generated
+    // set this field empty
+    QString invitationUrl;
+    if (!token.isEmpty())
+    {
+        InvitationParams inviteParams;
+        inviteParams.host_ = _connectParamsDialog->GetHost().toStdString();
+        inviteParams.room_ = _connectParamsDialog->GetRoom().toStdString();
+        inviteParams.token_ = token.toStdString();
+        invitationUrl = InvitationManager::MakeInvitationUrl(inviteParams);
+    }
+    ui->textEditInvitationToken->setPlainText(invitationUrl);
 }
 
 void InitialScreen::OnDummyFrameTimer()
@@ -469,8 +515,8 @@ void InitialScreen::OnDummyFrameTimer()
         // play dummy local video
         if (ui->checkBoxLocalVideo->isChecked())
         {
+            // only local video, local audoi should not be rendered
             ui->frameCallPart_Local->OnVideoFrame(video_frame->GetData(), video_frame->GetSize(), stride);
-            ui->frameCallPart_Local->OnAudioFrame(_audioFrame->GetData(), _audioFrame->GetSize(), _audioFrame->GetChannelsCount(), _audioFrame->GetSampleSize());
         }
 
         teeVidClient_->PutVideoFrame(video_frame->GetData(), video_frame->GetSize(), stride);
