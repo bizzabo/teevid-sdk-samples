@@ -19,7 +19,7 @@ import com.teevid.sdk.TeeVidClient;
 import com.teevid.sdk.TeeVidEventListener;
 import com.teevid.sdk.api.SdkErrors;
 import com.teevid.sdk.log.LogLevel;
-import com.teevid.sdk.view.TeeVidView;
+import com.teevid.sdk.view.BaseMeetingView;
 
 public class CallFragment extends Fragment {
 
@@ -43,27 +43,31 @@ public class CallFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        TeeVidView viewTeeVid = view.findViewById(R.id.view_teevid);
+        BaseMeetingView viewTeeVid = view.findViewById(R.id.view_meeting);
         ToggleButton btnCamera = view.findViewById(R.id.btn_camera);
         ToggleButton btnLocalVideo = view.findViewById(R.id.btn_local_video);
         ToggleButton btnMicrophone = view.findViewById(R.id.btn_microphone);
+        ToggleButton btnCameraSwitch = view.findViewById(R.id.btn_camera_switch);
 
         UserPreferences preferences = SampleApplication.getInstance().getUserPreferences();
         String server = preferences.getServer();
         String roomId = preferences.getRoomId();
         String username = preferences.getUsername();
+        int defaultCamera = preferences.getCamera();
 
         client = new TeeVidClient.Builder(getContext(), "token") // TODO Token
                 .addListener(getEventListener())
                 .setLogLevel(LogLevel.DEBUG)
                 .build();
         client.setView(viewTeeVid);
+        client.setDefaultCamera(defaultCamera);
 
         client.connect(roomId, server, username);
 
         btnCamera.setOnClickListener(v -> onCameraButtonClicked(btnCamera));
         btnLocalVideo.setOnClickListener(v -> onLocalVideoButtonClicked(btnLocalVideo));
         btnMicrophone.setOnClickListener(v -> onMicrophoneButtonClicked(btnMicrophone));
+        btnCameraSwitch.setOnClickListener(v -> onSwitchCameraButtonClicked());
     }
 
     @Override
@@ -97,6 +101,10 @@ public class CallFragment extends Fragment {
         } else {
             client.mute();
         }
+    }
+
+    private void onSwitchCameraButtonClicked() {
+        client.switchCamera();
     }
 
     private void showEnterPinDialog(Consumer<String> pinConsumer) {

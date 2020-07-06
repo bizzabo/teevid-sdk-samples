@@ -7,13 +7,17 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Spinner;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+
+import com.teevid.sdk.constant.CameraProvider;
 
 public class LoginFragment extends Fragment {
 
@@ -25,6 +29,7 @@ public class LoginFragment extends Fragment {
     private EditText etServer;
     private EditText etRoom;
     private EditText etName;
+    private Spinner spinnerCamera;
 
     public LoginFragment() {
 
@@ -56,6 +61,7 @@ public class LoginFragment extends Fragment {
         etServer = view.findViewById(R.id.et_server);
         etRoom = view.findViewById(R.id.et_room);
         etName = view.findViewById(R.id.et_name);
+        spinnerCamera = view.findViewById(R.id.spinner_camera);
 
         btnConnect.setOnClickListener(v -> onConnectClicked());
 
@@ -63,6 +69,22 @@ public class LoginFragment extends Fragment {
         etServer.setText(preferences.getServer());
         etRoom.setText(preferences.getRoomId());
         etName.setText(preferences.getUsername());
+
+        CameraOption[] cameraOptions = new CameraOption[]{
+                new CameraOption(CameraProvider.FRONT_FACING, getString(R.string.camera_front)),
+                new CameraOption(CameraProvider.BACK_FACING, getString(R.string.camera_back))
+        };
+
+        ArrayAdapter<CameraOption> adapter = new ArrayAdapter<>(getContext(),
+                R.layout.item_spinner, cameraOptions);
+        spinnerCamera.setAdapter(adapter);
+        for (int i = 0; i < cameraOptions.length; i++) { // Finding selected default camera
+            CameraOption cameraOption = cameraOptions[i];
+            if (cameraOption.first == preferences.getCamera()) {
+                spinnerCamera.setSelection(i);
+                break;
+            }
+        }
     }
 
     @Override
@@ -93,11 +115,13 @@ public class LoginFragment extends Fragment {
         String server = etServer.getText().toString();
         String roomId = etRoom.getText().toString();
         String username = etName.getText().toString();
+        int camera = ((CameraOption) spinnerCamera.getSelectedItem()).first;
 
         UserPreferences preferences = SampleApplication.getInstance().getUserPreferences();
         preferences.setServer(server);
         preferences.setRoomId(roomId);
         preferences.setUsername(username);
+        preferences.setCamera(camera);
 
         Fragment fragment = new CallFragment();
         navigation.showFragment(fragment, true);

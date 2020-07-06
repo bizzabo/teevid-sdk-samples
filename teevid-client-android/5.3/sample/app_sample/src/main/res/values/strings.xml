@@ -9,4 +9,7 @@
     <string name="enter_pin_title">Enter the PIN to access this meeting</string>
     <string name="invalid_pin">Invalid PIN</string>
 
+    <string name="camera_front">Front facing camera</string>
+    <string name="camera_back">Back facing camera</string>
+
 </resources>

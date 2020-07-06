@@ -1,5 +1,7 @@
 package com.teevid.sample;
 
+import com.teevid.sdk.constant.CameraProvider;
+
 public interface UserPreferences {
 
     String getServer();
@@ -13,4 +15,9 @@ public interface UserPreferences {
     String getUsername();
 
     void setUsername(String username);
+
+    @CameraProvider
+    int getCamera();
+
+    void setCamera(@CameraProvider int defaultCamera);
 }

@@ -4,11 +4,14 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
+import com.teevid.sdk.constant.CameraProvider;
+
 public class SharedUserPreferences implements UserPreferences {
 
     private static final String PREF_SERVER = "PREF_SERVER";
     private static final String PREF_ROOM_ID = "PREF_ROOM_ID";
     private static final String PREF_USERNAME = "PREF_USERNAME";
+    private static final String PREF_CAMERA = "PREF_CAMERA";
 
     private SharedPreferences prefs;
 
@@ -49,6 +52,18 @@ public class SharedUserPreferences implements UserPreferences {
     public void setUsername(String username) {
         prefs.edit()
                 .putString(PREF_USERNAME, username)
+                .apply();
+    }
+
+    @Override
+    public int getCamera() {
+        return prefs.getInt(PREF_CAMERA, CameraProvider.FRONT_FACING);
+    }
+
+    @Override
+    public void setCamera(int defaultCamera) {
+        prefs.edit()
+                .putInt(PREF_CAMERA, defaultCamera)
                 .apply();
     }
 }
