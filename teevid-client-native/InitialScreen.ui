@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1280</width>
-    <height>720</height>
+    <height>760</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -25,7 +25,7 @@
      <x>0</x>
      <y>0</y>
      <width>1281</width>
-     <height>731</height>
+     <height>761</height>
     </rect>
    </property>
    <layout class="QHBoxLayout" name="initScreenLayout">
@@ -64,7 +64,7 @@
          <x>0</x>
          <y>0</y>
          <width>201</width>
-         <height>721</height>
+         <height>761</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="settingsLayout">
@@ -574,7 +574,7 @@
          <x>0</x>
          <y>0</y>
          <width>251</width>
-         <height>721</height>
+         <height>761</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="usersLayout">
@@ -587,7 +587,7 @@
               <x>0</x>
               <y>0</y>
               <width>251</width>
-              <height>721</height>
+              <height>761</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="friendsLayout">
@@ -619,7 +619,7 @@
          <x>0</x>
          <y>0</y>
          <width>831</width>
-         <height>721</height>
+         <height>761</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout">
@@ -784,7 +784,7 @@
              <x>0</x>
              <y>0</y>
              <width>831</width>
-             <height>501</height>
+             <height>547</height>
             </rect>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -799,6 +799,12 @@
                 <verstretch>0</verstretch>
                </sizepolicy>
               </property>
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>285</height>
+               </size>
+              </property>
               <property name="frameShape">
                <enum>QFrame::StyledPanel</enum>
               </property>
@@ -811,7 +817,7 @@
                  <x>0</x>
                  <y>0</y>
                  <width>828</width>
-                 <height>251</height>
+                 <height>281</height>
                 </rect>
                </property>
                <layout class="QHBoxLayout" name="horizontalLayout_6">
@@ -842,13 +848,13 @@
                   <property name="minimumSize">
                    <size>
                     <width>256</width>
-                    <height>244</height>
+                    <height>264</height>
                    </size>
                   </property>
                   <property name="maximumSize">
                    <size>
                     <width>256</width>
-                    <height>244</height>
+                    <height>264</height>
                    </size>
                   </property>
                   <property name="frameShape">
@@ -863,7 +869,7 @@
                      <x>0</x>
                      <y>-4</y>
                      <width>258</width>
-                     <height>251</height>
+                     <height>271</height>
                     </rect>
                    </property>
                    <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -906,7 +912,7 @@
                       <property name="minimumSize">
                        <size>
                         <width>256</width>
-                        <height>222</height>
+                        <height>242</height>
                        </size>
                       </property>
                       <property name="frameShape">
@@ -932,7 +938,7 @@
                   <property name="minimumSize">
                    <size>
                     <width>256</width>
-                    <height>222</height>
+                    <height>242</height>
                    </size>
                   </property>
                   <property name="frameShape">
@@ -954,7 +960,7 @@
                   <property name="minimumSize">
                    <size>
                     <width>256</width>
-                    <height>222</height>
+                    <height>242</height>
                    </size>
                   </property>
                   <property name="frameShape">
@@ -984,6 +990,12 @@
             </item>
             <item>
              <widget class="QFrame" name="frameCall_2">
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>260</height>
+               </size>
+              </property>
               <property name="frameShape">
                <enum>QFrame::StyledPanel</enum>
               </property>
@@ -996,7 +1008,7 @@
                  <x>0</x>
                  <y>0</y>
                  <width>821</width>
-                 <height>251</height>
+                 <height>261</height>
                 </rect>
                </property>
                <layout class="QHBoxLayout" name="horizontalLayout_7">
@@ -1030,7 +1042,7 @@
                   <property name="minimumSize">
                    <size>
                     <width>256</width>
-                    <height>222</height>
+                    <height>242</height>
                    </size>
                   </property>
                   <property name="frameShape">
@@ -1052,7 +1064,7 @@
                   <property name="minimumSize">
                    <size>
                     <width>256</width>
-                    <height>222</height>
+                    <height>242</height>
                    </size>
                   </property>
                   <property name="frameShape">
@@ -1086,7 +1098,7 @@
            <property name="geometry">
             <rect>
              <x>0</x>
-             <y>500</y>
+             <y>545</y>
              <width>829</width>
              <height>60</height>
             </rect>

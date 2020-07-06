@@ -82,3 +82,5 @@ contains( UNAME, aarch64 ):{
         LIBS += -L"$$PWD/libs/jetson/release" -lteevid_sdk
     }
 }
+
+LIBS += -lasound

@@ -47,16 +47,6 @@ unsigned char* AudioFrameData::GetData() const
     return data_;
 }
 
-int AudioFrameData::GetChannelsCount() const
-{
-    return kDummyAudioFrameChannelsCount;
-}
-
-int AudioFrameData::GetSampleSize() const
-{
-    return kDummyAudioFrameChannelsCount;
-}
-
 size_t AudioFrameData::GetSize() const
 {
     return kDummyAudioSize;
