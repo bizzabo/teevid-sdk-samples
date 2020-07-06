@@ -10,8 +10,6 @@ public:
     virtual ~ AudioFrameData();
 
     unsigned char* GetData() const;
-    int GetChannelsCount() const;
-    int GetSampleSize() const;
     size_t GetSize() const;
 
 private:

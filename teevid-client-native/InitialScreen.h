@@ -42,15 +42,15 @@ public:
 
     void OnConnected (long streamId, const std::string& invitationToken) override;
     void OnConnectionError (const std::string& reason) override;
-    void OnStreamAdded (long streamId, const std::string& participantId, const std::string& name, int type, bool isOwn) override;
+    void OnStreamAdded (long streamId, const std::string& name, const std::string& participantId, int type, bool isLocal, int order, const Participant::Status& status) override;
     void OnStreamRemoved(long streamId) override;
     void OnDisconnected () override;
     void OnRoomModeChanged (RoomMode mode) override;
     void OnError (const std::string& error) override;
     void OnParticipantRemoved (const std::string& participantId) override;
-    void OnParticipantVideoViewRemoved (const std::string& participantId) override;
+    void OnParticipantMute (long streamId, bool audioMuted, bool videoMuted) override;
     int OnAccessPinRequested () override;
-    void OnActiveSpeakerChanged (const std::string& streamId, const std::string& participantId) override;
+    void OnActiveSpeakerChanged (const std::map<long, int>& order) override;
     void OnMuteAttributesUpdated (const MuteAttributes& muteAttr) override;
     void OnParticipantUpdated (const std::string& participantId, const MuteAttributes& muteAttr) override;
     void OnRaiseHandStatusUpdated (bool allowed) override;
