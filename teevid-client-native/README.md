@@ -11,6 +11,7 @@ sudo apt install qtcreator
 		cd <your_source_dir>
 
 	2. 	Download sources:
+	        cd cd teevid-client-native
 		git clone https://github.com/TeeVid/sdk_samples.git
 
 	3.	Run script to fix library issues:
