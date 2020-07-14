@@ -45,8 +45,10 @@ install_libnice
 if [  "$ARCHITECTURE" = "aarch64" ]; then
   echo "Install GStreamer with 'gst-install'"
   sudo gst-install --prefix=$INSTALL_PREFIX --version=1.16.2
-# temporary fix for missed vp8 keyframe
-  sudo cp ./3rd_party_libs/embedded/libgstrtp.so $INSTALL_LIB_DIR/gstreamer-1.0
+# temporary fix for missed vp8/vp9 keyframe
+  sudo cp ./3rd_party_libs/embedded/libgstrtp-1.0.so.0.1602.0 $INSTALL_LIB_DIR
+# temporary fix for 'gst_buffer_resize_range: assertion 'bufmax >= bufoffs + offset + size' failed'
+  sudo cp ./3rd_party_libs/embedded/libgstreamer-1.0.so.0.1602.0 $INSTALL_LIB_DIR
 else
   echo "Install GStreamer manually"
   ROOT_GST_DIR=$ROOT_DIR/gst-1.16
