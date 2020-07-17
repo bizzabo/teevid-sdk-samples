@@ -1,6 +1,8 @@
 package com.teevid.sample;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -11,6 +13,7 @@ import android.widget.ToggleButton;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.StringRes;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.util.Consumer;
 import androidx.fragment.app.Fragment;
@@ -26,6 +29,9 @@ public class CallFragment extends Fragment {
     private static final String TAG = "CallFragment";
 
     private TeeVidClient client;
+
+    private ToggleButton btnMicrophone;
+    private ToggleButton btnCamera;
 
     public CallFragment() {
 
@@ -44,15 +50,17 @@ public class CallFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         BaseMeetingView viewTeeVid = view.findViewById(R.id.view_meeting);
-        ToggleButton btnCamera = view.findViewById(R.id.btn_camera);
+        btnCamera = view.findViewById(R.id.btn_camera);
         ToggleButton btnLocalVideo = view.findViewById(R.id.btn_local_video);
-        ToggleButton btnMicrophone = view.findViewById(R.id.btn_microphone);
+        btnMicrophone = view.findViewById(R.id.btn_microphone);
+        ToggleButton btnScreenShare = view.findViewById(R.id.btn_screen_share);
         ToggleButton btnCameraSwitch = view.findViewById(R.id.btn_camera_switch);
 
         UserPreferences preferences = SampleApplication.getInstance().getUserPreferences();
         String server = preferences.getServer();
         String roomId = preferences.getRoomId();
         String username = preferences.getUsername();
+        String invitationLink = preferences.getInvitationLink();
         int defaultCamera = preferences.getCamera();
 
         client = new TeeVidClient.Builder(getContext(), "token") // TODO Token
@@ -62,12 +70,22 @@ public class CallFragment extends Fragment {
         client.setView(viewTeeVid);
         client.setDefaultCamera(defaultCamera);
 
-        client.connect(roomId, server, username);
+        if (TextUtils.isEmpty(invitationLink)) {
+            client.connect(roomId, server, username);
+        } else {
+            client.connectWithInvitation(username, invitationLink);
+        }
 
         btnCamera.setOnClickListener(v -> onCameraButtonClicked(btnCamera));
         btnLocalVideo.setOnClickListener(v -> onLocalVideoButtonClicked(btnLocalVideo));
+        btnScreenShare.setOnClickListener(v -> onScreenShareButtonClicked(btnScreenShare));
         btnMicrophone.setOnClickListener(v -> onMicrophoneButtonClicked(btnMicrophone));
         btnCameraSwitch.setOnClickListener(v -> onSwitchCameraButtonClicked());
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        client.onActivityResult(requestCode, resultCode, data);
     }
 
     @Override
@@ -91,6 +109,15 @@ public class CallFragment extends Fragment {
             client.showLocalVideo();
         } else {
             client.hideLocalVideo();
+        }
+    }
+
+    private void onScreenShareButtonClicked(ToggleButton button) {
+        boolean enabled = button.isChecked();
+        if (enabled) {
+            client.stopScreenShare();
+        } else {
+            client.startScreenShare(this);
         }
     }
 
@@ -124,6 +151,46 @@ public class CallFragment extends Fragment {
                 .create();
 
         dialog.show();
+    }
+
+    private void showUnmuteAudioRequestDialog(Consumer<Boolean> resultConsumer) {
+        AlertDialog alertDialog = new AlertDialog.Builder(getContext())
+                .setTitle(R.string.dialog_unmute_audio_title)
+                .setPositiveButton(R.string.dialog_unmute_positive, (dialog, which) -> {
+                    resultConsumer.accept(true);
+                    btnMicrophone.setVisibility(View.VISIBLE);
+                    if (btnMicrophone.isChecked()) {
+                        btnMicrophone.toggle();
+                    }
+                    showToast(R.string.dialog_unmute_microphone_unmuted);
+                })
+                .setNegativeButton(R.string.dialog_unmute_negative, (dialog, which) ->
+                        resultConsumer.accept(false))
+                .create();
+
+        alertDialog.show();
+    }
+
+    private void showUnmuteVideoRequestDialog(Consumer<Boolean> resultConsumer) {
+        AlertDialog alertDialog = new AlertDialog.Builder(getContext())
+                .setTitle(R.string.dialog_unmute_video_title)
+                .setPositiveButton(R.string.dialog_unmute_positive, (dialog, which) -> {
+                    resultConsumer.accept(true);
+                    btnCamera.setVisibility(View.VISIBLE);
+                    if (!btnCamera.isChecked()) {
+                        btnCamera.toggle();
+                    }
+                    showToast(R.string.dialog_unmute_camera_unmuted);
+                })
+                .setNegativeButton(R.string.dialog_unmute_negative, (dialog, which) ->
+                        resultConsumer.accept(false))
+                .create();
+
+        alertDialog.show();
+    }
+
+    private void showToast(@StringRes int resId) {
+        Toast.makeText(getContext(), resId, Toast.LENGTH_SHORT).show();
     }
 
     private TeeVidEventListener getEventListener() {
@@ -162,6 +229,36 @@ public class CallFragment extends Fragment {
                     Toast.makeText(getContext(), R.string.invalid_pin, Toast.LENGTH_LONG).show();
                 }
                 showEnterPinDialog(pinConsumer);
+            }
+
+            @Override
+            public void onMuteAudioByModerator() {
+                Log.d(TAG, "onMutedByModerator");
+                btnMicrophone.setVisibility(View.GONE);
+            }
+
+            @Override
+            public void onMuteVideoByModerator() {
+                Log.d(TAG, "onMuteVideoByModerator");
+                btnCamera.setVisibility(View.GONE);
+            }
+
+            @Override
+            public void onReceiveUnmuteAudioRequest(Consumer<Boolean> resultConsumer) {
+                Log.d(TAG, "onReceiveUnmuteAudioRequest");
+                showUnmuteAudioRequestDialog(resultConsumer);
+            }
+
+            @Override
+            public void onReceiveUnmuteVideoRequest(Consumer<Boolean> resultConsumer) {
+                Log.d(TAG, "onReceiveUnmuteVideoRequest");
+                showUnmuteVideoRequestDialog(resultConsumer);
+            }
+
+            @Override
+            public void onDisconnectByModerator() {
+                Log.d(TAG, "onDisconnectByModerator");
+                showToast(R.string.disconnected_from_room);
             }
 
             @Override

@@ -16,6 +16,10 @@ public interface UserPreferences {
 
     void setUsername(String username);
 
+    String getInvitationLink();
+
+    void setInvitationLink(String invitationLink);
+
     @CameraProvider
     int getCamera();
 

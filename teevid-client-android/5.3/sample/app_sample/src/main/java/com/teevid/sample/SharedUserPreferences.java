@@ -2,7 +2,8 @@ package com.teevid.sample;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.preference.PreferenceManager;
+
+import androidx.preference.PreferenceManager;
 
 import com.teevid.sdk.constant.CameraProvider;
 
@@ -11,6 +12,7 @@ public class SharedUserPreferences implements UserPreferences {
     private static final String PREF_SERVER = "PREF_SERVER";
     private static final String PREF_ROOM_ID = "PREF_ROOM_ID";
     private static final String PREF_USERNAME = "PREF_USERNAME";
+    private static final String PREF_INVITATION_LINK = "PREF_INVITATION_LINK";
     private static final String PREF_CAMERA = "PREF_CAMERA";
 
     private SharedPreferences prefs;
@@ -52,6 +54,18 @@ public class SharedUserPreferences implements UserPreferences {
     public void setUsername(String username) {
         prefs.edit()
                 .putString(PREF_USERNAME, username)
+                .apply();
+    }
+
+    @Override
+    public String getInvitationLink() {
+        return prefs.getString(PREF_INVITATION_LINK, null);
+    }
+
+    @Override
+    public void setInvitationLink(String invitationLink) {
+        prefs.edit()
+                .putString(PREF_INVITATION_LINK, invitationLink)
                 .apply();
     }
 

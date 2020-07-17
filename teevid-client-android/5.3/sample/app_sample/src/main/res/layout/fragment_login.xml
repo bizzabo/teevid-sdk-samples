@@ -39,14 +39,28 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:ems="10"
-        android:hint="Name"
+        android:hint="Name (optional)"
         android:inputType="textPersonName"
-        app:layout_constraintBottom_toTopOf="@+id/spinner_camera"
+        app:layout_constraintBottom_toTopOf="@+id/et_invitation_link"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/et_room"
-        tools:text="name" />
+        tools:text="Name" />
+
+    <EditText
+        android:id="@+id/et_invitation_link"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:hint="Invitation link (optional)"
+        android:inputType="textUri"
+        app:layout_constraintBottom_toTopOf="@+id/spinner_camera"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/et_name"
+        tools:text="Link" />
 
     <Spinner
         android:id="@+id/spinner_camera"
@@ -56,7 +70,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/et_name" />
+        app:layout_constraintTop_toBottomOf="@+id/et_invitation_link" />
 
     <Button
         android:id="@+id/btn_connect"

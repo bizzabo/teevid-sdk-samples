@@ -29,6 +29,7 @@ public class LoginFragment extends Fragment {
     private EditText etServer;
     private EditText etRoom;
     private EditText etName;
+    private EditText etInvitationLink;
     private Spinner spinnerCamera;
 
     public LoginFragment() {
@@ -62,6 +63,7 @@ public class LoginFragment extends Fragment {
         etRoom = view.findViewById(R.id.et_room);
         etName = view.findViewById(R.id.et_name);
         spinnerCamera = view.findViewById(R.id.spinner_camera);
+        etInvitationLink = view.findViewById(R.id.et_invitation_link);
 
         btnConnect.setOnClickListener(v -> onConnectClicked());
 
@@ -69,6 +71,7 @@ public class LoginFragment extends Fragment {
         etServer.setText(preferences.getServer());
         etRoom.setText(preferences.getRoomId());
         etName.setText(preferences.getUsername());
+        etInvitationLink.setText(preferences.getInvitationLink());
 
         CameraOption[] cameraOptions = new CameraOption[]{
                 new CameraOption(CameraProvider.FRONT_FACING, getString(R.string.camera_front)),
@@ -115,6 +118,7 @@ public class LoginFragment extends Fragment {
         String server = etServer.getText().toString();
         String roomId = etRoom.getText().toString();
         String username = etName.getText().toString();
+        String invitationLink = etInvitationLink.getText().toString();
         int camera = ((CameraOption) spinnerCamera.getSelectedItem()).first;
 
         UserPreferences preferences = SampleApplication.getInstance().getUserPreferences();
@@ -122,6 +126,7 @@ public class LoginFragment extends Fragment {
         preferences.setRoomId(roomId);
         preferences.setUsername(username);
         preferences.setCamera(camera);
+        preferences.setInvitationLink(invitationLink);
 
         Fragment fragment = new CallFragment();
         navigation.showFragment(fragment, true);

@@ -47,6 +47,30 @@
         app:layout_constraintStart_toStartOf="parent" />
 
     <ToggleButton
+        android:id="@+id/btn_screen_share"
+        style="@style/ToggleButton"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/ic_screen_share_on_off"
+        android:checked="true"
+        app:layout_constraintBottom_toTopOf="@+id/btn_invite"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <ImageButton
+        android:id="@+id/btn_invite"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginBottom="16dp"
+        android:background="?android:attr/selectableItemBackground"
+        android:scaleType="centerCrop"
+        android:src="@drawable/ic_invite"
+        app:layout_constraintBottom_toTopOf="@+id/btn_local_video"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <ToggleButton
         android:id="@+id/btn_microphone"
         style="@style/ToggleButton"
         android:layout_width="48dp"
@@ -56,7 +80,7 @@
         android:background="@drawable/ic_microphone_on_off"
         android:checked="true"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/btn_camera" />
+        app:layout_constraintStart_toEndOf="@+id/btn_local_video" />
 
     <ToggleButton
         android:id="@+id/btn_camera_switch"
