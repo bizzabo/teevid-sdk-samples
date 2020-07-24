@@ -4,6 +4,7 @@
 ```
 sudo apt install qt5-default
 sudo apt install qtcreator
+sudo apt install qtmultimedia5-dev
 ```
 
 #### 2. In order to build demo UI app do the following:
