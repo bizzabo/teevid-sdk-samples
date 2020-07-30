@@ -2,11 +2,15 @@
 #include "ui_CallItemVideoView.h"
 
 #include "VideoQualityDialog.h"
-
+#include <stdio.h>
+#include <sys/time.h>
+#include <time.h>
+#include <math.h>
 #include <QPainter>
 #include <QDebug>
 #include <QEvent>
 #include <QDateTime>
+#include <qmath.h>
 
 const int cDummyVideoFrameWidth = 1920;
 const int cDummyVideoFrameHeight = 1080;
@@ -14,8 +18,6 @@ const int cDummyVideoFrameHeight = 1080;
 // each pixel is coded via 4 bytes: red, green, blue and alpha channel
 const int cBytesPerPixel = 4;
 const size_t cDummyVideoSize = cDummyVideoFrameWidth * cDummyVideoFrameHeight * cBytesPerPixel;
-
-#define PCM_DEVICE "default"
 
 CallItemVideoView::CallItemVideoView(QWidget *parent) :
     QFrame(parent),
@@ -28,16 +30,21 @@ CallItemVideoView::CallItemVideoView(QWidget *parent) :
     ui->labelSize->clear();
     ui->labelAudio->clear();
     ui->labelVideo->clear();
+    ui->labelOrder->clear();
+
+    // signal-slot connection to itself because data is received from different thread
+    connect(this, SIGNAL(imageUpdated()), this, SLOT(onImageUpdated()));
+    connect(this, SIGNAL(audioStarted(int,int)), this, SLOT(onAudioStarted(int,int)));
 }
 
 CallItemVideoView::~CallItemVideoView()
 {
-    if (_audioInitialized)
+    if (_audioInitialized && _audioOutput)
     {
-        snd_pcm_drain(_pcm_handle);
-        snd_pcm_close(_pcm_handle);
-    }
+        _audioOutput->stop();
+        _audioInitialized = false;
 
+    }
     delete ui;
 }
 
@@ -50,6 +57,7 @@ void CallItemVideoView::setStreamId(long id)
         ui->labelSize->clear();
         ui->labelAudio->clear();
         ui->labelVideo->clear();
+        ui->labelOrder->clear();
     }
 }
 
@@ -58,11 +66,35 @@ long CallItemVideoView::getStreamId() const
     return _streamId;
 }
 
+void printLog(const char* text)
+{
+    char buffer[26];
+    int millisec;
+    struct tm* tm_info;
+    struct timeval tv;
+
+    gettimeofday(&tv, NULL);
+
+    millisec = lrint(tv.tv_usec/1000.0); // Round to nearest millisec
+    if (millisec>=1000) { // Allow for rounding up to nearest second
+      millisec -=1000;
+      tv.tv_sec++;
+    }
+
+    tm_info = localtime(&tv.tv_sec);
+
+    strftime(buffer, 26, "%Y:%m:%d %H:%M:%S", tm_info);
+    printf("%s.%03d: %s\n", buffer, millisec, text);
+
+}
 void CallItemVideoView::OnVideoFrame(unsigned char *data, size_t size, size_t stride)
 {
     // TODO: check whether this could be parallel
-    if (_videoMuted || !data)
+    if (_videoMuted || !data || *data == 0)
+    {
+        //printf("DEBUG. OnVideoFrame: _videoMuted || !data");
         return;
+    }
 
     std::lock_guard<std::mutex> lock(mt_video);
 
@@ -76,11 +108,17 @@ void CallItemVideoView::OnVideoFrame(unsigned char *data, size_t size, size_t st
         setImage(image);
         QString sizeStr = QString::number(width) + "x" + QString::number(height);
         ui->labelSize->setText(sizeStr);
+        //std::string text =_streamId + "OnVideoFrame: setImage";
+        if(_printLogs)
+        {
+            printLog("OnVideoFrame: setImage");
+        }
     }
     else
     {
         setImage(QImage());
         ui->labelSize->clear();
+        //printf("DEBUG. OnVideoFrame: clear image");
     }
 }
 
@@ -93,32 +131,31 @@ void CallItemVideoView::OnAudioFrame(unsigned char *data, size_t size, int chann
 
     //qDebug() << size << channels << bps;
 
-    if (!initializeAudioRendererIfNeeded(channels))
-        return;
+    emit audioStarted(channels, bps);
 
-    // TODO: handle channels count change
-
-    int result = snd_pcm_writei(_pcm_handle, data, _frames);
-    if (result == -EPIPE)
+    if (_audioOutput && _audioBuffer)
     {
-        snd_pcm_prepare(_pcm_handle);
+        int periodSize = _audioOutput->periodSize(); // Check the ideal chunk size, in bytes
+        _audioBuffer->write((const char*) data, periodSize);
     }
-    else if (result < 0)
-    {
-        printf("ERROR. Can't write to PCM device. %s\n", snd_strerror(result));
-    }
-    // else - ignore any other codes
 }
 
 void CallItemVideoView::OnVideoSizeChanged(const std::string &participantId, const Resolution &res)
 {
+    //printf("DEBUG. OnVideoSizeChanged");
+}
 
+void CallItemVideoView::EnableFramesLogs(bool enable)
+{
+    _printLogs = enable;
 }
 
 void CallItemVideoView::setImage(QImage image)
 {
     _image = image;
-    ui->frameContainer->update();
+
+    // do not update UI directly, just send signal to itself
+    emit imageUpdated();
 }
 
 void CallItemVideoView::clear()
@@ -140,9 +177,10 @@ void CallItemVideoView::setAudioMuted(bool muted)
 
 void CallItemVideoView::setVideoMuted(bool muted)
 {
+    printf("DEBUG. setVideoMuted");
     std::unique_lock<std::mutex> lock(mt_video, std::defer_lock);
     lock.lock();
-
+    printf("DEBUG. setVideoMuted: locked");
     _videoMuted = muted;
     ui->labelVideo->setText(muted ? "Video OFF" : "Video ON");
     if (_videoMuted)
@@ -151,6 +189,12 @@ void CallItemVideoView::setVideoMuted(bool muted)
     }
 
     lock.unlock();
+    printf("DEBUG. setVideoMuted: unlocked");
+}
+
+void CallItemVideoView::setParticipantOrder(int order)
+{
+    ui->labelOrder->setText(QString::number(order));
 }
 
 void CallItemVideoView::setAudioSampleRate(int rate)
@@ -184,53 +228,6 @@ bool CallItemVideoView::event(QEvent *event)
     return QFrame::event(event);
 }
 
-bool CallItemVideoView::initializeAudioRendererIfNeeded(int channels)
-{
-    if (!_audioInitialized)
-    {
-        _rate = _audioSampleRate;
-
-         /* Open the PCM device in playback mode */
-        int result = snd_pcm_open(&_pcm_handle, PCM_DEVICE, SND_PCM_STREAM_PLAYBACK, 0);
-        if (result < 0)
-        {
-            printf("ERROR: Can't open \"%s\" PCM device. %s\n", PCM_DEVICE, snd_strerror(result));
-            return false;
-        }
-
-        /* Allocate parameters object and fill it with default values*/
-        snd_pcm_hw_params_alloca(&_params);
-        snd_pcm_hw_params_any(_pcm_handle, _params);
-
-        /* Set parameters */
-        if ((snd_pcm_hw_params_set_access(_pcm_handle, _params, SND_PCM_ACCESS_RW_INTERLEAVED) < 0) ||
-            (snd_pcm_hw_params_set_format(_pcm_handle, _params, SND_PCM_FORMAT_S16_LE) < 0) ||
-            (snd_pcm_hw_params_set_channels(_pcm_handle, _params, channels) < 0) ||
-            (snd_pcm_hw_params_set_rate_near(_pcm_handle, _params, &_rate, 0) < 0))
-        {
-            printf("ERROR: failed to set PCM handle parameters\n");
-            return false;
-        }
-
-        /* Write parameters */
-        if (snd_pcm_hw_params(_pcm_handle, _params) < 0)
-        {
-            printf("ERROR: failed to write PCM handle parameters\n");
-            return false;
-        }
-
-        /* Allocate buffer to hold single period */
-        if (snd_pcm_hw_params_get_period_size(_params, &_frames, 0) < 0)
-        {
-            printf("ERROR: failed allocate buffer\n");
-            return false;
-        }
-
-        _audioInitialized = true;
-    }
-    return _audioInitialized;
-}
-
 void CallItemVideoView::onLowQualitySelected()
 {
     emit lowQualitySelected(_streamId);
@@ -239,4 +236,33 @@ void CallItemVideoView::onLowQualitySelected()
 void CallItemVideoView::onHighQualitySelected()
 {
     emit highQualitySelected(_streamId);
+}
+
+void CallItemVideoView::onImageUpdated()
+{
+    ui->frameContainer->update();
+}
+
+void CallItemVideoView::onAudioStarted(int channels, int bps)
+{
+    if (!_audioInitialized)
+    {
+        _audioFormat.setSampleRate(_audioSampleRate);
+        _audioFormat.setChannelCount(channels);
+        _audioFormat.setSampleSize(bps);
+        _audioFormat.setCodec("audio/pcm");
+        _audioFormat.setByteOrder(QAudioFormat::LittleEndian);
+
+        _audioDeviceInfo = QAudioDeviceInfo::defaultOutputDevice();
+
+        if (!_audioDeviceInfo.isFormatSupported(_audioFormat))
+        {
+            qDebug() << "Audio format is not supported";
+            return;
+        }
+
+        _audioOutput = new QAudioOutput(_audioDeviceInfo, _audioFormat, this);
+        _audioBuffer = _audioOutput->start();
+        _audioInitialized = true;
+    }
 }
