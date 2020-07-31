@@ -5,7 +5,9 @@
 
 #include <QFrame>
 
-#include <alsa/asoundlib.h>
+#include <QtMultimedia/QAudioInput>
+#include <QtMultimedia/QAudioOutput>
+
 #include <mutex>
 
 class QImage;
@@ -34,6 +36,8 @@ public:
     void setAudioMuted(bool muted);
     void setVideoMuted(bool muted);
 
+    void setParticipantOrder(int order);
+
     void setAudioSampleRate(int rate);
 
     // IStreamSubscriber
@@ -41,21 +45,28 @@ public:
     virtual void OnAudioFrame(unsigned char *data, size_t size, int channels, int bps) override;
     virtual void OnVideoSizeChanged(const std::string& participantId, const Resolution& res) override;
 
+    void EnableFramesLogs(bool enable);
+
 protected:
     void paintEvent(QPaintEvent *event);
     bool event(QEvent *event);
-
-    bool initializeAudioRendererIfNeeded(int channels);
 
 signals:
     void lowQualitySelected(long);
     void highQualitySelected(long);
 
+    void imageUpdated();
+    void audioStarted(int, int);
+
 protected slots:
     void onLowQualitySelected();
     void onHighQualitySelected();
 
+    void onImageUpdated();
+    void onAudioStarted(int channels, int bps);
+
 private:
+    bool _printLogs = false;
     Ui::CallItemVideoView *ui;
     long _streamId = 0;
     QImage _image;
@@ -65,11 +76,11 @@ private:
     bool _videoMuted = false;
 
     int _audioSampleRate = 48000;
-    unsigned int _rate;
-    snd_pcm_t *_pcm_handle;
-    snd_pcm_hw_params_t *_params;
-    snd_pcm_uframes_t _frames;
     std::atomic<bool> _audioInitialized;
+    QAudioOutput *_audioOutput = nullptr;
+    QAudioFormat _audioFormat;
+    QAudioDeviceInfo _audioDeviceInfo;
+    QIODevice* _audioBuffer = nullptr;     // IODevice to connect to m_AudioOutput
 
     std::mutex mt_audio;
     std::mutex mt_video;

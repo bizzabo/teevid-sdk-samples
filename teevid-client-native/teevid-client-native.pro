@@ -5,6 +5,7 @@
 #-------------------------------------------------
 
 QT       += core gui
+QT       += multimedia
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -82,5 +83,3 @@ contains( UNAME, aarch64 ):{
         LIBS += -L"$$PWD/libs/jetson/release" -lteevid_sdk
     }
 }
-
-LIBS += -lasound

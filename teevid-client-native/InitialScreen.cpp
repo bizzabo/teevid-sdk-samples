@@ -220,6 +220,7 @@ void InitialScreen::OnStreamAdded (long streamId, const std::string& name, const
     if (isLocal)
     {
         ui->frameCallPart_Local->setStreamId(streamId);
+        ui->frameCallPart_Local->setParticipantOrder(order);
         if (ui->checkBoxLocalVideo->isChecked())
         {
             teeVidClient_->Subscribe(streamId, ui->frameCallPart_Local);
@@ -231,6 +232,7 @@ void InitialScreen::OnStreamAdded (long streamId, const std::string& name, const
         if (teeVidClient_ && callItem)
         {
             callItem->setStreamId(streamId);
+            callItem->setParticipantOrder(order);
             teeVidClient_->Subscribe(streamId, callItem);
         }
     }
@@ -411,6 +413,8 @@ void InitialScreen::onBtnMicrophonePressed()
     {
         teeVidClient_->SendAudio(enabled);
     }
+
+    ui->frameCallPart_Local->setAudioMuted(!enabled);
 }
 
 void InitialScreen::onBtnCameraPressed()
@@ -426,6 +430,8 @@ void InitialScreen::onBtnCameraPressed()
     {
         teeVidClient_->SendVideo(enabled);
     }
+
+    ui->frameCallPart_Local->setVideoMuted(!enabled);
 }
 
 void InitialScreen::onRoomSubmitted(const QString &caller, const QString &invitationUrl)
