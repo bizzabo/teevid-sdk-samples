@@ -177,10 +177,10 @@ void CallItemVideoView::setAudioMuted(bool muted)
 
 void CallItemVideoView::setVideoMuted(bool muted)
 {
-    printf("DEBUG. setVideoMuted");
+    //printf("DEBUG. setVideoMuted");
     std::unique_lock<std::mutex> lock(mt_video, std::defer_lock);
     lock.lock();
-    printf("DEBUG. setVideoMuted: locked");
+    //printf("DEBUG. setVideoMuted: locked");
     _videoMuted = muted;
     ui->labelVideo->setText(muted ? "Video OFF" : "Video ON");
     if (_videoMuted)
@@ -189,7 +189,7 @@ void CallItemVideoView::setVideoMuted(bool muted)
     }
 
     lock.unlock();
-    printf("DEBUG. setVideoMuted: unlocked");
+    //printf("DEBUG. setVideoMuted: unlocked");
 }
 
 void CallItemVideoView::setParticipantOrder(int order)
