@@ -14,6 +14,7 @@ import androidx.annotation.Nullable;
 
 import com.teevid.sample.R;
 import com.teevid.sample.view.container.VideoViewContainer;
+import com.teevid.sdk.constant.CameraProvider;
 import com.teevid.sdk.view.BaseMeetingView;
 import com.teevid.sdk.view.VideoView;
 
@@ -226,6 +227,16 @@ public class CustomMeetingViewExample extends BaseMeetingView {
     @Override
     public void onSetMaxViewsInGrid(int maxViewsInGrid) {
         this.maxViewsInGrid = maxViewsInGrid;
+    }
+
+    @Override
+    public void onLocalVideoCameraChanged(@CameraProvider int cameraProvider) {
+        Log.d(TAG, "onLocalVideoCameraChanged: " + cameraProvider);
+        if (CameraProvider.FRONT_FACING == cameraProvider) {
+            viewPictureInPicture.setMirror(true);
+        } else {
+            viewPictureInPicture.setMirror(false);
+        }
     }
 
     private void addViewToGridViewContainer(VideoView view) {

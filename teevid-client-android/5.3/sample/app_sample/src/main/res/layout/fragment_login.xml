@@ -3,7 +3,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:animateLayoutChanges="true">
 
     <EditText
         android:id="@+id/et_server"
@@ -55,12 +56,28 @@
         android:ems="10"
         android:hint="Invitation link (optional)"
         android:inputType="textUri"
-        app:layout_constraintBottom_toTopOf="@+id/spinner_camera"
+        app:layout_constraintBottom_toTopOf="@+id/et_password"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/et_name"
         tools:text="Link" />
+
+    <EditText
+        android:id="@+id/et_password"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:hint="Password"
+        android:inputType="textVisiblePassword"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@+id/spinner_camera"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/et_invitation_link"
+        tools:text="Link"
+        tools:visibility="visible" />
 
     <Spinner
         android:id="@+id/spinner_camera"
@@ -70,7 +87,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/et_invitation_link" />
+        app:layout_constraintTop_toBottomOf="@+id/et_password" />
 
     <Button
         android:id="@+id/btn_connect"
@@ -82,5 +99,29 @@
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/spinner_camera" />
+
+    <RadioGroup
+        android:id="@+id/rg_connect_as"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:checkedButton="@+id/rb_connect_as_guest"
+        app:layout_constraintBottom_toTopOf="@+id/et_server"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <RadioButton
+            android:id="@+id/rb_connect_as_guest"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Connect as guest" />
+
+        <RadioButton
+            android:id="@+id/rb_connect_as_user"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Connect as user" />
+
+    </RadioGroup>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

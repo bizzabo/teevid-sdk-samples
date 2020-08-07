@@ -10,6 +10,7 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.RadioGroup;
 import android.widget.Spinner;
 
 import androidx.annotation.NonNull;
@@ -30,6 +31,7 @@ public class LoginFragment extends Fragment {
     private EditText etRoom;
     private EditText etName;
     private EditText etInvitationLink;
+    private EditText etPassword;
     private Spinner spinnerCamera;
 
     public LoginFragment() {
@@ -64,8 +66,11 @@ public class LoginFragment extends Fragment {
         etName = view.findViewById(R.id.et_name);
         spinnerCamera = view.findViewById(R.id.spinner_camera);
         etInvitationLink = view.findViewById(R.id.et_invitation_link);
+        etPassword = view.findViewById(R.id.et_password);
+        RadioGroup rgConnectAs = view.findViewById(R.id.rg_connect_as);
 
         btnConnect.setOnClickListener(v -> onConnectClicked());
+        rgConnectAs.setOnCheckedChangeListener((group, checkedId) -> onConnectAsToggled(checkedId));
 
         UserPreferences preferences = SampleApplication.getInstance().getUserPreferences();
         etServer.setText(preferences.getServer());
@@ -119,6 +124,7 @@ public class LoginFragment extends Fragment {
         String roomId = etRoom.getText().toString();
         String username = etName.getText().toString();
         String invitationLink = etInvitationLink.getText().toString();
+        String password = etPassword.getText().toString();
         int camera = ((CameraOption) spinnerCamera.getSelectedItem()).first;
 
         UserPreferences preferences = SampleApplication.getInstance().getUserPreferences();
@@ -127,6 +133,7 @@ public class LoginFragment extends Fragment {
         preferences.setUsername(username);
         preferences.setCamera(camera);
         preferences.setInvitationLink(invitationLink);
+        preferences.setPassword(password);
 
         Fragment fragment = new CallFragment();
         navigation.showFragment(fragment, true);
@@ -140,5 +147,15 @@ public class LoginFragment extends Fragment {
             }
         }
         return true;
+    }
+
+    private void onConnectAsToggled(int checkedId) {
+        if (checkedId == R.id.rb_connect_as_guest) {
+            etPassword.setVisibility(View.GONE);
+            etInvitationLink.setVisibility(View.VISIBLE);
+        } else {
+            etPassword.setVisibility(View.VISIBLE);
+            etInvitationLink.setVisibility(View.GONE);
+        }
     }
 }

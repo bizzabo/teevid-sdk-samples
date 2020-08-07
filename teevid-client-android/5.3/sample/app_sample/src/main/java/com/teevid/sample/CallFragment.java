@@ -8,6 +8,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
@@ -52,6 +53,7 @@ public class CallFragment extends Fragment {
         BaseMeetingView viewTeeVid = view.findViewById(R.id.view_meeting);
         btnCamera = view.findViewById(R.id.btn_camera);
         ToggleButton btnLocalVideo = view.findViewById(R.id.btn_local_video);
+        ImageButton btnInvite = view.findViewById(R.id.btn_invite);
         btnMicrophone = view.findViewById(R.id.btn_microphone);
         ToggleButton btnScreenShare = view.findViewById(R.id.btn_screen_share);
         ToggleButton btnCameraSwitch = view.findViewById(R.id.btn_camera_switch);
@@ -61,6 +63,7 @@ public class CallFragment extends Fragment {
         String roomId = preferences.getRoomId();
         String username = preferences.getUsername();
         String invitationLink = preferences.getInvitationLink();
+        String password = preferences.getPassword();
         int defaultCamera = preferences.getCamera();
 
         client = new TeeVidClient.Builder(getContext(), "token") // TODO Token
@@ -70,14 +73,17 @@ public class CallFragment extends Fragment {
         client.setView(viewTeeVid);
         client.setDefaultCamera(defaultCamera);
 
-        if (TextUtils.isEmpty(invitationLink)) {
-            client.connect(roomId, server, username);
-        } else {
+        if (!TextUtils.isEmpty(invitationLink)) {
             client.connectWithInvitation(username, invitationLink);
+        } else if (!TextUtils.isEmpty(password)) {
+            client.connectAsUser(roomId, server, username, password);
+        } else {
+            client.connect(roomId, server, username);
         }
 
         btnCamera.setOnClickListener(v -> onCameraButtonClicked(btnCamera));
         btnLocalVideo.setOnClickListener(v -> onLocalVideoButtonClicked(btnLocalVideo));
+        btnInvite.setOnClickListener(v -> onInviteButtonClicked());
         btnScreenShare.setOnClickListener(v -> onScreenShareButtonClicked(btnScreenShare));
         btnMicrophone.setOnClickListener(v -> onMicrophoneButtonClicked(btnMicrophone));
         btnCameraSwitch.setOnClickListener(v -> onSwitchCameraButtonClicked());
@@ -112,6 +118,10 @@ public class CallFragment extends Fragment {
         }
     }
 
+    private void onInviteButtonClicked() {
+        client.createInvitationLink(this::shareText);
+    }
+
     private void onScreenShareButtonClicked(ToggleButton button) {
         boolean enabled = button.isChecked();
         if (enabled) {
@@ -132,6 +142,13 @@ public class CallFragment extends Fragment {
 
     private void onSwitchCameraButtonClicked() {
         client.switchCamera();
+    }
+
+    private void shareText(String text) {
+        Intent intent = new Intent(android.content.Intent.ACTION_SEND);
+        intent.setType("text/plain");
+        intent.putExtra(android.content.Intent.EXTRA_TEXT, text);
+        startActivity(intent);
     }
 
     private void showEnterPinDialog(Consumer<String> pinConsumer) {

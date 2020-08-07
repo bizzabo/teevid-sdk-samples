@@ -24,4 +24,8 @@ public interface UserPreferences {
     int getCamera();
 
     void setCamera(@CameraProvider int defaultCamera);
+
+    String getPassword();
+
+    void setPassword(String password);
 }
