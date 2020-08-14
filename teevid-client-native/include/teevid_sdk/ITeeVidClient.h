@@ -13,6 +13,8 @@
 #include "SourceType.h"
 #include "LocalVideoMode.h"
 #include "TeeVidSettings.h"
+#include "LogLevel.h"
+#include "RoomParameters.h"
 
 namespace teevid_sdk {
     struct ITeeVidClient {
@@ -20,7 +22,7 @@ namespace teevid_sdk {
 
         // Initialize SDK with token, provided by TeeVid support. Also need to provide
         // DNS name of media server and pointer to Observer class
-        virtual bool Initialize(const std::string& token, const std::string& server,
+        virtual bool Initialize(const std::string& token, const std::string& server, LogLevel logLevel,
             ITeeVidClientObserver* clientObserver) = 0;
 
         // This method should be called if client need to change default settings

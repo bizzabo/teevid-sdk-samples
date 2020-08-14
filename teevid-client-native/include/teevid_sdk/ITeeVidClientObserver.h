@@ -10,6 +10,7 @@
 #include "Resolution.h"
 #include "MuteAttributes.h"
 #include "teevid_sdk/Participant.h"
+#include "teevid_sdk/RoomParameters.h"
 
 namespace teevid_sdk
 {
@@ -22,6 +23,8 @@ class ITeeVidClientObserver {
 
   // Raised if connection can't be done
   virtual void OnConnectionError (const std::string& reason) = 0;
+
+  virtual void OnRoomConnected(const RoomParameters& roomParameters) = 0;
 
   // Raised when new incoming stream has been created (another participant connected to the room)
   // If client connects to the room with already N existing participants, then client will receive

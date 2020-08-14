@@ -7,7 +7,7 @@ class VideoFrameData
 {
 public:
     VideoFrameData();
-    VideoFrameData(unsigned char index);
+    VideoFrameData(unsigned char index, int width, int height);
     virtual ~VideoFrameData();
 
     unsigned char* GetData() const;
@@ -18,6 +18,9 @@ public:
 
 private:
     unsigned char* data_ = nullptr;
+
+    int width_;
+    int height_;
 };
 
 #endif // VIDEOFRAMEDATA_H

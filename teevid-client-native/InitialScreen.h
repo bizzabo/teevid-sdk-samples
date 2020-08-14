@@ -8,6 +8,7 @@
 #include "Contact.h"
 #include "VideoFrameData.h"
 #include "AudioFrameData.h"
+#include "AudioParams.h"
 #include "teevid_sdk/ITeeVidClient.h"
 
 class QButtonGroup;
@@ -42,6 +43,7 @@ public:
 
     void OnConnected (long streamId, const std::string& invitationToken) override;
     void OnConnectionError (const std::string& reason) override;
+    void OnRoomConnected(const RoomParameters &roomParameters) override;
     void OnStreamAdded (long streamId, const std::string& name, const std::string& participantId, int type, bool isLocal, int order, const Participant::Status& status) override;
     void OnStreamRemoved(long streamId) override;
     void OnDisconnected () override;
@@ -56,6 +58,7 @@ public:
     void OnRaiseHandStatusUpdated (bool allowed) override;
 
 signals:
+    void roomConnectReceived(int videoWidth, int videoHeight);
     void sdkOnConnectedRecieved(QString token);
 
 protected slots:
@@ -79,16 +82,18 @@ protected slots:
 
     void onDisplayLocalVideoChecked(int state);
 
+    void OnRoomConnectReceived(int videoWidth, int videoHeight);
     void OnSdkOnConnectedReceived(QString token);
 
-    void OnDummyFrameTimer();
+    void OnDummyVideoFrameTimer();
+    void OnDummyAudioFrameTimer();
 
 protected:
     void UnsubscribeFromVideo();
 
     CallItemVideoView* GetVacantVideoView() const;
     CallItemVideoView* GetVideoViewById(long streamId) const;
-    void GenerateDummyVideoFrames();
+    void GenerateDummyVideoFrames(int width, int height);
     void GenerateDummyAudioFrames();
 
 private:
@@ -108,9 +113,15 @@ private:
 
     // dummy frames
     std::vector<std::shared_ptr<VideoFrameData>> _videoFrames;
-    std::shared_ptr<AudioFrameData> _audioFrame;
-    QTimer _dummyFramesTimer;
-    int _dummyTimerIteration = 0;
+    std::vector<std::shared_ptr<AudioFrameData>> _audioFrames;
+    std::shared_ptr<AudioFrameData> _silentAudioFrame;
+    QTimer _dummyVideoFramesTimer;
+    int _videoTimerIteration = 0;
+    int _dummyAudioFrameSetsCount = 32;
+
+    QTimer _dummyAudioFramesTimer;
+    int _audioTimerIteration = 0;
+    AudioParams _audioParams;
 };
 
 #endif // INITIALSCREEN_H
