@@ -67,7 +67,7 @@ long CallItemVideoView::getStreamId() const
 }
 
 void printLog(const char* text)
-{
+{    
     char buffer[26];
     int millisec;
     struct tm* tm_info;
@@ -108,17 +108,17 @@ void CallItemVideoView::OnVideoFrame(unsigned char *data, size_t size, size_t st
         setImage(image);
         QString sizeStr = QString::number(width) + "x" + QString::number(height);
         ui->labelSize->setText(sizeStr);
-        //std::string text =_streamId + "OnVideoFrame: setImage";
-        if(_printLogs)
-        {
-            printLog("OnVideoFrame: setImage");
-        }
     }
     else
     {
         setImage(QImage());
         ui->labelSize->clear();
-        //printf("DEBUG. OnVideoFrame: clear image");
+#ifdef QT_DEBUG
+        if (_printLogs)
+        {
+            printLog("DEBUG. OnVideoFrame: clear image");
+        }
+#endif
     }
 }
 
@@ -142,7 +142,9 @@ void CallItemVideoView::OnAudioFrame(unsigned char *data, size_t size, int chann
 
 void CallItemVideoView::OnVideoSizeChanged(const std::string &participantId, const Resolution &res)
 {
-    //printf("DEBUG. OnVideoSizeChanged");
+#ifdef QT_DEBUG
+    qDebug() << "DEBUG. OnVideoSizeChanged";
+#endif
 }
 
 void CallItemVideoView::EnableFramesLogs(bool enable)
@@ -177,10 +179,11 @@ void CallItemVideoView::setAudioMuted(bool muted)
 
 void CallItemVideoView::setVideoMuted(bool muted)
 {
-    //printf("DEBUG. setVideoMuted");
+#ifdef QT_DEBUG
+    qDebug() << "DEBUG. setVideoMuted";
+#endif
     std::unique_lock<std::mutex> lock(mt_video, std::defer_lock);
     lock.lock();
-    //printf("DEBUG. setVideoMuted: locked");
     _videoMuted = muted;
     ui->labelVideo->setText(muted ? "Video OFF" : "Video ON");
     if (_videoMuted)
@@ -189,7 +192,6 @@ void CallItemVideoView::setVideoMuted(bool muted)
     }
 
     lock.unlock();
-    //printf("DEBUG. setVideoMuted: unlocked");
 }
 
 void CallItemVideoView::setParticipantOrder(int order)
@@ -257,7 +259,7 @@ void CallItemVideoView::onAudioStarted(int channels, int bps)
 
         if (!_audioDeviceInfo.isFormatSupported(_audioFormat))
         {
-            qDebug() << "Audio format is not supported";
+            //qDebug() << "Audio format is not supported";
             return;
         }
 

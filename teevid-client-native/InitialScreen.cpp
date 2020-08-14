@@ -7,20 +7,37 @@
 #include "ConnectParamsDialog.h"
 #include "InvitationManager.h"
 
+#include "teevid_sdk/RoomParameters.h"
+
 #include <QButtonGroup>
 #include <QStandardItemModel>
 #include <QMessageBox>
 #include <QDebug>
 #include <QTimer>
+#include <QCoreApplication>
+#include <QFileInfo>
 #include <memory>
 
 using namespace teevid_sdk;
 
 const int cVideoFps = 30;
 const int cVideoTimerInterval = 1000 / cVideoFps;
-const int cDummyFrameSetsCount = 32;
+const int cDummyVideoFrameSetsCount = 32;
+
+const int cAudioFps = 50;
+const int cAudioTimerInterval = 1000 / cAudioFps;
+const int cAudioIntervalSeconds = 20; // sound/silence duration
+const int cAudioIntervals = 2; // sound and silence
+const int cTimerCountReset = cAudioFps * cAudioIntervalSeconds * cAudioIntervals;
 
 const int cAudioSampleRate = 48000;
+const int cMaxAudioSetsCount = 512;
+
+const QString cSourceDir = "teevid-client-native";
+
+// choose audio sample file
+const QString cAudioSampleFile = "audio-sample-48000.wav";
+//const QString cAudioSampleFile = "audio-sample-44100.wav";
 
 InitialScreen::InitialScreen(QWidget *parent) : QWidget(parent), ui(new Ui::InitialScreen)
 {
@@ -30,7 +47,8 @@ InitialScreen::InitialScreen(QWidget *parent) : QWidget(parent), ui(new Ui::Init
 
 InitialScreen::~InitialScreen()
 {
-    _dummyFramesTimer.stop();
+    _dummyVideoFramesTimer.stop();
+    _dummyAudioFramesTimer.stop();
     UnsubscribeFromVideo();
 
     if (teeVidClient_)
@@ -64,15 +82,20 @@ void InitialScreen::InitSDK()
     try
     {
         teeVidClient_ = TeeVidFactory::CreateTeeVidClient();
-        teeVidClient_->Initialize(validationToken, teevidServer, (ITeeVidClientObserver*)this);
 
-        TeeVidSettings settings;
-        settings.media_settings.audioSettings.audioChannels = kStereo;
-        settings.media_settings.audioSettings.audioBpsType = kS16LE;
-        settings.media_settings.audioSettings.audioSampleRate = cAudioSampleRate;
-        settings.media_settings.videoSettings.videoFormatType = VideoFormatType::kRGBA;
-        settings.media_settings.videoSettings.videoFps = cVideoFps;
-        teeVidClient_->Configure(settings);
+        // TODO: set desired logging level
+        // if you need no SDK signalling traces - set any level except DEBUG
+        teeVidClient_->Initialize(validationToken, teevidServer, LogLevel::DEBUG, (ITeeVidClientObserver*)this);
+
+        // TODO: uncomment this if default configuration is required
+//        TeeVidSettings settings;
+//        settings.media_settings.audioSettings.audioChannels = kStereo;
+//        settings.media_settings.audioSettings.audioBpsType = kS16LE;
+//        settings.media_settings.audioSettings.audioSampleRate = cAudioSampleRate;
+//        settings.media_settings.videoSettings.videoFormatType = VideoFormatType::kRGBA;
+//        settings.media_settings.videoSettings.videoFps = cVideoFps;
+//        teeVidClient_->Configure(settings);
+
     }
     catch (std::exception& e)
     {
@@ -153,6 +176,8 @@ void InitialScreen::InitUI()
     ui->checkBoxLocalVideo->setChecked(true);
     connect(ui->checkBoxLocalVideo, SIGNAL(stateChanged(int)), this, SLOT(onDisplayLocalVideoChecked(int)));
 
+    //
+    connect(this, SIGNAL(roomConnectReceived(int, int)), this, SLOT(OnRoomConnectReceived(int, int)));
     connect(this, SIGNAL(sdkOnConnectedRecieved(QString)), this, SLOT(OnSdkOnConnectedReceived(QString)));
 
     _connectParamsDialog = new ConnectParamsDialog(this);
@@ -162,12 +187,16 @@ void InitialScreen::InitUI()
     connect(_connectParamsDialog, SIGNAL(paramsCancelled()), this, SLOT(onConnectParamsCancelled()));
 
     // TODO: should it be called only at first successful publish?
-    GenerateDummyVideoFrames();
+    // currently only audio frames are generated here
     GenerateDummyAudioFrames();
 
-    _dummyFramesTimer.setInterval(cVideoTimerInterval);
-    _dummyFramesTimer.setSingleShot(false);
-    connect(&_dummyFramesTimer, SIGNAL(timeout()), this, SLOT(OnDummyFrameTimer()));
+    _dummyVideoFramesTimer.setInterval(cVideoTimerInterval);
+    _dummyVideoFramesTimer.setSingleShot(false);
+    connect(&_dummyVideoFramesTimer, SIGNAL(timeout()), this, SLOT(OnDummyVideoFrameTimer()));
+
+    _dummyAudioFramesTimer.setInterval(cAudioTimerInterval);
+    _dummyAudioFramesTimer.setSingleShot(false);
+    connect(&_dummyAudioFramesTimer, SIGNAL(timeout()), this, SLOT(OnDummyAudioFrameTimer()));
 }
 
 void InitialScreen::setFriendsData(std::vector<Contact> friends)
@@ -213,6 +242,28 @@ void InitialScreen::OnConnected (long streamId, const std::string& invitationTok
 
 void InitialScreen::OnConnectionError (const std::string& )
 {
+}
+
+void InitialScreen::OnRoomConnected(const RoomParameters &roomParameters)
+{
+    int videoWidth = roomParameters.video_resolution_.width;
+    int videoHeight = roomParameters.video_resolution_.height;
+
+    if (teeVidClient_)
+    {
+        int sampleRate = _audioParams.GetSampleRate();
+        TeeVidSettings settings;
+        settings.media_settings.audioSettings.audioChannels = kStereo;
+        settings.media_settings.audioSettings.audioBpsType = kS16LE;
+        settings.media_settings.audioSettings.audioSampleRate = _audioParams.GetSampleRate();
+        settings.media_settings.videoSettings.videoFormatType = VideoFormatType::kRGBA;
+        settings.media_settings.videoSettings.videoWidth = videoWidth;
+        settings.media_settings.videoSettings.videoHeight = videoHeight;
+        settings.media_settings.videoSettings.videoFps = cVideoFps;
+        teeVidClient_->Configure(settings);
+    }
+
+    emit roomConnectReceived(videoWidth, videoHeight);
 }
 
 void InitialScreen::OnStreamAdded (long streamId, const std::string& name, const std::string& participantId, int type, bool isLocal, int order, const Participant::Status &status)
@@ -363,7 +414,6 @@ void InitialScreen::onInvitePressed()
     int accessPin = _connectParamsDialog->GetAccessPin();
     try
     {
-         _dummyFramesTimer.start();
         teeVidClient_->ConnectTo(room, user, password, accessPin, 0);
     }
     catch (std::exception& e)
@@ -386,8 +436,10 @@ void InitialScreen::onServerSimulationPressed()
 
 void InitialScreen::onBtnEndCallPressed()
 {
-    _dummyFramesTimer.stop();
-    _dummyTimerIteration = 0;
+    _dummyVideoFramesTimer.stop();
+    _dummyAudioFramesTimer.stop();
+    _videoTimerIteration = 0;
+    _audioTimerIteration = 0;
     ui->textEditInvitationToken->clear();
 
     UnsubscribeFromVideo();
@@ -459,7 +511,6 @@ void InitialScreen::onRoomSubmitted(const QString &caller, const QString &invita
     {
         try
         {
-            _dummyFramesTimer.start();
             std::string user = _connectParamsDialog->GetUser().toStdString();
             std::string password = _connectParamsDialog->GetPassword().toStdString();
             teeVidClient_->ConnectTo(inviteParams.token_, inviteParams.room_, user, password);
@@ -487,6 +538,13 @@ void InitialScreen::onDisplayLocalVideoChecked(int state)
     ui->frameLocalVideo->setVisible(showVideo);
 }
 
+void InitialScreen::OnRoomConnectReceived(int videoWidth, int videoHeight)
+{
+    GenerateDummyVideoFrames(videoWidth, videoHeight);
+    _dummyVideoFramesTimer.start();
+    _dummyAudioFramesTimer.start();
+}
+
 void InitialScreen::OnSdkOnConnectedReceived(QString token)
 {
     // empty invitation token means no invitation URL can be generated
@@ -503,19 +561,19 @@ void InitialScreen::OnSdkOnConnectedReceived(QString token)
     ui->textEditInvitationToken->setPlainText(invitationUrl);
 }
 
-void InitialScreen::OnDummyFrameTimer()
+void InitialScreen::OnDummyVideoFrameTimer()
 {
-    if (_videoFrames.empty() || !_audioFrame)
+    if (_videoFrames.empty())
         return;
 
-    if (++_dummyTimerIteration == cDummyFrameSetsCount)
+    // timer is common for video and audio so reset by the biggest value
+    if (++_videoTimerIteration == cDummyVideoFrameSetsCount)
     {
-        _dummyTimerIteration = 0;
+        _videoTimerIteration = 0;
     }
     if (teeVidClient_)
     {
-        std::shared_ptr<VideoFrameData> video_frame = _videoFrames[_dummyTimerIteration];
-
+        std::shared_ptr<VideoFrameData> video_frame = _videoFrames[_videoTimerIteration];
         size_t stride = video_frame->GetWidth() * video_frame->GetBytesPerPixel();
 
         // play dummy local video
@@ -526,7 +584,28 @@ void InitialScreen::OnDummyFrameTimer()
         }
 
         teeVidClient_->PutVideoFrame(video_frame->GetData(), video_frame->GetSize(), stride);
-        teeVidClient_->PutAudioFrame(_audioFrame->GetData(), _audioFrame->GetSize());
+    }
+}
+
+void InitialScreen::OnDummyAudioFrameTimer()
+{
+    if (_audioFrames.empty() || !_silentAudioFrame)
+        return;
+
+    // timer is common for video and audio so reset by the biggest value
+    if (++_audioTimerIteration == cTimerCountReset)
+    {
+        _audioTimerIteration = 0;
+    }
+    if (teeVidClient_)
+    {
+        // audio has 2 intervals - one is sound, another is silent
+        bool sound = (_audioTimerIteration < cAudioFps * cAudioIntervalSeconds);
+        std::shared_ptr<AudioFrameData> audio_frame = sound ? _audioFrames[_audioTimerIteration % _dummyAudioFrameSetsCount] : _silentAudioFrame;
+
+        //ui->frameCallPart_Local->OnAudioFrame(audio_frame->GetData(), audio_frame->GetSize(), 2, 16);
+
+        teeVidClient_->PutAudioFrame(audio_frame->GetData(), audio_frame->GetSize());
     }
 }
 
@@ -581,16 +660,62 @@ CallItemVideoView* InitialScreen::GetVideoViewById(long streamId) const
 }
 
 
-void InitialScreen::GenerateDummyVideoFrames()
+void InitialScreen::GenerateDummyVideoFrames(int width, int height)
 {
     _videoFrames.clear();
-    for (unsigned char i = 0; i < cDummyFrameSetsCount; ++i)
+    for (unsigned char i = 0; i < cDummyVideoFrameSetsCount; ++i)
     {
-        _videoFrames.push_back(std::make_shared<VideoFrameData>(i));
+        _videoFrames.push_back(std::make_shared<VideoFrameData>(i, width, height));
     }
 }
 
 void InitialScreen::GenerateDummyAudioFrames()
 {
-    _audioFrame = std::make_shared<AudioFrameData>();
+    _audioFrames.clear();
+
+    QString audioFileFullName = QCoreApplication::applicationDirPath();
+    int lastSlashPos = audioFileFullName.lastIndexOf("/");
+    audioFileFullName = audioFileFullName.left(lastSlashPos + 1) + cSourceDir + "/" + cAudioSampleFile;
+    QFileInfo audioFileInfo(audioFileFullName);
+    bool isAudioFileValid = false;
+    if (audioFileInfo.exists())
+    {
+        // try to read WAV file
+        int audioFileSize = audioFileInfo.size();
+        _dummyAudioFrameSetsCount = (audioFileSize - _audioParams.GetWavFileDataOffset()) / _audioParams.GetDataChunkSize();
+        if (_dummyAudioFrameSetsCount > cMaxAudioSetsCount)
+        {
+            // restrict (nearly 10 seconds) if file is too large
+            _dummyAudioFrameSetsCount = cMaxAudioSetsCount;
+        }
+
+        QFile file(audioFileFullName);
+        if (file.open(QIODevice::ReadOnly))
+        {
+            QByteArray buffer = file.readAll();
+
+            // retrive the file bitrate and calculate data chunk size
+            int sampleRate = (((int)buffer.at(25) & 0xff) << 8) + ((int)buffer.at(24) & 0xff);
+            _audioParams.SetSampleRate(sampleRate);
+            _audioParams.SetFrameSampleRate(sampleRate / cAudioFps);
+
+            for (int i = 0; i < _dummyAudioFrameSetsCount; ++i)
+            {
+                _audioFrames.push_back(std::make_shared<AudioFrameData>(_audioParams, buffer, i));
+            }
+            isAudioFileValid = true;
+        }
+    }
+
+    if (!isAudioFileValid)
+    {
+        _audioParams.SetSampleRate(cAudioSampleRate);
+        _audioParams.SetFrameSampleRate(cAudioSampleRate / cAudioFps);
+        // failed to read sample file, generate dummy noize frames
+        for (int i = 0; i < _dummyAudioFrameSetsCount; ++i)
+        {
+            _audioFrames.push_back(std::make_shared<AudioFrameData>(_audioParams, i));
+        }
+    }
+    _silentAudioFrame = std::make_shared<AudioFrameData>(_audioParams);
 }

@@ -8,6 +8,7 @@ namespace teevid_sdk
 {
     class Resolution
     {
+    public:
       unsigned int width = 0;
       unsigned int height = 0;
     };

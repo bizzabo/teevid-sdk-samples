@@ -36,7 +36,8 @@ SOURCES += \
     CallItemVideoView.cpp \
     ServerSimulationDialog.cpp \
     VideoQualityDialog.cpp \
-    InvitationManager.cpp
+    InvitationManager.cpp \
+    AudioParams.cpp
 
 HEADERS += \
     AudioFrameData.h \
@@ -50,7 +51,8 @@ HEADERS += \
     IVideoProvider.h \
     ServerSimulationDialog.h \
     VideoQualityDialog.h \
-    InvitationManager.h
+    InvitationManager.h \
+    AudioParams.h
 
 FORMS += \
     CallItemVideoView.ui \
