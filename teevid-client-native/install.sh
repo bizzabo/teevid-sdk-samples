@@ -65,4 +65,3 @@ sudo cp $CUSTOM_LIB_DIR/gstreamer-1.0/libgstwebrtc.la $INSTALL_LIB_DIR/gstreamer
 
 echo "Install $CUSTOM_LIB_DIR/gstreamer-1.0/libgstwebrtc.so"
 sudo cp $CUSTOM_LIB_DIR/gstreamer-1.0/libgstwebrtc.so $INSTALL_LIB_DIR/gstreamer-1.0/
-
