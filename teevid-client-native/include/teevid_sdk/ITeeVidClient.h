@@ -44,8 +44,11 @@ namespace teevid_sdk {
 
         // Each stream which return by OnStreamAdded callback can e subscribed by client's application
         // Subscriber provides callback interface which wil be used to deliver media data
-        virtual void Subscribe(long streamId, IStreamSubscriber* streamSubscriber) = 0;
+        virtual void Subscribe(long streamId, const VideoSettings& videoSettings, IStreamSubscriber* streamSubscriber) = 0;
         virtual void Unsubscribe(long streamId) = 0;
+
+        // Allows to change settings (e.g. video format) for the video from already subscribed stream - without stopping
+        virtual void SetSubscribedVideoSettings(long streamId, const VideoSettings& videoSettings) = 0;
 
         // Disconnect from room and stop receiving/sending media
         virtual bool Disconnect() = 0;
@@ -71,8 +74,8 @@ namespace teevid_sdk {
 
         // Those methods take raw media data and it's size to deliver it to the server
         // Application should provide data in format which has been configured by Configure method
-        virtual void PutVideoFrame(unsigned char *data, size_t size, size_t stride) = 0;
-        virtual void PutAudioFrame(unsigned char *data, size_t size) = 0;
+        virtual bool PutVideoFrame(unsigned char *data, size_t size, size_t stride) = 0;
+        virtual bool PutAudioFrame(unsigned char *data, size_t size) = 0;
     };
 
     typedef std::shared_ptr<ITeeVidClient> ITeeVidClientPtr;

@@ -24,6 +24,7 @@ class ITeeVidClientObserver {
   // Raised if connection can't be done
   virtual void OnConnectionError (const std::string& reason) = 0;
 
+  // Raised when room connection is successful (credentials are obtained) but signaling has not started yet
   virtual void OnRoomConnected(const RoomParameters& roomParameters) = 0;
 
   // Raised when new incoming stream has been created (another participant connected to the room)
@@ -33,7 +34,7 @@ class ITeeVidClientObserver {
   // name and StreamType
   virtual void OnStreamAdded (long streamId, const std::string& name, const std::string& participantId, int type, bool isLocal, int order, const Participant::Status& status) = 0;
 
-  // Raied when one of observed streams has ended
+  // Raised when one of observed streams has ended
   virtual void OnStreamRemoved (long streamId) = 0;
 
   // Informs application that it has been disconnected from the room
