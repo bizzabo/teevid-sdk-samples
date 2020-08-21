@@ -37,7 +37,8 @@ SOURCES += \
     ServerSimulationDialog.cpp \
     VideoQualityDialog.cpp \
     InvitationManager.cpp \
-    AudioParams.cpp
+    AudioParams.cpp \
+    DeviceVideoManager.cpp
 
 HEADERS += \
     AudioFrameData.h \
@@ -52,7 +53,8 @@ HEADERS += \
     ServerSimulationDialog.h \
     VideoQualityDialog.h \
     InvitationManager.h \
-    AudioParams.h
+    AudioParams.h \
+    DeviceVideoManager.h
 
 FORMS += \
     CallItemVideoView.ui \
@@ -69,6 +71,23 @@ RESOURCES += \
 INCLUDEPATH += $$PWD/include \
 
 UNAME = $$system(uname -p)
+
+INCLUDEPATH += ../desktop-client-sdk/include \
+               /usr/include/gstreamer-1.0 \
+               /usr/include/glib-2.0 \
+
+contains( UNAME, x86_64 ):{
+    INCLUDEPATH += /usr/lib/x86_64-linux-gnu/glib-2.0/include
+}
+
+contains( UNAME, aarch64 ):{
+    INCLUDEPATH += /usr/lib/aarch64-linux-gnu/glib-2.0/include
+}
+
+LIBS += -lgstreamer-1.0 \
+        -lgstapp-1.0 \
+        -lgobject-2.0 \
+        -lglib-2.0
 
 contains( UNAME, x86_64 ):{
     CONFIG(debug, debug|release){

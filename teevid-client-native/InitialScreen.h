@@ -9,6 +9,7 @@
 #include "VideoFrameData.h"
 #include "AudioFrameData.h"
 #include "AudioParams.h"
+#include "DeviceVideoManager.h"
 #include "teevid_sdk/ITeeVidClient.h"
 
 class QButtonGroup;
@@ -88,6 +89,10 @@ protected slots:
     void OnDummyVideoFrameTimer();
     void OnDummyAudioFrameTimer();
 
+    void OnPublishVideoFrame(unsigned char* data, size_t size, int stride);
+    void OnInternalVideoFrame(unsigned char* data, size_t size, int stride);
+    void OnVideoError(QString message);
+
 protected:
     void UnsubscribeFromVideo();
 
@@ -99,6 +104,8 @@ protected:
 private:
     void InitSDK();
     void InitUI();
+
+    std::string GetVideoFormatName(const VideoSettings& videoSettings);
 
 private:
     Ui::InitialScreen *ui;
@@ -122,6 +129,10 @@ private:
     QTimer _dummyAudioFramesTimer;
     int _audioTimerIteration = 0;
     AudioParams _audioParams;
+    DeviceVideoManager _deviceVideoMgr;
+
+    VideoSettings _publishVideoSettings;
+    VideoSettings _subscribeVideoSettings;
 };
 
 #endif // INITIALSCREEN_H

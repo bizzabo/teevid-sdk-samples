@@ -33,7 +33,7 @@ const int cTimerCountReset = cAudioFps * cAudioIntervalSeconds * cAudioIntervals
 const int cAudioSampleRate = 48000;
 const int cMaxAudioSetsCount = 512;
 
-const QString cSourceDir = "teevid-client-native";
+const QString cSourceDir = "hisense-demo";
 
 // choose audio sample file
 const QString cAudioSampleFile = "audio-sample-48000.wav";
@@ -43,11 +43,14 @@ InitialScreen::InitialScreen(QWidget *parent) : QWidget(parent), ui(new Ui::Init
 {
     InitUI();
     //InitSDK();
+
+    _publishVideoSettings.videoFormatType = VideoFormatType::kUYVY;
+    _subscribeVideoSettings.videoFormatType = VideoFormatType::kRGBA;
 }
 
 InitialScreen::~InitialScreen()
 {
-    _dummyVideoFramesTimer.stop();
+    //_dummyVideoFramesTimer.stop();
     _dummyAudioFramesTimer.stop();
     UnsubscribeFromVideo();
 
@@ -55,6 +58,9 @@ InitialScreen::~InitialScreen()
     {
         teeVidClient_->Disconnect();
     }
+
+    // Please note: this should be called AFTER disconnection from TeeVidClient !!!
+    _deviceVideoMgr.Stop();
 
     delete ui;
 }
@@ -190,13 +196,17 @@ void InitialScreen::InitUI()
     // currently only audio frames are generated here
     GenerateDummyAudioFrames();
 
-    _dummyVideoFramesTimer.setInterval(cVideoTimerInterval);
-    _dummyVideoFramesTimer.setSingleShot(false);
-    connect(&_dummyVideoFramesTimer, SIGNAL(timeout()), this, SLOT(OnDummyVideoFrameTimer()));
+//    _dummyVideoFramesTimer.setInterval(cVideoTimerInterval);
+//    _dummyVideoFramesTimer.setSingleShot(false);
+//    connect(&_dummyVideoFramesTimer, SIGNAL(timeout()), this, SLOT(OnDummyVideoFrameTimer()));
 
     _dummyAudioFramesTimer.setInterval(cAudioTimerInterval);
     _dummyAudioFramesTimer.setSingleShot(false);
     connect(&_dummyAudioFramesTimer, SIGNAL(timeout()), this, SLOT(OnDummyAudioFrameTimer()));
+
+    connect(&_deviceVideoMgr, SIGNAL(publishVideoFrame(unsigned char*,size_t,int)), this, SLOT(OnPublishVideoFrame(unsigned char*,size_t,int)));
+    connect(&_deviceVideoMgr, SIGNAL(internalVideoFrame(unsigned char*,size_t,int)), this, SLOT(OnInternalVideoFrame(unsigned char*,size_t,int)));
+    connect(&_deviceVideoMgr, SIGNAL(videoError(QString)), this, SLOT(OnVideoError(QString)));
 }
 
 void InitialScreen::setFriendsData(std::vector<Contact> friends)
@@ -246,8 +256,14 @@ void InitialScreen::OnConnectionError (const std::string& )
 
 void InitialScreen::OnRoomConnected(const RoomParameters &roomParameters)
 {
-    int videoWidth = roomParameters.video_resolution_.width;
-    int videoHeight = roomParameters.video_resolution_.height;
+    int width = roomParameters.video_resolution_.width;
+    int height = roomParameters.video_resolution_.height;
+
+    _publishVideoSettings.videoWidth = width;
+    _publishVideoSettings.videoHeight = height;
+
+    _subscribeVideoSettings.videoWidth = width;
+    _subscribeVideoSettings.videoHeight = height;
 
     if (teeVidClient_)
     {
@@ -256,14 +272,14 @@ void InitialScreen::OnRoomConnected(const RoomParameters &roomParameters)
         settings.media_settings.audioSettings.audioChannels = kStereo;
         settings.media_settings.audioSettings.audioBpsType = kS16LE;
         settings.media_settings.audioSettings.audioSampleRate = _audioParams.GetSampleRate();
-        settings.media_settings.videoSettings.videoFormatType = VideoFormatType::kRGBA;
-        settings.media_settings.videoSettings.videoWidth = videoWidth;
-        settings.media_settings.videoSettings.videoHeight = videoHeight;
+        settings.media_settings.videoSettings.videoFormatType = VideoFormatType::kUYVY;
+        settings.media_settings.videoSettings.videoWidth = width;
+        settings.media_settings.videoSettings.videoHeight = height;
         settings.media_settings.videoSettings.videoFps = cVideoFps;
         teeVidClient_->Configure(settings);
     }
 
-    emit roomConnectReceived(videoWidth, videoHeight);
+    emit roomConnectReceived(width, height);
 }
 
 void InitialScreen::OnStreamAdded (long streamId, const std::string& name, const std::string& participantId, int type, bool isLocal, int order, const Participant::Status &status)
@@ -272,10 +288,6 @@ void InitialScreen::OnStreamAdded (long streamId, const std::string& name, const
     {
         ui->frameCallPart_Local->setStreamId(streamId);
         ui->frameCallPart_Local->setParticipantOrder(order);
-        if (ui->checkBoxLocalVideo->isChecked())
-        {
-            teeVidClient_->Subscribe(streamId, ui->frameCallPart_Local);
-        }
     }
     else
     {
@@ -284,7 +296,8 @@ void InitialScreen::OnStreamAdded (long streamId, const std::string& name, const
         {
             callItem->setStreamId(streamId);
             callItem->setParticipantOrder(order);
-            teeVidClient_->Subscribe(streamId, callItem);
+
+            teeVidClient_->Subscribe(streamId, _subscribeVideoSettings, callItem);
         }
     }
 }
@@ -299,8 +312,12 @@ void InitialScreen::OnStreamRemoved(long streamId)
     }
 }
 
-void InitialScreen::OnDisconnected (){
+void InitialScreen::OnDisconnected ()
+{
+    // TODO: add needed logic here
+    qDebug() << "OnDisconnected";
 }
+
 void InitialScreen::OnRoomModeChanged (RoomMode ){
 }
 void InitialScreen::OnError (const std::string& ){
@@ -310,6 +327,8 @@ void InitialScreen::OnParticipantRemoved (const std::string& ){
 
 void InitialScreen::OnParticipantMute(long streamId, bool audioMuted, bool videoMuted)
 {
+    bool isLocal = false;
+
     CallItemVideoView* callItem = GetVideoViewById(streamId);
     if (!callItem)
     {
@@ -318,9 +337,10 @@ void InitialScreen::OnParticipantMute(long streamId, bool audioMuted, bool video
         {
             return;
         }
+        isLocal = true;
     }
 
-    if (teeVidClient_)
+    if (!isLocal && teeVidClient_)
     {
         if (audioMuted && videoMuted)
         {
@@ -328,7 +348,7 @@ void InitialScreen::OnParticipantMute(long streamId, bool audioMuted, bool video
         }
         else
         {
-            teeVidClient_->Subscribe(streamId, callItem);
+            teeVidClient_->Subscribe(streamId, _subscribeVideoSettings, callItem);
         }
     }
 
@@ -340,6 +360,20 @@ int InitialScreen::OnAccessPinRequested (){
     return 12345;
 }
 void InitialScreen::OnActiveSpeakerChanged (const std::map<long, int> &order){
+
+    for (auto const& item : order)
+    {
+        CallItemVideoView* callItem = GetVideoViewById(item.first);
+        if (!callItem)
+        {
+            callItem = ui->frameCallPart_Local;
+            if (callItem->getStreamId() != item.first)
+            {
+                return;
+            }
+        }
+        callItem->setParticipantOrder(item.second);
+    }
 }
 void InitialScreen::OnMuteAttributesUpdated (const MuteAttributes& ){
 }
@@ -436,7 +470,7 @@ void InitialScreen::onServerSimulationPressed()
 
 void InitialScreen::onBtnEndCallPressed()
 {
-    _dummyVideoFramesTimer.stop();
+    //_dummyVideoFramesTimer.stop();
     _dummyAudioFramesTimer.stop();
     _videoTimerIteration = 0;
     _audioTimerIteration = 0;
@@ -447,6 +481,9 @@ void InitialScreen::onBtnEndCallPressed()
     {
         teeVidClient_->Disconnect();
     }
+
+    // Please note: this should be called AFTER disconnection from TeeVidClient !!!
+    _deviceVideoMgr.Stop();
 
     QMessageBox mb(QMessageBox::Information, "Invitation", "Call ended");
     mb.exec();
@@ -540,8 +577,11 @@ void InitialScreen::onDisplayLocalVideoChecked(int state)
 
 void InitialScreen::OnRoomConnectReceived(int videoWidth, int videoHeight)
 {
-    GenerateDummyVideoFrames(videoWidth, videoHeight);
-    _dummyVideoFramesTimer.start();
+    //GenerateDummyVideoFrames(videoWidth, videoHeight);
+    //_dummyVideoFramesTimer.start();
+
+    std::string videoFormat = GetVideoFormatName(_publishVideoSettings);
+    _deviceVideoMgr.Start(cVideoFps, videoWidth, videoHeight, videoFormat);
     _dummyAudioFramesTimer.start();
 }
 
@@ -607,6 +647,22 @@ void InitialScreen::OnDummyAudioFrameTimer()
 
         teeVidClient_->PutAudioFrame(audio_frame->GetData(), audio_frame->GetSize());
     }
+}
+
+void InitialScreen::OnPublishVideoFrame(unsigned char *data, size_t size, int stride)
+{
+    teeVidClient_->PutVideoFrame(data, size, stride);
+}
+
+void InitialScreen::OnInternalVideoFrame(unsigned char *data, size_t size, int stride)
+{
+    ui->frameCallPart_Local->OnVideoFrame(data, size, stride);
+}
+
+void InitialScreen::OnVideoError(QString message)
+{
+    QMessageBox mb(QMessageBox::Critical, "Video error", message);
+    mb.exec();
 }
 
 void InitialScreen::UnsubscribeFromVideo()
@@ -718,4 +774,42 @@ void InitialScreen::GenerateDummyAudioFrames()
         }
     }
     _silentAudioFrame = std::make_shared<AudioFrameData>(_audioParams);
+}
+
+std::string InitialScreen::GetVideoFormatName (const VideoSettings& videoSettings)
+{
+  std::string format;
+  switch (videoSettings.videoFormatType)
+  {
+    case kBGRx:
+      format = "BGRx";
+      break;
+    case kGRAY8:
+      format = "GRAY8";
+      break;
+    case kUYVY:
+      format = "UYVY";
+      break;
+    case kYUY2:
+      format = "YUY2";
+      break;
+    case kYVYU:
+      format = "YVYU";
+      break;
+    case kI420:
+      format = "I420";
+      break;
+    case kI420_10LE:
+      format = "I420_10LE";
+      break;
+    case kNV12:
+      format = "NV12";
+      break;
+    case kRGBA:
+    default:
+      format = "RGBA";
+      break;
+  }
+
+  return format;
 }
