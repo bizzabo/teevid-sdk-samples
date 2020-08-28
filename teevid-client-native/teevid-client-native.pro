@@ -38,7 +38,8 @@ SOURCES += \
     VideoQualityDialog.cpp \
     InvitationManager.cpp \
     AudioParams.cpp \
-    DeviceVideoManager.cpp
+    DeviceVideoManager.cpp \
+    DeviceAudioManager.cpp
 
 HEADERS += \
     AudioFrameData.h \
@@ -54,7 +55,8 @@ HEADERS += \
     VideoQualityDialog.h \
     InvitationManager.h \
     AudioParams.h \
-    DeviceVideoManager.h
+    DeviceVideoManager.h \
+    DeviceAudioManager.h
 
 FORMS += \
     CallItemVideoView.ui \

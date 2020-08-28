@@ -21,9 +21,6 @@ class ITeeVidClientObserver {
   // Also it has streamId - it is ID of outgoing stream, it can be used for identifying video frames
   virtual void OnConnected (long streamId, const std::string& invitationToken) = 0;
 
-  // Raised if connection can't be done
-  virtual void OnConnectionError (const std::string& reason) = 0;
-
   // Raised when room connection is successful (credentials are obtained) but signaling has not started yet
   virtual void OnRoomConnected(const RoomParameters& roomParameters) = 0;
 
@@ -43,6 +40,7 @@ class ITeeVidClientObserver {
   // Informs application that room mode has changed
   virtual void OnRoomModeChanged (RoomMode mode) = 0;
 
+  // Raised if some error occurred while connection
   virtual void OnError (const std::string& error) = 0;
 
   // Informs application that one of remote participant has left the room
