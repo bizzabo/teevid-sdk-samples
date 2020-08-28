@@ -7,7 +7,12 @@ sudo apt install qtcreator
 sudo apt install qtmultimedia5-dev
 ```
 
-#### 2. In order to build demo UI app do the following:
+#### 2. For Desktop (non-Jetson) also install multimedia plugins:
+```
+sudo apt install libqt5multimedia5-plugins
+```
+
+#### 3. In order to build demo UI app do the following:
 	1.	Navigate to the directory where your sources are stored
 		cd <your_source_dir>
 
