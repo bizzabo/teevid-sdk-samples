@@ -71,13 +71,27 @@
         android:hint="Password"
         android:inputType="textVisiblePassword"
         android:visibility="gone"
-        app:layout_constraintBottom_toTopOf="@+id/spinner_camera"
+        app:layout_constraintBottom_toTopOf="@+id/et_sdk_token"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/et_invitation_link"
-        tools:text="Link"
+        tools:text="Password"
         tools:visibility="visible" />
+
+    <EditText
+        android:id="@+id/et_sdk_token"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:hint="SDK token"
+        android:inputType="textVisiblePassword"
+        app:layout_constraintBottom_toTopOf="@+id/spinner_camera"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/et_password"
+        tools:text="SDK token" />
 
     <Spinner
         android:id="@+id/spinner_camera"
@@ -87,7 +101,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/et_password" />
+        app:layout_constraintTop_toBottomOf="@+id/et_sdk_token" />
 
     <Button
         android:id="@+id/btn_connect"

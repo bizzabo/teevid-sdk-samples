@@ -28,4 +28,8 @@ public interface UserPreferences {
     String getPassword();
 
     void setPassword(String password);
+
+    String getSdkToken();
+
+    void setSdkToken(String sdkToken);
 }

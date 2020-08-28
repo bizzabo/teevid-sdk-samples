@@ -35,10 +35,7 @@
 
     <com.teevid.sdk.view.VideoView
         android:id="@+id/view_picture_in_picture"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_gravity="bottom|end"
-        tools:layout_height="@dimen/local_video_small_height"
-        tools:layout_width="@dimen/local_video_small_width" />
+        android:layout_width="@dimen/local_video_small_width"
+        android:layout_height="@dimen/local_video_small_height" />
 
 </merge>

@@ -32,6 +32,7 @@ public class LoginFragment extends Fragment {
     private EditText etName;
     private EditText etInvitationLink;
     private EditText etPassword;
+    private EditText etSdkToken;
     private Spinner spinnerCamera;
 
     public LoginFragment() {
@@ -67,6 +68,7 @@ public class LoginFragment extends Fragment {
         spinnerCamera = view.findViewById(R.id.spinner_camera);
         etInvitationLink = view.findViewById(R.id.et_invitation_link);
         etPassword = view.findViewById(R.id.et_password);
+        etSdkToken = view.findViewById(R.id.et_sdk_token);
         RadioGroup rgConnectAs = view.findViewById(R.id.rg_connect_as);
 
         btnConnect.setOnClickListener(v -> onConnectClicked());
@@ -77,6 +79,7 @@ public class LoginFragment extends Fragment {
         etRoom.setText(preferences.getRoomId());
         etName.setText(preferences.getUsername());
         etInvitationLink.setText(preferences.getInvitationLink());
+        etSdkToken.setText(preferences.getSdkToken());
 
         CameraOption[] cameraOptions = new CameraOption[]{
                 new CameraOption(CameraProvider.FRONT_FACING, getString(R.string.camera_front)),
@@ -125,6 +128,7 @@ public class LoginFragment extends Fragment {
         String username = etName.getText().toString();
         String invitationLink = etInvitationLink.getText().toString();
         String password = etPassword.getText().toString();
+        String sdkToken = etSdkToken.getText().toString();
         int camera = ((CameraOption) spinnerCamera.getSelectedItem()).first;
 
         UserPreferences preferences = SampleApplication.getInstance().getUserPreferences();
@@ -134,6 +138,7 @@ public class LoginFragment extends Fragment {
         preferences.setCamera(camera);
         preferences.setInvitationLink(invitationLink);
         preferences.setPassword(password);
+        preferences.setSdkToken(sdkToken);
 
         Fragment fragment = new CallFragment();
         navigation.showFragment(fragment, true);

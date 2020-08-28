@@ -7,6 +7,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
@@ -18,15 +19,17 @@ import com.teevid.sdk.constant.CameraProvider;
 import com.teevid.sdk.view.BaseMeetingView;
 import com.teevid.sdk.view.VideoView;
 
-import org.webrtc.RendererCommon;
+import java.util.List;
 
 public class CustomMeetingViewExample extends BaseMeetingView {
 
     private static final String TAG = "CustomMeetingViewExampl";
 
     private VideoView viewPictureInPicture;
-    private VideoView viewScreenShare;
+    private VideoView viewScreenSharing;
     private LinearLayout layoutLinear;
+
+    private DragTouchListener dragTouchListener;
 
     private VideoViewContainer<VideoView> viewGrid;
     private VideoViewContainer<VideoView> viewList;
@@ -38,14 +41,18 @@ public class CustomMeetingViewExample extends BaseMeetingView {
         LayoutInflater.from(context).inflate(R.layout.view_meeting_custom, this, true);
 
         viewPictureInPicture = findViewById(R.id.view_picture_in_picture);
-        viewScreenShare = findViewById(R.id.view_screen_share);
+        viewScreenSharing = findViewById(R.id.view_screen_share);
         viewGrid = findViewById(R.id.view_grid);
         viewList = findViewById(R.id.view_list);
         layoutLinear = findViewById(R.id.layout_linear);
 
         viewPictureInPicture.setZOrderMediaOverlay(true);
-        viewScreenShare.setZOrderMediaOverlay(true);
-        viewScreenShare.setScalingType(RendererCommon.ScalingType.SCALE_ASPECT_FIT);
+        viewScreenSharing.setZOrderMediaOverlay(true);
+        dragTouchListener = new DragTouchListener(viewPictureInPicture);
+        viewPictureInPicture.setOnTouchListener(dragTouchListener);
+        makeLocalVideoFullscreen();
+
+        setKeepScreenOn(true);
 
 // Reserved for testing purposes
 //        Random random = new Random();
@@ -77,7 +84,7 @@ public class CustomMeetingViewExample extends BaseMeetingView {
 //                    minValue + random.nextInt(maxValue),
 //                    minValue + random.nextInt(maxValue));
 //
-//            int visibility = viewScreenShare.getVisibility();
+//            int visibility = viewScreenSharing.getVisibility();
 //            if (visibility == VISIBLE) {
 //                super.removeVideoView(0, false);
 //            } else {
@@ -85,11 +92,11 @@ public class CustomMeetingViewExample extends BaseMeetingView {
 //                });
 //            }
 //
-//            viewScreenShare.setBackgroundColor(color);
+//            viewScreenSharing.setBackgroundColor(color);
 //            return true;
 //        });
-//        viewScreenShare.setOnClickListener(v -> {
-//            int visibility = viewScreenShare.getVisibility();
+//        viewScreenSharing.setOnClickListener(v -> {
+//            int visibility = viewScreenSharing.getVisibility();
 //            if (visibility == VISIBLE) {
 //                super.removeVideoView(0, false);
 //            } else {
@@ -101,6 +108,7 @@ public class CustomMeetingViewExample extends BaseMeetingView {
 
     @Override
     public void onOrientationChanged(int orientation) {
+        dragTouchListener.onOrientationChanged();
         viewGrid.setLayoutOrientationMode(orientation);
         viewList.setLayoutOrientationMode(orientation);
 
@@ -109,8 +117,8 @@ public class CustomMeetingViewExample extends BaseMeetingView {
         LinearLayout.LayoutParams paramsGrid = (LinearLayout.LayoutParams) viewGrid.getLayoutParams();
         paramsGrid.weight = 1;
 
-        LinearLayout.LayoutParams paramsScreenShare = (LinearLayout.LayoutParams)
-                viewScreenShare.getLayoutParams();
+        LinearLayout.LayoutParams paramsScreenSharing = (LinearLayout.LayoutParams)
+                viewScreenSharing.getLayoutParams();
 
         LinearLayout.LayoutParams paramsList = (LinearLayout.LayoutParams) viewList.getLayoutParams();
 
@@ -120,8 +128,8 @@ public class CustomMeetingViewExample extends BaseMeetingView {
             paramsGrid.width = ViewGroup.LayoutParams.MATCH_PARENT;
             paramsGrid.height = 0;
 
-            paramsScreenShare.width = ViewGroup.LayoutParams.MATCH_PARENT;
-            paramsScreenShare.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+            paramsScreenSharing.width = ViewGroup.LayoutParams.MATCH_PARENT;
+            paramsScreenSharing.height = ViewGroup.LayoutParams.WRAP_CONTENT;
 
             paramsList.width = ViewGroup.LayoutParams.MATCH_PARENT;
             paramsList.height = ViewGroup.LayoutParams.WRAP_CONTENT;
@@ -131,8 +139,8 @@ public class CustomMeetingViewExample extends BaseMeetingView {
             paramsGrid.width = 0;
             paramsGrid.height = ViewGroup.LayoutParams.MATCH_PARENT;
 
-            paramsScreenShare.width = ViewGroup.LayoutParams.WRAP_CONTENT;
-            paramsScreenShare.height = ViewGroup.LayoutParams.MATCH_PARENT;
+            paramsScreenSharing.width = ViewGroup.LayoutParams.WRAP_CONTENT;
+            paramsScreenSharing.height = ViewGroup.LayoutParams.MATCH_PARENT;
 
             paramsList.width = ViewGroup.LayoutParams.WRAP_CONTENT;
             paramsList.height = ViewGroup.LayoutParams.MATCH_PARENT;
@@ -140,7 +148,7 @@ public class CustomMeetingViewExample extends BaseMeetingView {
 
         layoutLinear.setOrientation(layoutOrientation);
         viewGrid.setLayoutParams(paramsGrid);
-        viewScreenShare.setLayoutParams(paramsScreenShare);
+        viewScreenSharing.setLayoutParams(paramsScreenSharing);
         viewList.setLayoutParams(paramsList);
     }
 
@@ -150,16 +158,16 @@ public class CustomMeetingViewExample extends BaseMeetingView {
     }
 
     @Override
-    public VideoView getScreenShareVideoView(String participantId) {
-        viewScreenShare.setVisibility(View.VISIBLE);
+    public VideoView getScreenSharingVideoView(String participantId) {
+        viewScreenSharing.setVisibility(View.VISIBLE);
         viewPictureInPicture.setVisibility(View.GONE);
         redistributeVideoViews(); // Move all views from grid to list
-        return viewScreenShare;
+        return viewScreenSharing;
     }
 
     @Override
-    public void onRemoveScreenShareVideoView(String participantId) {
-        viewScreenShare.setVisibility(View.GONE);
+    public void onRemoveScreenSharingVideoView(String participantId) {
+        viewScreenSharing.setVisibility(View.GONE);
         viewPictureInPicture.setVisibility(View.VISIBLE);
         redistributeVideoViews(); // Distribute view from list between grid and list
     }
@@ -174,14 +182,12 @@ public class CustomMeetingViewExample extends BaseMeetingView {
                 addViewToGridViewContainer(view);
 
                 if (count == 1) {
-                    ViewGroup.LayoutParams params = viewPictureInPicture.getLayoutParams();
-                    params.width = (int) getResources().getDimension(R.dimen.local_video_small_width);
-                    params.height = (int) getResources().getDimension(R.dimen.local_video_small_height);
+                    makeLocalVideoSmall();
                 }
             } else {
                 addViewToListViewContainer(view);
             }
-        } else { // Screen share is on, all views should go to list
+        } else { // Screen sharing is on, all views should go to list
             addViewToListViewContainer(view);
         }
     }
@@ -208,9 +214,7 @@ public class CustomMeetingViewExample extends BaseMeetingView {
             }
         }
         if (count == 0 && getMode() != MODE_SCREEN_SHARE) {
-            ViewGroup.LayoutParams params = viewPictureInPicture.getLayoutParams();
-            params.width = ViewGroup.LayoutParams.MATCH_PARENT;
-            params.height = ViewGroup.LayoutParams.MATCH_PARENT;
+            makeLocalVideoFullscreen();
         }
     }
 
@@ -250,16 +254,44 @@ public class CustomMeetingViewExample extends BaseMeetingView {
     }
 
     // Removes all views from grid and list and then re-adds them. This is required when screen
-    // share is on (all views from grid should be moved to list) and when screen share is off (views
+    // share is on (all views from grid should be moved to list) and when screen sharing is off (views
     // from list should be distributed between grid and list).
     private void redistributeVideoViews() {
         viewList.clear();
         viewGrid.clear();
 
         post(() -> {
-            for (VideoView videoView : getRemoteVideoViews()) {
-                onAddVideoView(null, 0, videoView);
+            List<VideoView> videoViews = getRemoteVideoViews();
+            if (videoViews.isEmpty() && getMode() != MODE_SCREEN_SHARE) {
+                // A situation when screen sharing view is removed along with the last video view
+                makeLocalVideoFullscreen();
+            } else {
+                for (VideoView videoView : getRemoteVideoViews()) {
+                    onAddVideoView(null, 0, videoView);
+                }
             }
         });
+    }
+
+    private void makeLocalVideoSmall() {
+        int width = (int) getResources().getDimension(R.dimen.local_video_small_width);
+        int height = (int) getResources().getDimension(R.dimen.local_video_small_height);
+        setLocalVideoSize(width, height);
+
+        dragTouchListener.enable();
+        dragTouchListener.moveViewToDesiredPosition();
+    }
+
+    private void makeLocalVideoFullscreen() {
+        int width = ViewGroup.LayoutParams.MATCH_PARENT;
+        int height = ViewGroup.LayoutParams.MATCH_PARENT;
+        setLocalVideoSize(width, height);
+
+        dragTouchListener.disable();
+    }
+
+    private void setLocalVideoSize(int width, int height) {
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(width, height);
+        viewPictureInPicture.setLayoutParams(params);
     }
 }

@@ -47,7 +47,7 @@
         app:layout_constraintStart_toStartOf="parent" />
 
     <ToggleButton
-        android:id="@+id/btn_screen_share"
+        android:id="@+id/btn_screen_sharing"
         style="@style/ToggleButton"
         android:layout_width="48dp"
         android:layout_height="48dp"
@@ -57,6 +57,19 @@
         android:checked="true"
         app:layout_constraintBottom_toTopOf="@+id/btn_invite"
         app:layout_constraintStart_toStartOf="parent" />
+
+    <ImageButton
+        android:id="@+id/btn_share_logs"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginBottom="16dp"
+        android:background="?android:attr/selectableItemBackground"
+        android:scaleType="centerCrop"
+        android:src="@drawable/ic_share_logs"
+        app:layout_constraintBottom_toTopOf="@+id/btn_screen_sharing"
+        app:layout_constraintStart_toStartOf="parent" />
+
 
     <ImageButton
         android:id="@+id/btn_invite"

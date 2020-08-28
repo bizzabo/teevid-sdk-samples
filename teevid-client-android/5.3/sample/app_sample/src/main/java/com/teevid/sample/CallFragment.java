@@ -1,6 +1,7 @@
 package com.teevid.sample;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
@@ -55,8 +56,9 @@ public class CallFragment extends Fragment {
         ToggleButton btnLocalVideo = view.findViewById(R.id.btn_local_video);
         ImageButton btnInvite = view.findViewById(R.id.btn_invite);
         btnMicrophone = view.findViewById(R.id.btn_microphone);
-        ToggleButton btnScreenShare = view.findViewById(R.id.btn_screen_share);
+        ToggleButton btnScreenSharing = view.findViewById(R.id.btn_screen_sharing);
         ToggleButton btnCameraSwitch = view.findViewById(R.id.btn_camera_switch);
+        ImageButton btnShareLogs = view.findViewById(R.id.btn_share_logs);
 
         UserPreferences preferences = SampleApplication.getInstance().getUserPreferences();
         String server = preferences.getServer();
@@ -64,9 +66,10 @@ public class CallFragment extends Fragment {
         String username = preferences.getUsername();
         String invitationLink = preferences.getInvitationLink();
         String password = preferences.getPassword();
+        String sdkToken = preferences.getSdkToken();
         int defaultCamera = preferences.getCamera();
 
-        client = new TeeVidClient.Builder(getContext(), "token") // TODO Token
+        client = new TeeVidClient.Builder(getContext(), sdkToken)
                 .addListener(getEventListener())
                 .setLogLevel(LogLevel.DEBUG)
                 .build();
@@ -84,9 +87,10 @@ public class CallFragment extends Fragment {
         btnCamera.setOnClickListener(v -> onCameraButtonClicked(btnCamera));
         btnLocalVideo.setOnClickListener(v -> onLocalVideoButtonClicked(btnLocalVideo));
         btnInvite.setOnClickListener(v -> onInviteButtonClicked());
-        btnScreenShare.setOnClickListener(v -> onScreenShareButtonClicked(btnScreenShare));
+        btnScreenSharing.setOnClickListener(v -> onScreenSharingButtonClicked(btnScreenSharing));
         btnMicrophone.setOnClickListener(v -> onMicrophoneButtonClicked(btnMicrophone));
         btnCameraSwitch.setOnClickListener(v -> onSwitchCameraButtonClicked());
+        btnShareLogs.setOnClickListener(v -> onShareLogsButtonClicked());
     }
 
     @Override
@@ -122,12 +126,12 @@ public class CallFragment extends Fragment {
         client.createInvitationLink(this::shareText);
     }
 
-    private void onScreenShareButtonClicked(ToggleButton button) {
+    private void onScreenSharingButtonClicked(ToggleButton button) {
         boolean enabled = button.isChecked();
         if (enabled) {
-            client.stopScreenShare();
+            client.stopScreenSharing();
         } else {
-            client.startScreenShare(this);
+            client.startScreenSharing(this);
         }
     }
 
@@ -149,6 +153,11 @@ public class CallFragment extends Fragment {
         intent.setType("text/plain");
         intent.putExtra(android.content.Intent.EXTRA_TEXT, text);
         startActivity(intent);
+    }
+
+    private void onShareLogsButtonClicked() {
+        Uri uri = client.getLogsFileUri();
+        shareFileUsingUri(uri);
     }
 
     private void showEnterPinDialog(Consumer<String> pinConsumer) {
@@ -208,6 +217,13 @@ public class CallFragment extends Fragment {
 
     private void showToast(@StringRes int resId) {
         Toast.makeText(getContext(), resId, Toast.LENGTH_SHORT).show();
+    }
+
+    private void shareFileUsingUri(Uri uri) {
+        Intent intent = new Intent(Intent.ACTION_SEND);
+        intent.setType("text/plain");
+        intent.putExtra(Intent.EXTRA_STREAM, uri);
+        startActivity(intent);
     }
 
     private TeeVidEventListener getEventListener() {

@@ -15,6 +15,7 @@ public class SharedUserPreferences implements UserPreferences {
     private static final String PREF_INVITATION_LINK = "PREF_INVITATION_LINK";
     private static final String PREF_CAMERA = "PREF_CAMERA";
     public static final String PREF_PASSWORD = "PREF_PASSWORD";
+    public static final String PREF_SDK_TOKEN = "PREF_SDK_TOKEN";
 
     private SharedPreferences prefs;
 
@@ -91,6 +92,18 @@ public class SharedUserPreferences implements UserPreferences {
     public void setPassword(String password) {
         prefs.edit()
                 .putString(PREF_PASSWORD, password)
+                .apply();
+    }
+
+    @Override
+    public String getSdkToken() {
+        return prefs.getString(PREF_SDK_TOKEN, null);
+    }
+
+    @Override
+    public void setSdkToken(String sdkToken) {
+        prefs.edit()
+                .putString(PREF_SDK_TOKEN, sdkToken)
                 .apply();
     }
 }
