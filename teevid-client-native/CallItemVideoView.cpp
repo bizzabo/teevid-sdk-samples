@@ -90,7 +90,7 @@ void printLog(const char* text)
 void CallItemVideoView::OnVideoFrame(unsigned char *data, size_t size, size_t stride)
 {
     // TODO: check whether this could be parallel
-    if (_videoMuted || !data || *data == 0)
+    if (_videoMuted || !data)
     {
         //printf("DEBUG. OnVideoFrame: _videoMuted || !data");
         return;

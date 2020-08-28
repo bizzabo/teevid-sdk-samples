@@ -24,7 +24,7 @@ const int cVideoFps = 30;
 const int cVideoTimerInterval = 1000 / cVideoFps;
 const int cDummyVideoFrameSetsCount = 32;
 
-const int cAudioFps = 50;
+const int cAudioFps = 30;
 const int cAudioTimerInterval = 1000 / cAudioFps;
 const int cAudioIntervalSeconds = 20; // sound/silence duration
 const int cAudioIntervals = 2; // sound and silence
@@ -51,7 +51,7 @@ InitialScreen::InitialScreen(QWidget *parent) : QWidget(parent), ui(new Ui::Init
 InitialScreen::~InitialScreen()
 {
     //_dummyVideoFramesTimer.stop();
-    _dummyAudioFramesTimer.stop();
+    //_dummyAudioFramesTimer.stop();
     UnsubscribeFromVideo();
 
     if (teeVidClient_)
@@ -61,6 +61,7 @@ InitialScreen::~InitialScreen()
 
     // Please note: this should be called AFTER disconnection from TeeVidClient !!!
     _deviceVideoMgr.Stop();
+    _deviceAudioMgr.Stop();
 
     delete ui;
 }
@@ -182,9 +183,10 @@ void InitialScreen::InitUI()
     ui->checkBoxLocalVideo->setChecked(true);
     connect(ui->checkBoxLocalVideo, SIGNAL(stateChanged(int)), this, SLOT(onDisplayLocalVideoChecked(int)));
 
-    //
+    // signals emitted to itself in order to handle different thread messages
     connect(this, SIGNAL(roomConnectReceived(int, int)), this, SLOT(OnRoomConnectReceived(int, int)));
     connect(this, SIGNAL(sdkOnConnectedRecieved(QString)), this, SLOT(OnSdkOnConnectedReceived(QString)));
+    connect(this, SIGNAL(roomErrorReceived(QString)), this, SLOT(OnRoomErrorReceived(QString)));
 
     _connectParamsDialog = new ConnectParamsDialog(this);
     _connectParamsDialog->show();
@@ -194,19 +196,22 @@ void InitialScreen::InitUI()
 
     // TODO: should it be called only at first successful publish?
     // currently only audio frames are generated here
-    GenerateDummyAudioFrames();
+    //GenerateDummyAudioFrames();
 
 //    _dummyVideoFramesTimer.setInterval(cVideoTimerInterval);
 //    _dummyVideoFramesTimer.setSingleShot(false);
 //    connect(&_dummyVideoFramesTimer, SIGNAL(timeout()), this, SLOT(OnDummyVideoFrameTimer()));
 
-    _dummyAudioFramesTimer.setInterval(cAudioTimerInterval);
-    _dummyAudioFramesTimer.setSingleShot(false);
-    connect(&_dummyAudioFramesTimer, SIGNAL(timeout()), this, SLOT(OnDummyAudioFrameTimer()));
+//    _dummyAudioFramesTimer.setInterval(cAudioTimerInterval);
+//    _dummyAudioFramesTimer.setSingleShot(false);
+//    connect(&_dummyAudioFramesTimer, SIGNAL(timeout()), this, SLOT(OnDummyAudioFrameTimer()));
 
     connect(&_deviceVideoMgr, SIGNAL(publishVideoFrame(unsigned char*,size_t,int)), this, SLOT(OnPublishVideoFrame(unsigned char*,size_t,int)));
     connect(&_deviceVideoMgr, SIGNAL(internalVideoFrame(unsigned char*,size_t,int)), this, SLOT(OnInternalVideoFrame(unsigned char*,size_t,int)));
     connect(&_deviceVideoMgr, SIGNAL(videoError(QString)), this, SLOT(OnVideoError(QString)));
+
+    connect(&_deviceAudioMgr, SIGNAL(audioFrame(unsigned char*,size_t)), this, SLOT(OnAudioFrame(unsigned char*,size_t)));
+    connect(&_deviceAudioMgr, SIGNAL(audioError(QString)), this, SLOT(OnAudioError(QString)));
 }
 
 void InitialScreen::setFriendsData(std::vector<Contact> friends)
@@ -250,10 +255,6 @@ void InitialScreen::OnConnected (long streamId, const std::string& invitationTok
     emit sdkOnConnectedRecieved(token);
 }
 
-void InitialScreen::OnConnectionError (const std::string& )
-{
-}
-
 void InitialScreen::OnRoomConnected(const RoomParameters &roomParameters)
 {
     int width = roomParameters.video_resolution_.width;
@@ -272,7 +273,7 @@ void InitialScreen::OnRoomConnected(const RoomParameters &roomParameters)
         settings.media_settings.audioSettings.audioChannels = kStereo;
         settings.media_settings.audioSettings.audioBpsType = kS16LE;
         settings.media_settings.audioSettings.audioSampleRate = _audioParams.GetSampleRate();
-        settings.media_settings.videoSettings.videoFormatType = VideoFormatType::kUYVY;
+        settings.media_settings.videoSettings.videoFormatType = _publishVideoSettings.videoFormatType;
         settings.media_settings.videoSettings.videoWidth = width;
         settings.media_settings.videoSettings.videoHeight = height;
         settings.media_settings.videoSettings.videoFps = cVideoFps;
@@ -320,8 +321,25 @@ void InitialScreen::OnDisconnected ()
 
 void InitialScreen::OnRoomModeChanged (RoomMode ){
 }
-void InitialScreen::OnError (const std::string& ){
+
+void InitialScreen::OnError (const std::string& error)
+{
+    // just emit this signal to handle it in the UI thread (show message box)
+    emit roomErrorReceived(QString::fromStdString(error));
+
+    try
+    {
+        if (teeVidClient_)
+        {
+            teeVidClient_->Disconnect();
+        }
+    }
+    catch (std::exception& e)
+    {
+        qInfo() << "Room disconnection error: " << e.what();
+    }
 }
+
 void InitialScreen::OnParticipantRemoved (const std::string& ){
 }
 
@@ -471,7 +489,7 @@ void InitialScreen::onServerSimulationPressed()
 void InitialScreen::onBtnEndCallPressed()
 {
     //_dummyVideoFramesTimer.stop();
-    _dummyAudioFramesTimer.stop();
+    //_dummyAudioFramesTimer.stop();
     _videoTimerIteration = 0;
     _audioTimerIteration = 0;
     ui->textEditInvitationToken->clear();
@@ -484,6 +502,7 @@ void InitialScreen::onBtnEndCallPressed()
 
     // Please note: this should be called AFTER disconnection from TeeVidClient !!!
     _deviceVideoMgr.Stop();
+    _deviceAudioMgr.Stop();
 
     QMessageBox mb(QMessageBox::Information, "Invitation", "Call ended");
     mb.exec();
@@ -579,10 +598,11 @@ void InitialScreen::OnRoomConnectReceived(int videoWidth, int videoHeight)
 {
     //GenerateDummyVideoFrames(videoWidth, videoHeight);
     //_dummyVideoFramesTimer.start();
+    //_dummyAudioFramesTimer.start();
 
     std::string videoFormat = GetVideoFormatName(_publishVideoSettings);
     _deviceVideoMgr.Start(cVideoFps, videoWidth, videoHeight, videoFormat);
-    _dummyAudioFramesTimer.start();
+    _deviceAudioMgr.Start(cAudioFps, cAudioSampleRate, 2, "S16LE");
 }
 
 void InitialScreen::OnSdkOnConnectedReceived(QString token)
@@ -599,6 +619,12 @@ void InitialScreen::OnSdkOnConnectedReceived(QString token)
         invitationUrl = InvitationManager::MakeInvitationUrl(inviteParams);
     }
     ui->textEditInvitationToken->setPlainText(invitationUrl);
+}
+
+void InitialScreen::OnRoomErrorReceived(QString errorMessage)
+{
+    QMessageBox mb(QMessageBox::Critical, "Room Connection Error", errorMessage);
+    mb.exec();
 }
 
 void InitialScreen::OnDummyVideoFrameTimer()
@@ -651,7 +677,10 @@ void InitialScreen::OnDummyAudioFrameTimer()
 
 void InitialScreen::OnPublishVideoFrame(unsigned char *data, size_t size, int stride)
 {
-    teeVidClient_->PutVideoFrame(data, size, stride);
+    if (teeVidClient_)
+    {
+        teeVidClient_->PutVideoFrame(data, size, stride);
+    }
 }
 
 void InitialScreen::OnInternalVideoFrame(unsigned char *data, size_t size, int stride)
@@ -663,6 +692,19 @@ void InitialScreen::OnVideoError(QString message)
 {
     QMessageBox mb(QMessageBox::Critical, "Video error", message);
     mb.exec();
+}
+
+void InitialScreen::OnAudioFrame(unsigned char *data, size_t size)
+{
+    if (teeVidClient_)
+    {
+        teeVidClient_->PutAudioFrame(data, size);
+    }
+}
+
+void InitialScreen::OnAudioError(QString message)
+{
+
 }
 
 void InitialScreen::UnsubscribeFromVideo()

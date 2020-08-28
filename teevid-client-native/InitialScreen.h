@@ -10,6 +10,7 @@
 #include "AudioFrameData.h"
 #include "AudioParams.h"
 #include "DeviceVideoManager.h"
+#include "DeviceAudioManager.h"
 #include "teevid_sdk/ITeeVidClient.h"
 
 class QButtonGroup;
@@ -43,7 +44,6 @@ public:
     bool isCameraOn() const;
 
     void OnConnected (long streamId, const std::string& invitationToken) override;
-    void OnConnectionError (const std::string& reason) override;
     void OnRoomConnected(const RoomParameters &roomParameters) override;
     void OnStreamAdded (long streamId, const std::string& name, const std::string& participantId, int type, bool isLocal, int order, const Participant::Status& status) override;
     void OnStreamRemoved(long streamId) override;
@@ -61,6 +61,7 @@ public:
 signals:
     void roomConnectReceived(int videoWidth, int videoHeight);
     void sdkOnConnectedRecieved(QString token);
+    void roomErrorReceived(QString errorMessage);
 
 protected slots:
     void onConnectParamsApplied();
@@ -85,6 +86,7 @@ protected slots:
 
     void OnRoomConnectReceived(int videoWidth, int videoHeight);
     void OnSdkOnConnectedReceived(QString token);
+    void OnRoomErrorReceived(QString errorMessage);
 
     void OnDummyVideoFrameTimer();
     void OnDummyAudioFrameTimer();
@@ -92,6 +94,9 @@ protected slots:
     void OnPublishVideoFrame(unsigned char* data, size_t size, int stride);
     void OnInternalVideoFrame(unsigned char* data, size_t size, int stride);
     void OnVideoError(QString message);
+
+    void OnAudioFrame(unsigned char* data, size_t size);
+    void OnAudioError(QString message);
 
 protected:
     void UnsubscribeFromVideo();
@@ -130,6 +135,7 @@ private:
     int _audioTimerIteration = 0;
     AudioParams _audioParams;
     DeviceVideoManager _deviceVideoMgr;
+    DeviceAudioManager _deviceAudioMgr;
 
     VideoSettings _publishVideoSettings;
     VideoSettings _subscribeVideoSettings;
