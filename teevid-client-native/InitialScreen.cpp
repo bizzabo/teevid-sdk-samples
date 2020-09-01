@@ -52,6 +52,7 @@ InitialScreen::~InitialScreen()
 {
     //_dummyVideoFramesTimer.stop();
     //_dummyAudioFramesTimer.stop();
+
     UnsubscribeFromVideo();
 
     if (teeVidClient_)
@@ -206,9 +207,10 @@ void InitialScreen::InitUI()
 //    _dummyAudioFramesTimer.setSingleShot(false);
 //    connect(&_dummyAudioFramesTimer, SIGNAL(timeout()), this, SLOT(OnDummyAudioFrameTimer()));
 
-    connect(&_deviceVideoMgr, SIGNAL(publishVideoFrame(unsigned char*,size_t,int)), this, SLOT(OnPublishVideoFrame(unsigned char*,size_t,int)));
-    connect(&_deviceVideoMgr, SIGNAL(internalVideoFrame(unsigned char*,size_t,int)), this, SLOT(OnInternalVideoFrame(unsigned char*,size_t,int)));
+    connect(&_deviceVideoMgr, SIGNAL(publishVideoFrame(unsigned char*,long,int)), this, SLOT(OnPublishVideoFrame(unsigned char*,long,int)));
+    connect(&_deviceVideoMgr, SIGNAL(internalVideoFrame(unsigned char*,long,int)), this, SLOT(OnInternalVideoFrame(unsigned char*,long,int)));
     connect(&_deviceVideoMgr, SIGNAL(videoError(QString)), this, SLOT(OnVideoError(QString)));
+    connect(&_deviceVideoMgr, SIGNAL(videoStarted(int, int)), this, SLOT(OnVideoStarted(int,int)));
 
     connect(&_deviceAudioMgr, SIGNAL(audioFrame(unsigned char*,size_t)), this, SLOT(OnAudioFrame(unsigned char*,size_t)));
     connect(&_deviceAudioMgr, SIGNAL(audioError(QString)), this, SLOT(OnAudioError(QString)));
@@ -260,6 +262,8 @@ void InitialScreen::OnRoomConnected(const RoomParameters &roomParameters)
     int width = roomParameters.video_resolution_.width;
     int height = roomParameters.video_resolution_.height;
 
+    emit roomConnectReceived(width, height);
+
     _publishVideoSettings.videoWidth = width;
     _publishVideoSettings.videoHeight = height;
 
@@ -268,7 +272,6 @@ void InitialScreen::OnRoomConnected(const RoomParameters &roomParameters)
 
     if (teeVidClient_)
     {
-        int sampleRate = _audioParams.GetSampleRate();
         TeeVidSettings settings;
         settings.media_settings.audioSettings.audioChannels = kStereo;
         settings.media_settings.audioSettings.audioBpsType = kS16LE;
@@ -279,8 +282,6 @@ void InitialScreen::OnRoomConnected(const RoomParameters &roomParameters)
         settings.media_settings.videoSettings.videoFps = cVideoFps;
         teeVidClient_->Configure(settings);
     }
-
-    emit roomConnectReceived(width, height);
 }
 
 void InitialScreen::OnStreamAdded (long streamId, const std::string& name, const std::string& participantId, int type, bool isLocal, int order, const Participant::Status &status)
@@ -601,7 +602,7 @@ void InitialScreen::OnRoomConnectReceived(int videoWidth, int videoHeight)
     //_dummyAudioFramesTimer.start();
 
     std::string videoFormat = GetVideoFormatName(_publishVideoSettings);
-    _deviceVideoMgr.Start(cVideoFps, videoWidth, videoHeight, videoFormat);
+    _deviceVideoMgr.Start(videoWidth, videoHeight, videoFormat);
     _deviceAudioMgr.Start(cAudioFps, cAudioSampleRate, 2, "S16LE");
 }
 
@@ -675,7 +676,7 @@ void InitialScreen::OnDummyAudioFrameTimer()
     }
 }
 
-void InitialScreen::OnPublishVideoFrame(unsigned char *data, size_t size, int stride)
+void InitialScreen::OnPublishVideoFrame(unsigned char *data, long size, int stride)
 {
     if (teeVidClient_)
     {
@@ -683,7 +684,7 @@ void InitialScreen::OnPublishVideoFrame(unsigned char *data, size_t size, int st
     }
 }
 
-void InitialScreen::OnInternalVideoFrame(unsigned char *data, size_t size, int stride)
+void InitialScreen::OnInternalVideoFrame(unsigned char *data, long size, int stride)
 {
     ui->frameCallPart_Local->OnVideoFrame(data, size, stride);
 }
@@ -692,6 +693,36 @@ void InitialScreen::OnVideoError(QString message)
 {
     QMessageBox mb(QMessageBox::Critical, "Video error", message);
     mb.exec();
+}
+
+void InitialScreen::OnVideoStarted(int width, int height)
+{
+    if (width == _publishVideoSettings.videoWidth && height == _publishVideoSettings.videoHeight)
+    {
+        // the settings are the same as original - no need to reconfigure
+        return;
+    }
+
+    _publishVideoSettings.videoWidth = width;
+    _publishVideoSettings.videoHeight = height;
+    if (ui->frameCallPart_Local->getStreamId() > 0)
+    {
+        // we already have our stream so we need to reconfigure it
+        teeVidClient_->SetStreamVideoSettings(ui->frameCallPart_Local->getStreamId(), _publishVideoSettings);
+    }
+    else
+    {
+        // not published yet, so just update settings
+        TeeVidSettings settings;
+        settings.media_settings.audioSettings.audioChannels = kStereo;
+        settings.media_settings.audioSettings.audioBpsType = kS16LE;
+        settings.media_settings.audioSettings.audioSampleRate = _audioParams.GetSampleRate();
+        settings.media_settings.videoSettings.videoFormatType = _publishVideoSettings.videoFormatType;
+        settings.media_settings.videoSettings.videoWidth = _publishVideoSettings.videoWidth;
+        settings.media_settings.videoSettings.videoHeight = _publishVideoSettings.videoHeight;
+        settings.media_settings.videoSettings.videoFps = cVideoFps;
+        teeVidClient_->Configure(settings);
+    }
 }
 
 void InitialScreen::OnAudioFrame(unsigned char *data, size_t size)

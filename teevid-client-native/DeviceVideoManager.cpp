@@ -3,10 +3,11 @@
 #include <QDebug>
 #include <thread>
 
+const int cDefaultWidth = 1280;
+const int cDefaultHeight = 720;
+
 DeviceVideoManager::DeviceVideoManager(QObject *parent) : QObject(parent)
 {
-    _timer.setSingleShot(false);
-    QObject::connect(&_timer, SIGNAL(timeout()), this, SLOT(OnTimer()));
 }
 
 static gboolean bus_call(GstBus *bus, GstMessage *msg, gpointer data)
@@ -23,15 +24,21 @@ static gboolean bus_call(GstBus *bus, GstMessage *msg, gpointer data)
 
     case GST_MESSAGE_ERROR:
     {
-        gchar *debug;
-        GError *error;
-
-        gst_message_parse_error(msg, &error, &debug);
-        g_free(debug);
-        self->HandleError(error->message);
-        g_error_free(error);
-
         self->QuitMainLoop();
+        if (self->RemainingRetryCount() > 0)
+        {
+            self->Retry();
+        }
+        else
+        {
+            gchar *debug;
+            GError *error;
+
+            gst_message_parse_error(msg, &error, &debug);
+            g_free(debug);
+            self->HandleError(error->message);
+            g_error_free(error);
+        }
     } break;
 
     case GST_MESSAGE_STEP_DONE:
@@ -47,26 +54,41 @@ static gboolean bus_call(GstBus *bus, GstMessage *msg, gpointer data)
     return TRUE;
 }
 
-bool DeviceVideoManager::Start(int fps, int width, int height, const std::string &format)
+static GstFlowReturn new_sample_publish (GstElement *sink, gpointer data)
 {
-    _fps = fps;
+    DeviceVideoManager *self = (DeviceVideoManager *)data;
+    self->PullBuffer(DeviceVideoManager::eVideoType::Publish);
+}
+
+static GstFlowReturn new_sample_internal (GstElement *sink, gpointer data)
+{
+    DeviceVideoManager *self = (DeviceVideoManager *)data;
+    self->PullBuffer(DeviceVideoManager::eVideoType::Internal);
+}
+
+bool DeviceVideoManager::Start(int width, int height, const std::string &format)
+{
     _width = width;
     _height = height;
-
-    _timer.setInterval(1000 / _fps);
+    _publishFormat = format;
 
     gst_init(NULL, NULL);
 
-    std::string pipelineStr = "v4l2src device=/dev/video0 ! tee name=t ! queue ";
-               pipelineStr += " ! videoconvert ! videoscale ! video/x-raw,format=" +
-                              format + ",framerate=" +
-                              std::to_string(_fps) + "/1,width=" +
-                              std::to_string(_width) + ",height=" + std::to_string(_height) +
-                              " ! appsink name=appsink0 t. ! queue " +
-                              " ! videoconvert ! videoscale ! video/x-raw,format=RGBA,framerate=" +
-                              std::to_string(_fps) + "/1,width=" +
-                              std::to_string(_width) + ",height=" + std::to_string(_height) +
-                              " ! appsink name=appsink1";
+//    std::string pipelineStr = "v4l2src device=/dev/video0 ! tee name=t ! queue ";
+//               pipelineStr += " ! videoconvert ! videoscale ! video/x-raw,format=" +
+//                              format + ",framerate=" +
+//                              std::to_string(_fps) + "/1,width=" +
+//                              std::to_string(_width) + ",height=" + std::to_string(_height) +
+//                              " ! appsink name=appsink0 t. ! queue " +
+//                              " ! videoconvert ! videoscale ! video/x-raw,format=RGBA,framerate=" +
+//                              std::to_string(_fps) + "/1,width=" +
+//                              std::to_string(_width) + ",height=" + std::to_string(_height) +
+//                              " ! appsink name=appsink1";
+
+    std::string pipelineStr = "v4l2src device=/dev/video0 ! video/x-raw,width=";
+                pipelineStr += std::to_string(_width) + ",height=" + std::to_string(_height) +
+                               " ! tee name=t ! queue ! videoconvert ! video/x-raw,format=" + _publishFormat + " ! appsink name=appsink0 t. " +
+                               " ! queue ! videoconvert ! video/x-raw,format=RGBA ! appsink name=appsink1";
 
     //qDebug() << QString::fromStdString(pipelineStr);
 
@@ -96,6 +118,12 @@ bool DeviceVideoManager::Start(int fps, int width, int height, const std::string
     _bus_watch_id = gst_bus_add_watch(_bus, bus_call, this);
     gst_object_unref(_bus);
 
+    g_object_set (G_OBJECT (_appsinkPublish), "emit-signals", TRUE, NULL);
+    g_signal_connect (_appsinkPublish, "new-sample", G_CALLBACK (new_sample_publish), this);
+
+    g_object_set (G_OBJECT (_appsinkInternal), "emit-signals", TRUE, NULL);
+    g_signal_connect (_appsinkInternal, "new-sample", G_CALLBACK (new_sample_internal), this);
+
     std::thread t(&DeviceVideoManager::GstTimerFunc, this);
     t.detach();
 
@@ -104,11 +132,6 @@ bool DeviceVideoManager::Start(int fps, int width, int height, const std::string
 
 void DeviceVideoManager::Stop()
 {
-    if (_timer.isActive())
-    {
-        _timer.stop();
-    }
-
     if (_pipeline == NULL || _loop == NULL)
     {
         // to ensure the stop is not called several times
@@ -129,10 +152,7 @@ void DeviceVideoManager::Stop()
 
 void DeviceVideoManager::StartVideo()
 {
-    if (!_timer.isActive())
-    {
-        _timer.start();
-    }
+    emit videoStarted(_width, _height);
 }
 
 void DeviceVideoManager::QuitMainLoop()
@@ -145,12 +165,12 @@ void DeviceVideoManager::QuitMainLoop()
 
 void DeviceVideoManager::HandleError(QString error)
 {
-    if (_timer.isActive())
-    {
-        _timer.stop();
-    }
-
     emit videoError(error);
+}
+
+int DeviceVideoManager::RemainingRetryCount()
+{
+    return _retryCount--;
 }
 
 void DeviceVideoManager::OnTimer()
@@ -199,4 +219,10 @@ void DeviceVideoManager::PullBuffer(eVideoType type)
 
     gst_buffer_unmap(buffer, &map);
     gst_sample_unref(sample);
+}
+
+void DeviceVideoManager::Retry()
+{
+    Stop();
+    Start(cDefaultWidth, cDefaultHeight, _publishFormat);
 }

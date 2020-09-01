@@ -48,7 +48,7 @@ namespace teevid_sdk {
         virtual void Unsubscribe(long streamId) = 0;
 
         // Allows to change settings (e.g. video format) for the video from already subscribed stream - without stopping
-        virtual void SetSubscribedVideoSettings(long streamId, const VideoSettings& videoSettings) = 0;
+        virtual void SetStreamVideoSettings(long streamId, const VideoSettings& videoSettings) = 0;
 
         // Disconnect from room and stop receiving/sending media
         virtual bool Disconnect() = 0;
