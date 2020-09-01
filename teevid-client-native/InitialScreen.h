@@ -91,9 +91,10 @@ protected slots:
     void OnDummyVideoFrameTimer();
     void OnDummyAudioFrameTimer();
 
-    void OnPublishVideoFrame(unsigned char* data, size_t size, int stride);
-    void OnInternalVideoFrame(unsigned char* data, size_t size, int stride);
+    void OnPublishVideoFrame(unsigned char* data, long size, int stride);
+    void OnInternalVideoFrame(unsigned char* data, long size, int stride);
     void OnVideoError(QString message);
+    void OnVideoStarted(int width, int height);
 
     void OnAudioFrame(unsigned char* data, size_t size);
     void OnAudioError(QString message);
