@@ -96,7 +96,7 @@ protected slots:
     void OnVideoError(QString message);
     void OnVideoStarted(int width, int height);
 
-    void OnAudioFrame(unsigned char* data, size_t size);
+    void OnAudioFrame(unsigned char* data, long size);
     void OnAudioError(QString message);
 
 protected:

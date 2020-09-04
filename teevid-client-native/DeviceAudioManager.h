@@ -2,7 +2,6 @@
 #define DEVICEAUDIOMANAGER_H
 
 #include <QObject>
-#include <QTimer>
 
 #include <gst/gst.h>
 #include <gst/app/gstappsrc.h>
@@ -17,27 +16,22 @@ public:
     bool Start(int fps, int frames, int channels, const std::string& format);
     void Stop();
 
-    void StartAudio();
     void QuitMainLoop();
     void HandleError(QString error);
 
-signals:
-    void audioFrame(unsigned char* data, size_t size);
-    void audioError(QString message);
+    void PullBuffer();
 
-protected slots:
-    void OnTimer();
+signals:
+    void audioFrame(unsigned char* data, long size);
+    void audioError(QString message);
 
 protected:
     void GstTimerFunc();
-    void PullBuffer();
 
 private:
     int _fps = 30;
     int _frames = 48000;
     int _channels = 2;
-
-    QTimer _timer;
 
     GMainLoop* _loop = NULL;
     GstElement* _pipeline = NULL;

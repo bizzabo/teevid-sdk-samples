@@ -212,7 +212,7 @@ void InitialScreen::InitUI()
     connect(&_deviceVideoMgr, SIGNAL(videoError(QString)), this, SLOT(OnVideoError(QString)));
     connect(&_deviceVideoMgr, SIGNAL(videoStarted(int, int)), this, SLOT(OnVideoStarted(int,int)));
 
-    connect(&_deviceAudioMgr, SIGNAL(audioFrame(unsigned char*,size_t)), this, SLOT(OnAudioFrame(unsigned char*,size_t)));
+    connect(&_deviceAudioMgr, SIGNAL(audioFrame(unsigned char*,long)), this, SLOT(OnAudioFrame(unsigned char*,long)));
     connect(&_deviceAudioMgr, SIGNAL(audioError(QString)), this, SLOT(OnAudioError(QString)));
 }
 
@@ -725,7 +725,7 @@ void InitialScreen::OnVideoStarted(int width, int height)
     }
 }
 
-void InitialScreen::OnAudioFrame(unsigned char *data, size_t size)
+void InitialScreen::OnAudioFrame(unsigned char *data, long size)
 {
     if (teeVidClient_)
     {
@@ -735,7 +735,8 @@ void InitialScreen::OnAudioFrame(unsigned char *data, size_t size)
 
 void InitialScreen::OnAudioError(QString message)
 {
-
+    QMessageBox mb(QMessageBox::Critical, "Audio error", message);
+    mb.exec();
 }
 
 void InitialScreen::UnsubscribeFromVideo()

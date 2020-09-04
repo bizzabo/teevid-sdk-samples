@@ -2,7 +2,6 @@
 #define DEVICEVIDEOMANAGER_H
 
 #include <QObject>
-#include <QTimer>
 
 #include <gst/gst.h>
 #include <gst/app/gstappsrc.h>
@@ -45,9 +44,6 @@ signals:
     void internalVideoFrame(unsigned char* data, long size, int stride);
     void videoError(QString message);
     void videoStarted(int, int);
-
-protected slots:
-    void OnTimer();
 
 protected:
     void GstTimerFunc();
