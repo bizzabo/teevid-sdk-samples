@@ -27,6 +27,7 @@ static gboolean bus_call(GstBus *bus, GstMessage *msg, gpointer data)
         self->QuitMainLoop();
         if (self->RemainingRetryCount() > 0)
         {
+            // if there's remaining retries - try with smaller video resolution
             self->Retry();
         }
         else
@@ -171,12 +172,6 @@ void DeviceVideoManager::HandleError(QString error)
 int DeviceVideoManager::RemainingRetryCount()
 {
     return _retryCount--;
-}
-
-void DeviceVideoManager::OnTimer()
-{
-    PullBuffer(eVideoType::Publish);
-    PullBuffer(eVideoType::Internal);
 }
 
 void DeviceVideoManager::GstTimerFunc()

@@ -5,8 +5,6 @@
 
 DeviceAudioManager::DeviceAudioManager(QObject *parent) : QObject(parent)
 {
-    _timer.setSingleShot(false);
-    QObject::connect(&_timer, SIGNAL(timeout()), this, SLOT(OnTimer()));
 }
 
 static gboolean bus_call(GstBus *bus, GstMessage *msg, gpointer data)
@@ -34,12 +32,6 @@ static gboolean bus_call(GstBus *bus, GstMessage *msg, gpointer data)
         self->QuitMainLoop();
     } break;
 
-    case GST_MESSAGE_STEP_DONE:
-    case GST_MESSAGE_ASYNC_DONE:
-    {
-        self->StartAudio();
-    } break;
-
     default:
         break;
     }
@@ -47,13 +39,17 @@ static gboolean bus_call(GstBus *bus, GstMessage *msg, gpointer data)
     return TRUE;
 }
 
+static GstFlowReturn new_sample_audio (GstElement *sink, gpointer data)
+{
+    DeviceAudioManager *self = (DeviceAudioManager *)data;
+    self->PullBuffer();
+}
+
 bool DeviceAudioManager::Start(int fps, int frames, int channels, const std::string& format)
 {
     _fps = fps;
     _frames = frames;
     _channels = channels;
-
-    _timer.setInterval(1000 / _fps);
 
     gst_init(NULL, NULL);
 
@@ -95,6 +91,9 @@ bool DeviceAudioManager::Start(int fps, int frames, int channels, const std::str
     _bus_watch_id = gst_bus_add_watch(_bus, bus_call, this);
     gst_object_unref(_bus);
 
+    g_object_set (G_OBJECT (_appsink), "emit-signals", TRUE, NULL);
+    g_signal_connect (_appsink, "new-sample", G_CALLBACK (new_sample_audio), this);
+
     std::thread t(&DeviceAudioManager::GstTimerFunc, this);
     t.detach();
 
@@ -103,11 +102,6 @@ bool DeviceAudioManager::Start(int fps, int frames, int channels, const std::str
 
 void DeviceAudioManager::Stop()
 {
-    if (_timer.isActive())
-    {
-        _timer.stop();
-    }
-
     if (_pipeline == NULL || _loop == NULL)
     {
         // to ensure the stop is not called several times
@@ -126,14 +120,6 @@ void DeviceAudioManager::Stop()
     _bus_watch_id = 0;
 }
 
-void DeviceAudioManager::StartAudio()
-{
-    if (!_timer.isActive())
-    {
-        _timer.start();
-    }
-}
-
 void DeviceAudioManager::QuitMainLoop()
 {
     if (_loop != NULL)
@@ -144,17 +130,7 @@ void DeviceAudioManager::QuitMainLoop()
 
 void DeviceAudioManager::HandleError(QString error)
 {
-    if (_timer.isActive())
-    {
-        _timer.stop();
-    }
-
     emit audioError(error);
-}
-
-void DeviceAudioManager::OnTimer()
-{
-    PullBuffer();
 }
 
 void DeviceAudioManager::GstTimerFunc()
