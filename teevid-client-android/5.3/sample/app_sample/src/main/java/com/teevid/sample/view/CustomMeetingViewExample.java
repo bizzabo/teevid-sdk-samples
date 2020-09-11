@@ -2,6 +2,8 @@ package com.teevid.sample.view;
 
 import android.content.Context;
 import android.content.res.Configuration;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -19,6 +21,7 @@ import com.teevid.sdk.constant.CameraProvider;
 import com.teevid.sdk.view.BaseMeetingView;
 import com.teevid.sdk.view.VideoView;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class CustomMeetingViewExample extends BaseMeetingView {
@@ -33,6 +36,7 @@ public class CustomMeetingViewExample extends BaseMeetingView {
 
     private VideoViewContainer<VideoView> viewGrid;
     private VideoViewContainer<VideoView> viewList;
+    private final Handler handler = new Handler(Looper.getMainLooper());
     private int maxViewsInGrid = 4;
 
     public CustomMeetingViewExample(@NonNull Context context, @Nullable AttributeSet attrs) {
@@ -61,6 +65,7 @@ public class CustomMeetingViewExample extends BaseMeetingView {
 //        viewPictureInPicture.setOnClickListener(v -> {
 //
 //            long id = System.currentTimeMillis();
+//            String participantId = "" + id;
 //
 //            int color = Color.argb(255, minValue + random.nextInt(maxValue),
 //                    minValue + random.nextInt(maxValue),
@@ -71,38 +76,15 @@ public class CustomMeetingViewExample extends BaseMeetingView {
 //            log.d(TAG, "onClick: create " + view);
 //
 //            view.setOnClickListener(view1 -> {
-//                removeVideoView(id, true);
+//                log.d(TAG, "onClick: remove " + view);
+//                getRemoteVideoViews().remove(view);
+//                onRemoveVideoView(participantId, id, view);
 //            });
 //
 //            view.setBackgroundColor(color);
 //
-//            getVideoViews().put(id, view);
-//            onAddVideoView(id, view);
-//        });
-//        viewPictureInPicture.setOnLongClickListener(v -> {
-//            int color = Color.argb(255, minValue + random.nextInt(maxValue),
-//                    minValue + random.nextInt(maxValue),
-//                    minValue + random.nextInt(maxValue));
-//
-//            int visibility = viewScreenSharing.getVisibility();
-//            if (visibility == VISIBLE) {
-//                super.removeVideoView(0, false);
-//            } else {
-//                super.createRemoteVideoSink(0, false, videoSink -> {
-//                });
-//            }
-//
-//            viewScreenSharing.setBackgroundColor(color);
-//            return true;
-//        });
-//        viewScreenSharing.setOnClickListener(v -> {
-//            int visibility = viewScreenSharing.getVisibility();
-//            if (visibility == VISIBLE) {
-//                super.removeVideoView(0, false);
-//            } else {
-//                super.createRemoteVideoSink(0, false, videoSink -> {
-//                });
-//            }
+//            getRemoteVideoViews().add(view);
+//            onAddVideoView(participantId, id, view);
 //        });
     }
 
@@ -161,7 +143,7 @@ public class CustomMeetingViewExample extends BaseMeetingView {
     public VideoView getScreenSharingVideoView(String participantId) {
         viewScreenSharing.setVisibility(View.VISIBLE);
         viewPictureInPicture.setVisibility(View.GONE);
-        redistributeVideoViews(); // Move all views from grid to list
+        moveAllViewsToList();
         return viewScreenSharing;
     }
 
@@ -169,13 +151,14 @@ public class CustomMeetingViewExample extends BaseMeetingView {
     public void onRemoveScreenSharingVideoView(String participantId) {
         viewScreenSharing.setVisibility(View.GONE);
         viewPictureInPicture.setVisibility(View.VISIBLE);
-        redistributeVideoViews(); // Distribute view from list between grid and list
+        moveAllViewsToList();
     }
 
     @Override
     public void onAddVideoView(String participantId, long streamId, VideoView view) {
         Log.d(TAG, "onAddVideoView: " + participantId + ", " + streamId);
         int count = viewGrid.itemCount() + viewList.itemCount() + 1;
+        Log.d(TAG, "onAddVideoView: count " + count);
 
         if (getMode() == MODE_DEFAULT) {
             if (count <= maxViewsInGrid) {
@@ -196,7 +179,7 @@ public class CustomMeetingViewExample extends BaseMeetingView {
     public void onRemoveVideoView(String participantId, long streamId, VideoView view) {
         Log.d(TAG, "onRemoveVideoView: " + streamId);
 
-        int count = getVideoViewsCount();
+        int count = getRemoteVideoViews().size();
 
         if (viewList.contains(view)) {
             Log.d(TAG, "onRemoveVideoView: " + "remove from list");
@@ -253,24 +236,19 @@ public class CustomMeetingViewExample extends BaseMeetingView {
         viewList.addView(view);
     }
 
-    // Removes all views from grid and list and then re-adds them. This is required when screen
-    // share is on (all views from grid should be moved to list) and when screen sharing is off (views
-    // from list should be distributed between grid and list).
-    private void redistributeVideoViews() {
-        viewList.clear();
+    private void moveAllViewsToList() {
+        List<VideoView> gridViews = new ArrayList<>(viewGrid.getVideoViews());
         viewGrid.clear();
 
-        post(() -> {
-            List<VideoView> videoViews = getRemoteVideoViews();
-            if (videoViews.isEmpty() && getMode() != MODE_SCREEN_SHARE) {
-                // A situation when screen sharing view is removed along with the last video view
-                makeLocalVideoFullscreen();
-            } else {
-                for (VideoView videoView : getRemoteVideoViews()) {
-                    onAddVideoView(null, 0, videoView);
-                }
-            }
-        });
+        for (VideoView gridVideoView : gridViews) {
+            onAddVideoView(null, 0, gridVideoView);
+        }
+
+        List<VideoView> videoViews = getRemoteVideoViews();
+        if (videoViews.isEmpty() && getMode() != MODE_SCREEN_SHARE) {
+            // A situation when screen sharing view is removed along with the last video view
+            makeLocalVideoFullscreen();
+        }
     }
 
     private void makeLocalVideoSmall() {

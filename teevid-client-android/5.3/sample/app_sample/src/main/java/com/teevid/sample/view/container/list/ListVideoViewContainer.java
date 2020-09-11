@@ -11,6 +11,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.teevid.sample.view.container.VideoViewContainer;
 import com.teevid.sdk.view.VideoView;
 
+import java.util.List;
+
 public class ListVideoViewContainer extends RecyclerView implements VideoViewContainer<VideoView> { // Also known as "Carousel"
 
     private ListViewAdapter adapter;
@@ -53,6 +55,11 @@ public class ListVideoViewContainer extends RecyclerView implements VideoViewCon
     @Override
     public VideoView get(int index) {
         return adapter.get(index);
+    }
+
+    @Override
+    public List<VideoView> getVideoViews() {
+        return adapter.getVideoViews();
     }
 
     @Override

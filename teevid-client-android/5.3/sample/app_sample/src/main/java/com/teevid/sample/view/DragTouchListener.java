@@ -9,7 +9,8 @@ import android.view.ViewGroup;
 
 public class DragTouchListener implements View.OnTouchListener {
 
-    public static final int DURATION_ANIMATION_CORNER = 500;
+    private static final int DURATION_ANIMATION_CORNER = 500;
+    private static final int CLICK_THRESHOLD = 100;
 
     private final View viewDrag;
     private boolean enabled = true;
@@ -42,6 +43,10 @@ public class DragTouchListener implements View.OnTouchListener {
                 return true;
             }
             case MotionEvent.ACTION_UP: {
+                long duration = event.getEventTime() - event.getDownTime();
+                if (duration < CLICK_THRESHOLD) {
+                    v.performClick();
+                }
                 onActionUp();
                 return true;
             }

@@ -1,134 +1,192 @@
 package com.teevid.sample.view.container.grid;
 
 import android.content.res.Configuration;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.BaseAdapter;
-import android.widget.GridView;
 
+import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.teevid.sample.R;
 import com.teevid.sdk.view.VideoView;
 
 import java.util.ArrayList;
 import java.util.List;
 
-class GridViewAdapter extends BaseAdapter {
+public class GridViewAdapter extends RecyclerView.Adapter<GridViewAdapter.ViewViewHolder> {
 
+    private RecyclerView recyclerView;
+    private GridLayoutManager gridLayoutManager;
     private List<VideoView> views = new ArrayList<>();
     private int viewHeight;
-    private GridView gridView;
+    private int viewWidth;
     private int orientation = Configuration.ORIENTATION_PORTRAIT;
 
-    private Runnable commandUpdate = () -> {
-        updateGridViewParameters(orientation == Configuration.ORIENTATION_PORTRAIT);
-        notifyDataSetChanged();
-    };
+    public GridViewAdapter(RecyclerView recyclerView) {
+        this.recyclerView = recyclerView;
 
-    public GridViewAdapter(GridView gridView) {
-        this.gridView = gridView;
+        RecyclerView.LayoutManager layoutManager = recyclerView.getLayoutManager();
+        if (layoutManager instanceof GridLayoutManager) {
+            this.gridLayoutManager = (GridLayoutManager) layoutManager;
+        } else {
+            throw new RuntimeException("GridLayoutManager is not set to RecyclerView");
+        }
+    }
+
+    @NonNull
+    @Override
+    public ViewViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View view = LayoutInflater.from(parent.getContext())
+                .inflate(R.layout.item_grid_video_holder, parent, false);
+
+        return new GridViewAdapter.ViewViewHolder(view);
+    }
+
+    @Override
+    public void onBindViewHolder(@NonNull ViewViewHolder holder, int position) {
+        VideoView videoView = views.get(position);
+        ViewGroup viewGroup = ((ViewGroup) holder.itemView);
+
+        ViewGroup parent = (ViewGroup) videoView.getParent();
+        if (parent != null) {
+            parent.removeView(videoView);
+        }
+
+        viewGroup.addView(videoView);
+
+        ViewGroup.LayoutParams layoutParams = viewGroup.getLayoutParams();
+        layoutParams.width = viewWidth;
+        layoutParams.height = viewHeight;
+        viewGroup.setLayoutParams(layoutParams);
+    }
+
+    @Override
+    public int getItemCount() {
+        return views.size();
     }
 
     public void addView(VideoView view) {
-        view.setLayoutParams(new GridView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
-                viewHeight));
-
         views.add(view);
 
-        updateViews();
+        calculateViewSizeAndColumns();
+        applySizeToViews();
+
+        notifyItemInserted(views.size());
     }
 
     public void removeView(VideoView view) {
-        view.setVisibility(View.GONE);
+        int position = views.indexOf(view);
         views.remove(view);
-        updateViews();
-    }
 
-    public void clear() {
-        views.clear();
-        updateViews();
+        calculateViewSizeAndColumns();
+        applySizeToViews();
+
+        notifyItemRemoved(position);
     }
 
     public boolean contains(VideoView view) {
         return views.contains(view);
     }
 
+    public boolean isEmpty() {
+        return getItemCount() == 0;
+    }
+
     public VideoView get(int index) {
         return views.get(index);
     }
 
-    public void setLayoutMode(int orientation) {
+    public void setLayoutOrientationMode(int orientation) {
         this.orientation = orientation;
+        calculateViewSizeAndColumns();
+        applySizeToViews();
     }
 
-    public void updateViews() {
-        gridView.getHandler().removeCallbacks(commandUpdate);
-        gridView.post(commandUpdate);
+    public void clear() {
+        int count = views.size();
+        views.clear();
+
+        notifyItemRangeRemoved(0, count);
     }
 
-    private void updateGridViewParameters(boolean portrait) {
-        int viewCount = getCount();
+    public void onSizeChanged() {
+        calculateViewSizeAndColumns();
+        applySizeToViews();
+    }
+
+    public List<VideoView> getItems() {
+        return views;
+    }
+
+    private void calculateViewSizeAndColumns() {
+        int viewCount = views.size();
         int numColumns;
         int viewHeight;
+        int viewWidth;
+        boolean portrait = orientation == Configuration.ORIENTATION_PORTRAIT;
 
         if (portrait) {
-            if (viewCount == 0) {
+            if (viewCount == 0) { // 0
                 numColumns = 1;
-                viewHeight = gridView.getHeight();
-            } else if (viewCount <= 3) {
+                viewWidth = recyclerView.getWidth();
+                viewHeight = recyclerView.getHeight();
+            } else if (viewCount <= 3) { // 1-3
                 numColumns = 1;
-                viewHeight = gridView.getHeight() / viewCount;
-            } else {
+                viewWidth = recyclerView.getWidth();
+                viewHeight = recyclerView.getHeight() / viewCount;
+            } else { // 4+
                 numColumns = 2;
-                viewHeight = gridView.getHeight() / 2;
+                viewWidth = recyclerView.getWidth() / 2;
+                viewHeight = recyclerView.getHeight() / 2;
             }
         } else {
-            if (viewCount == 0) {
+            if (viewCount == 0) { // 0
                 numColumns = 1;
-                viewHeight = gridView.getHeight();
-            } else if (viewCount <= 3) {
+                viewWidth = recyclerView.getWidth();
+                viewHeight = recyclerView.getHeight();
+            } else if (viewCount <= 3) { // 1-3
                 numColumns = viewCount;
-                viewHeight = gridView.getHeight();
-            } else {
+                viewWidth = recyclerView.getWidth() / viewCount;
+                viewHeight = recyclerView.getHeight();
+            } else { // 4+
                 numColumns = 2;
-                viewHeight = gridView.getHeight() / 2;
+                viewWidth = recyclerView.getWidth() / 2;
+                viewHeight = recyclerView.getHeight() / 2;
             }
         }
 
-        if (numColumns != gridView.getNumColumns()) {
-            gridView.setNumColumns(numColumns);
+        if (numColumns != gridLayoutManager.getSpanCount()) {
+            gridLayoutManager.setSpanCount(numColumns);
         }
 
-        if (viewCount == 0 && gridView.getVisibility() == View.VISIBLE) {
-            gridView.setVisibility(View.GONE);
-        } else if (viewCount != 0 && gridView.getVisibility() == View.GONE) {
-            gridView.setVisibility(View.VISIBLE);
+        if (viewCount == 0 && recyclerView.getVisibility() == View.VISIBLE) {
+            recyclerView.setVisibility(View.GONE);
+        } else if (viewCount != 0 && recyclerView.getVisibility() == View.GONE) {
+            recyclerView.setVisibility(View.VISIBLE);
         }
 
         this.viewHeight = viewHeight;
+        this.viewWidth = viewWidth;
     }
 
-    @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
-        View view = views.get(position);
-
-        ViewGroup.LayoutParams layoutParams = view.getLayoutParams();
-        layoutParams.height = viewHeight;
-        view.setLayoutParams(layoutParams);
-
-        return view;
+    private void applySizeToViews() {
+        for (VideoView view : views) {
+            ViewGroup parent = (ViewGroup) view.getParent();
+            if (parent != null) {
+                ViewGroup.LayoutParams layoutParams = parent.getLayoutParams();
+                layoutParams.width = viewWidth;
+                layoutParams.height = viewHeight;
+                parent.setLayoutParams(layoutParams);
+            }
+        }
     }
 
-    @Override
-    public int getCount() {
-        return views.size();
-    }
+    static class ViewViewHolder extends RecyclerView.ViewHolder {
 
-    @Override
-    public Object getItem(int position) {
-        return views.get(position);
-    }
-
-    @Override
-    public long getItemId(int position) {
-        return position;
+        public ViewViewHolder(@NonNull View itemView) {
+            super(itemView);
+        }
     }
 }

@@ -9,13 +9,13 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.teevid.sdk.R;
+import com.teevid.sample.R;
 import com.teevid.sdk.view.VideoView;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class ListViewAdapter extends RecyclerView.Adapter {
+public class ListViewAdapter extends RecyclerView.Adapter<ListViewAdapter.ViewViewHolder> {
 
     private List<VideoView> views = new ArrayList<>();
     private RecyclerView recyclerView;
@@ -83,13 +83,13 @@ public class ListViewAdapter extends RecyclerView.Adapter {
         layoutManager.setOrientation(recyclerOrientation);
     }
 
-    public List<VideoView> getData() {
+    public List<VideoView> getVideoViews() {
         return views;
     }
 
     @NonNull
     @Override
-    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public ViewViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.item_list_video_holder, parent, false);
 
@@ -97,7 +97,7 @@ public class ListViewAdapter extends RecyclerView.Adapter {
     }
 
     @Override
-    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull ViewViewHolder holder, int position) {
         VideoView videoView = views.get(position);
         ViewGroup viewGroup = ((ViewGroup) holder.itemView);
 
@@ -114,7 +114,7 @@ public class ListViewAdapter extends RecyclerView.Adapter {
         return views.size();
     }
 
-    private static class ViewViewHolder extends RecyclerView.ViewHolder {
+    static class ViewViewHolder extends RecyclerView.ViewHolder {
 
         public ViewViewHolder(@NonNull View itemView) {
             super(itemView);

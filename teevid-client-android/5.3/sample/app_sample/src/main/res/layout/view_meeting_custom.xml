@@ -14,7 +14,9 @@
             android:id="@+id/view_grid"
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_weight="1" />
+            android:layout_weight="1"
+            android:background="@color/colorMeetingDefault"
+            tools:listitem="@layout/item_grid_video_holder" />
 
         <com.teevid.sdk.view.VideoView
             android:id="@+id/view_screen_share"
@@ -29,7 +31,9 @@
             android:id="@+id/view_list"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="end|bottom" />
+            android:layout_gravity="end|bottom"
+            android:background="@color/colorMeetingDefault"
+            tools:listitem="@layout/item_list_video_holder" />
 
     </LinearLayout>
 

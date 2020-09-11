@@ -2,24 +2,45 @@ package com.teevid.sample.view.container.grid;
 
 import android.content.Context;
 import android.util.AttributeSet;
-import android.widget.GridView;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.teevid.sample.view.container.VideoViewContainer;
 import com.teevid.sdk.view.VideoView;
 
-public class GridVideoViewContainer extends GridView implements VideoViewContainer<VideoView> {
+import java.util.List;
+
+public class GridVideoViewContainer extends RecyclerView implements VideoViewContainer<VideoView> {
 
     private GridViewAdapter adapter;
 
-    public GridVideoViewContainer(Context context, AttributeSet attrs) {
+    public GridVideoViewContainer(@NonNull Context context, @Nullable AttributeSet attrs) {
         this(context, attrs, 0);
     }
 
-    public GridVideoViewContainer(Context context, AttributeSet attrs, int defStyleAttr) {
+    public GridVideoViewContainer(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
+
+        GridLayoutManager layoutManager = new GridLayoutManager(context, 1) {
+            @Override
+            public boolean canScrollVertically() {
+                return false;
+            }
+        };
+        setLayoutManager(layoutManager);
+        setItemAnimator(null); // Disable animation
 
         adapter = new GridViewAdapter(this);
         setAdapter(adapter);
+    }
+
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        adapter.onSizeChanged();
     }
 
     @Override
@@ -48,8 +69,13 @@ public class GridVideoViewContainer extends GridView implements VideoViewContain
     }
 
     @Override
+    public List<VideoView> getVideoViews() {
+        return adapter.getItems();
+    }
+
+    @Override
     public void setLayoutOrientationMode(int orientation) {
-        adapter.setLayoutMode(orientation);
+        adapter.setLayoutOrientationMode(orientation);
     }
 
     @Override
@@ -59,12 +85,6 @@ public class GridVideoViewContainer extends GridView implements VideoViewContain
 
     @Override
     public int itemCount() {
-        return adapter.getCount();
-    }
-
-    @Override
-    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-        super.onSizeChanged(w, h, oldw, oldh);
-        adapter.updateViews();
+        return adapter.getItemCount();
     }
 }
