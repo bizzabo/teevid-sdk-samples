@@ -91,7 +91,7 @@ bool DeviceVideoManager::Start(int width, int height, const std::string &format)
                                " ! tee name=t ! queue ! videoconvert ! video/x-raw,format=" + _publishFormat + " ! appsink name=appsink0 t. " +
                                " ! queue ! videoconvert ! video/x-raw,format=RGBA ! appsink name=appsink1";
 
-    //qDebug() << QString::fromStdString(pipelineStr);
+    qDebug() << "Video pipeline:\n" << QString::fromStdString(pipelineStr);
 
     _pipeline = gst_parse_launch(pipelineStr.c_str(), NULL);
     if (_pipeline == NULL)

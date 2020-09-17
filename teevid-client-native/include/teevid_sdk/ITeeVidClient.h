@@ -44,6 +44,9 @@ namespace teevid_sdk {
 
         // Each stream which return by OnStreamAdded callback can e subscribed by client's application
         // Subscriber provides callback interface which wil be used to deliver media data
+
+        // videoSettings parameter contains the resolution to which incoming video should be resized
+        // to prevent resizing (receiving video as is) videoWidth and videoHeight fields in videoSettings should be set to 0
         virtual void Subscribe(long streamId, const VideoSettings& videoSettings, IStreamSubscriber* streamSubscriber) = 0;
         virtual void Unsubscribe(long streamId) = 0;
 

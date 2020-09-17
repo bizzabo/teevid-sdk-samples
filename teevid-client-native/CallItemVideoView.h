@@ -2,6 +2,7 @@
 #define CALLITEMVIDEOVIEW_H
 
 #include "teevid_sdk/IStreamSubscriber.h"
+#include "teevid_sdk/MediaSettings.h"
 
 #include <QFrame>
 
@@ -30,6 +31,9 @@ public:
     void setStreamId(long id);
     long getStreamId() const;
 
+    void setVideoFormat(VideoFormatType type);
+    VideoFormatType getVideoFormat() const;
+
     void setImage(QImage image);
     void clear();
 
@@ -41,7 +45,7 @@ public:
     void setAudioSampleRate(int rate);
 
     // IStreamSubscriber
-    virtual void OnVideoFrame(unsigned char *data, size_t size, size_t stride) override;
+    virtual void OnVideoFrame(unsigned char *data, size_t size, size_t stride, VideoOrientation orientation) override;
     virtual void OnAudioFrame(unsigned char *data, size_t size, int channels, int bps) override;
     virtual void OnVideoSizeChanged(const std::string& participantId, const Resolution& res) override;
 
@@ -50,6 +54,8 @@ public:
 protected:
     void paintEvent(QPaintEvent *event);
     bool event(QEvent *event);
+
+    size_t GetWidthFromStride (VideoFormatType videoFormatType, size_t stride);
 
 signals:
     void lowQualitySelected(long);
@@ -74,6 +80,8 @@ private:
 
     bool _audioMuted = false;
     bool _videoMuted = false;
+
+    VideoFormatType _videoFormatType = kRGBA;
 
     int _audioSampleRate = 48000;
     std::atomic<bool> _audioInitialized;

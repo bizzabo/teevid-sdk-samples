@@ -45,7 +45,12 @@ InitialScreen::InitialScreen(QWidget *parent) : QWidget(parent), ui(new Ui::Init
     //InitSDK();
 
     _publishVideoSettings.videoFormatType = VideoFormatType::kUYVY;
+
     _subscribeVideoSettings.videoFormatType = VideoFormatType::kRGBA;
+
+    // values to prevent video resizing
+    _subscribeVideoSettings.videoWidth = 0;
+    _subscribeVideoSettings.videoHeight = 0;
 }
 
 InitialScreen::~InitialScreen()
@@ -267,6 +272,9 @@ void InitialScreen::OnRoomConnected(const RoomParameters &roomParameters)
     _publishVideoSettings.videoWidth = width;
     _publishVideoSettings.videoHeight = height;
 
+    // BE AWARE
+    // for now incoming video is set to be resized to the resolution from the room settings
+    // to prevent resizing just comment (or remove these 2 lines below):
     _subscribeVideoSettings.videoWidth = width;
     _subscribeVideoSettings.videoHeight = height;
 
@@ -298,6 +306,7 @@ void InitialScreen::OnStreamAdded (long streamId, const std::string& name, const
         {
             callItem->setStreamId(streamId);
             callItem->setParticipantOrder(order);
+            callItem->setVideoFormat(kRGBA);
 
             teeVidClient_->Subscribe(streamId, _subscribeVideoSettings, callItem);
         }
@@ -647,7 +656,7 @@ void InitialScreen::OnDummyVideoFrameTimer()
         if (ui->checkBoxLocalVideo->isChecked())
         {
             // only local video, local audoi should not be rendered
-            ui->frameCallPart_Local->OnVideoFrame(video_frame->GetData(), video_frame->GetSize(), stride);
+            ui->frameCallPart_Local->OnVideoFrame(video_frame->GetData(), video_frame->GetSize(), stride, VideoOrientation::kOrientationIdentity);
         }
 
         teeVidClient_->PutVideoFrame(video_frame->GetData(), video_frame->GetSize(), stride);
@@ -686,7 +695,7 @@ void InitialScreen::OnPublishVideoFrame(unsigned char *data, long size, int stri
 
 void InitialScreen::OnInternalVideoFrame(unsigned char *data, long size, int stride)
 {
-    ui->frameCallPart_Local->OnVideoFrame(data, size, stride);
+    ui->frameCallPart_Local->OnVideoFrame(data, size, stride, VideoOrientation::kOrientationIdentity);
 }
 
 void InitialScreen::OnVideoError(QString message)
