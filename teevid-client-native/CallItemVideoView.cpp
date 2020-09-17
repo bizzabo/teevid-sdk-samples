@@ -15,10 +15,6 @@
 const int cDummyVideoFrameWidth = 1920;
 const int cDummyVideoFrameHeight = 1080;
 
-// each pixel is coded via 4 bytes: red, green, blue and alpha channel
-const int cBytesPerPixel = 4;
-const size_t cDummyVideoSize = cDummyVideoFrameWidth * cDummyVideoFrameHeight * cBytesPerPixel;
-
 CallItemVideoView::CallItemVideoView(QWidget *parent) :
     QFrame(parent),
     ui(new Ui::CallItemVideoView),
@@ -66,6 +62,16 @@ long CallItemVideoView::getStreamId() const
     return _streamId;
 }
 
+void CallItemVideoView::setVideoFormat(VideoFormatType type)
+{
+    _videoFormatType = type;
+}
+
+VideoFormatType CallItemVideoView::getVideoFormat() const
+{
+    return _videoFormatType;
+}
+
 void printLog(const char* text)
 {    
     char buffer[26];
@@ -87,10 +93,10 @@ void printLog(const char* text)
     printf("%s.%03d: %s\n", buffer, millisec, text);
 
 }
-void CallItemVideoView::OnVideoFrame(unsigned char *data, size_t size, size_t stride)
+void CallItemVideoView::OnVideoFrame(unsigned char *data, size_t size, size_t stride, VideoOrientation orientation)
 {
     // TODO: check whether this could be parallel
-    if (_videoMuted || !data)
+    if (_videoMuted || !data || stride <= 0)
     {
         //printf("DEBUG. OnVideoFrame: _videoMuted || !data");
         return;
@@ -98,15 +104,16 @@ void CallItemVideoView::OnVideoFrame(unsigned char *data, size_t size, size_t st
 
     std::lock_guard<std::mutex> lock(mt_video);
 
-    int width = stride / cBytesPerPixel;
+    int width = GetWidthFromStride(_videoFormatType, stride);
     int height = size / stride;
 
     if (_streamId > 0)
     {
         QImage image(data, width, height, stride, QImage::Format_RGBA8888);
+
         image = image.scaled(ui->frameContainer->size());
         setImage(image);
-        QString sizeStr = QString::number(width) + "x" + QString::number(height);
+        QString sizeStr = QString::number(width) + "x" + QString::number(height) + ", orient: " + QString::number((int) orientation) ;
         ui->labelSize->setText(sizeStr);
     }
     else
@@ -267,4 +274,37 @@ void CallItemVideoView::onAudioStarted(int channels, int bps)
         _audioBuffer = _audioOutput->start();
         _audioInitialized = true;
     }
+}
+
+size_t CallItemVideoView::GetWidthFromStride (VideoFormatType videoFormatType, size_t stride)
+{
+    if (stride <= 0)
+        return 0;
+
+    int width;
+
+    switch (videoFormatType)
+    {
+    case kGRAY8:
+        width = stride;
+        break;
+    case kUYVY:
+    case kYUY2:
+    case kYVYU:
+        width = stride / 2;
+        break;
+    case kI420:
+    case kI420_10LE:
+    case kNV12:
+        // if width is impair the stride should contain 2 "odd bytes", multipying by 2 and integer division by 3 gives 1
+        width = stride * 2 / 3;
+        break;
+    case kBGRx:
+    case kRGBA:
+    default:
+        width = stride / 4;
+        break;
+    }
+
+    return width;
 }

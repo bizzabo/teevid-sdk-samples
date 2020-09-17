@@ -58,7 +58,7 @@ bool DeviceAudioManager::Start(int fps, int frames, int channels, const std::str
                               std::to_string(_frames) + ",channels=" + std::to_string(_channels) +
                               " ! audiobuffersplit name=splitter ! appsink name=appsink_audio";
 
-    //qDebug() << QString::fromStdString(pipelineStr);
+    qDebug() << "Audio pipeline:\n" << QString::fromStdString(pipelineStr);
 
     _pipeline = gst_parse_launch(pipelineStr.c_str(), NULL);
     if (_pipeline == NULL)

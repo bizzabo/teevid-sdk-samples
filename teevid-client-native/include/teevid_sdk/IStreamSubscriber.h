@@ -7,14 +7,20 @@
 
 #include <string>
 #include "Resolution.h"
+#include "VideoOrientation.h"
 
 namespace teevid_sdk
 {
     struct IStreamSubscriber {
       // Each stream (including local one) is generating video frames. Each new frame is comming by this
-      // callback method. It contains pointer to allocated buffer with data, it's size and stride
+      // callback method. It contains pointer to allocated buffer with data, it's size and stride, and a video orientation
       // Format of video is RGB24 by default and can be changed by MediaSettings and Configure()
-      virtual void OnVideoFrame (unsigned char *data, size_t size, size_t stride) = 0;
+      // Orientation values can be:
+      // 0 - identity,
+      // 1 - rotate 90 degrees right
+      // 2 - rotate 180 degrees
+      // 3 - rotate 90 degrees left
+      virtual void OnVideoFrame (unsigned char *data, size_t size, size_t stride, VideoOrientation orientation) = 0;
 
       // Each remote stream is generating audio frames. In PCM format
       virtual void OnAudioFrame (unsigned char *data, size_t size, int channels, int bps) = 0;
