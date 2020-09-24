@@ -247,12 +247,12 @@ void InitialScreen::setFriendsData(std::vector<Contact> friends)
 
 bool InitialScreen::isMicrophoneOn() const
 {
-    return ui->btnMicrophone->property("enabled").toBool();
+    return ui->btnMicrophone->property("turn_on").toBool();
 }
 
 bool InitialScreen::isCameraOn() const
 {
-    return ui->btnCamera->property("enabled").toBool();
+    return ui->btnCamera->property("turn_on").toBool();
 }
 
 void InitialScreen::OnConnected (long streamId, const std::string& invitationToken)
@@ -476,7 +476,9 @@ void InitialScreen::onInvitePressed()
     int accessPin = _connectParamsDialog->GetAccessPin();
     try
     {
-        teeVidClient_->ConnectTo(room, user, password, accessPin, 0);
+        bool sendAudio = isMicrophoneOn();
+        bool sendVideo = isCameraOn();
+        teeVidClient_->ConnectTo(room, user, password, accessPin, 0, sendAudio, sendVideo);
     }
     catch (std::exception& e)
     {
@@ -579,7 +581,9 @@ void InitialScreen::onRoomSubmitted(const QString &caller, const QString &invita
         {
             std::string user = _connectParamsDialog->GetUser().toStdString();
             std::string password = _connectParamsDialog->GetPassword().toStdString();
-            teeVidClient_->ConnectTo(inviteParams.token_, inviteParams.room_, user, password);
+            bool sendAudio = isMicrophoneOn();
+            bool sendVideo = isCameraOn();
+            teeVidClient_->ConnectTo(inviteParams.token_, inviteParams.room_, user, password, sendAudio, sendVideo);
         }
         catch (std::exception& e)
         {
