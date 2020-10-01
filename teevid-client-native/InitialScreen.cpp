@@ -44,7 +44,7 @@ InitialScreen::InitialScreen(QWidget *parent) : QWidget(parent), ui(new Ui::Init
     InitUI();
     //InitSDK();
 
-    _publishVideoSettings.videoFormatType = VideoFormatType::kUYVY;
+    _publishVideoSettings.videoFormatType = VideoFormatType::kI420;
 
     _subscribeVideoSettings.videoFormatType = VideoFormatType::kRGBA;
 
@@ -283,7 +283,7 @@ void InitialScreen::OnRoomConnected(const RoomParameters &roomParameters)
         TeeVidSettings settings;
         settings.media_settings.audioSettings.audioChannels = kStereo;
         settings.media_settings.audioSettings.audioBpsType = kS16LE;
-        settings.media_settings.audioSettings.audioSampleRate = _audioParams.GetSampleRate();
+        settings.media_settings.audioSettings.audioSampleRate = cAudioSampleRate;
         settings.media_settings.videoSettings.videoFormatType = _publishVideoSettings.videoFormatType;
         settings.media_settings.videoSettings.videoWidth = width;
         settings.media_settings.videoSettings.videoHeight = height;
@@ -729,7 +729,7 @@ void InitialScreen::OnVideoStarted(int width, int height)
         TeeVidSettings settings;
         settings.media_settings.audioSettings.audioChannels = kStereo;
         settings.media_settings.audioSettings.audioBpsType = kS16LE;
-        settings.media_settings.audioSettings.audioSampleRate = _audioParams.GetSampleRate();
+        settings.media_settings.audioSettings.audioSampleRate = cAudioSampleRate;
         settings.media_settings.videoSettings.videoFormatType = _publishVideoSettings.videoFormatType;
         settings.media_settings.videoSettings.videoWidth = _publishVideoSettings.videoWidth;
         settings.media_settings.videoSettings.videoHeight = _publishVideoSettings.videoHeight;
