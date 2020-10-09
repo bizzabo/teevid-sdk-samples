@@ -86,13 +86,13 @@ bool DeviceVideoManager::Start(int width, int height, const std::string &format)
 //                              std::to_string(_width) + ",height=" + std::to_string(_height) +
 //                              " ! appsink name=appsink1";
 
-    std::string pipelineStr = "v4l2src device=/dev/video0 ! video/x-raw,width=";
+    std::string pipelineStr = "v4l2src device=/dev/video0 io-mode=2 ! video/x-raw,width=";
                     pipelineStr += std::to_string(_width) + ",height=" + std::to_string(_height) +
                     " ! tee name=t ! queue leaky=2 max-size-bytes=995328000 ! videoconvert ! video/x-raw,format=" + _publishFormat +
                     " ! appsink drop=true max-buffers=60 name=appsink0 t. " +
                     " ! queue leaky=2 max-size-bytes=248832000 ! videoconvert ! video/x-raw,format=RGBA ! appsink drop=true max-buffers=15 name=appsink1";
 
-    qDebug() << "Video pipeline:\n" << QString::fromStdString(pipelineStr);
+    qDebug() << QString::fromStdString(pipelineStr);
 
     _pipeline = gst_parse_launch(pipelineStr.c_str(), NULL);
     if (_pipeline == NULL)
