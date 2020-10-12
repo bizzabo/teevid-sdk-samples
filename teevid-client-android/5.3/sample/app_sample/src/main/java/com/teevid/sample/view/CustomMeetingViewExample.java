@@ -2,8 +2,6 @@ package com.teevid.sample.view;
 
 import android.content.Context;
 import android.content.res.Configuration;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -51,7 +49,7 @@ public class CustomMeetingViewExample extends BaseMeetingView {
         layoutLinear = findViewById(R.id.layout_linear);
 
         viewPictureInPicture.setZOrderMediaOverlay(true);
-        viewPictureInPicture.setEnableHardwareScaler(true);
+        viewScreenSharing.setZOrderMediaOverlay(true);
         dragTouchListener = new DragTouchListener(viewPictureInPicture);
         viewPictureInPicture.setOnTouchListener(dragTouchListener);
         makeLocalVideoFullscreen();
@@ -89,7 +87,7 @@ public class CustomMeetingViewExample extends BaseMeetingView {
     }
 
     @Override
-    public void onOrientationChanged(int orientation) {
+    protected void onOrientationChanged(int orientation) {
         dragTouchListener.onOrientationChanged();
         viewGrid.setLayoutOrientationMode(orientation);
         viewList.setLayoutOrientationMode(orientation);
@@ -135,12 +133,12 @@ public class CustomMeetingViewExample extends BaseMeetingView {
     }
 
     @Override
-    public VideoView getLocalVideoView() {
+    protected VideoView getLocalVideoView() {
         return viewPictureInPicture;
     }
 
     @Override
-    public VideoView getScreenSharingVideoView(ParticipantInfo participantInfo) {
+    protected VideoView getScreenSharingVideoView(ParticipantInfo participantInfo) {
         Log.d(TAG, "getScreenSharingVideoView: " + participantInfo);
         viewScreenSharing.setVisibility(View.VISIBLE);
         viewPictureInPicture.setVisibility(View.GONE);
@@ -149,7 +147,7 @@ public class CustomMeetingViewExample extends BaseMeetingView {
     }
 
     @Override
-    public void onRemoveScreenSharingVideoView(ParticipantInfo participantInfo) {
+    protected void onRemoveScreenSharingVideoView(ParticipantInfo participantInfo) {
         Log.d(TAG, "onRemoveScreenSharingVideoView: " + participantInfo);
         viewScreenSharing.setVisibility(View.GONE);
         viewPictureInPicture.setVisibility(View.VISIBLE);
@@ -157,7 +155,7 @@ public class CustomMeetingViewExample extends BaseMeetingView {
     }
 
     @Override
-    public void onAddVideoView(VideoView view, ParticipantInfo participantInfo) {
+    protected void onAddVideoView(VideoView view, ParticipantInfo participantInfo) {
         Log.d(TAG, "onAddVideoView: " + participantInfo);
         int count = viewGrid.itemCount() + viewList.itemCount() + 1;
         Log.d(TAG, "onAddVideoView: count " + count);
@@ -178,8 +176,8 @@ public class CustomMeetingViewExample extends BaseMeetingView {
     }
 
     @Override
-    public void onRemoveVideoView(VideoView view, ParticipantInfo participantInfo) {
-        Log.d(TAG, "onRemoveVideoView: " + participantInfo);
+    protected void onRemoveVideoView(VideoView view, ParticipantInfo participantInfo) {
+        Log.d(TAG, "onRemoveVideoView: " + participantInfo + ", " + view);
 
         int count = getRemoteVideoViews().size();
 
@@ -191,7 +189,7 @@ public class CustomMeetingViewExample extends BaseMeetingView {
             viewGrid.removeView(view);
 
             // If there's any view in list, move the first one to grid
-            if (!viewList.isEmpty()) {
+            if (!viewList.isEmpty() && getMode() != MODE_SCREEN_SHARE) {
                 VideoView listChildView = viewList.get(0);
                 viewList.removeView(listChildView);
 
@@ -204,22 +202,22 @@ public class CustomMeetingViewExample extends BaseMeetingView {
     }
 
     @Override
-    public void onShowLocalVideo() {
+    protected void onShowLocalVideo() {
         viewPictureInPicture.setVisibility(View.VISIBLE);
     }
 
     @Override
-    public void onHideLocalVideo() {
+    protected void onHideLocalVideo() {
         viewPictureInPicture.setVisibility(View.GONE);
     }
 
     @Override
-    public void onSetMaxViewsInGrid(int maxViewsInGrid) {
+    protected void onSetMaxViewsInGrid(int maxViewsInGrid) {
         this.maxViewsInGrid = maxViewsInGrid;
     }
 
     @Override
-    public void onLocalVideoCameraChanged(@CameraProvider int cameraProvider) {
+    protected void onLocalVideoCameraChanged(@CameraProvider int cameraProvider) {
         Log.d(TAG, "onLocalVideoCameraChanged: " + cameraProvider);
         if (CameraProvider.FRONT_FACING == cameraProvider) {
             viewPictureInPicture.setMirror(true);
@@ -229,16 +227,17 @@ public class CustomMeetingViewExample extends BaseMeetingView {
     }
 
     private void addViewToGridViewContainer(VideoView view) {
-        Log.d(TAG, "addViewToGridView");
+        Log.d(TAG, "addViewToGridViewContainer: " + view);
         viewGrid.addView(view);
     }
 
     private void addViewToListViewContainer(VideoView view) {
-        Log.d(TAG, "addViewToListView");
+        Log.d(TAG, "addViewToGridViewContainer: " + view);
         viewList.addView(view);
     }
 
     private void moveAllViewsToList() {
+        Log.d(TAG, "moveAllViewsToList");
         List<VideoView> gridViews = new ArrayList<>(viewGrid.getVideoViews());
         viewGrid.clear();
 
@@ -248,6 +247,7 @@ public class CustomMeetingViewExample extends BaseMeetingView {
     }
 
     private void moveViewsFromListToGridIfPossible() {
+        Log.d(TAG, "moveViewsFromListToGridIfPossible");
         List<VideoView> listViews = new ArrayList<>(viewList.getVideoViews());
         viewList.clear();
 
