@@ -226,6 +226,15 @@ public class CallFragment extends Fragment {
         startActivity(intent);
     }
 
+    private void showDisconnectDialog() {
+        AlertDialog dialog = new AlertDialog.Builder(requireContext())
+                .setMessage(R.string.disconnected_from_room)
+                .setPositiveButton(android.R.string.ok,
+                        (dialog1, which) -> getActivity().onBackPressed())
+                .create();
+        dialog.show();
+    }
+
     private TeeVidEventListener getEventListener() {
         return new TeeVidEventListener() {
 
@@ -237,6 +246,7 @@ public class CallFragment extends Fragment {
             @Override
             public void onDisconnect() {
                 Log.d(TAG, "onDisconnect");
+                showDisconnectDialog();
             }
 
             @Override
