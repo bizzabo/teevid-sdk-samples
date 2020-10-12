@@ -92,7 +92,7 @@ bool DeviceVideoManager::Start(int width, int height, const std::string &format)
                     " ! appsink drop=true max-buffers=60 name=appsink0 t. " +
                     " ! queue leaky=2 max-size-bytes=248832000 ! videoconvert ! video/x-raw,format=RGBA ! appsink drop=true max-buffers=15 name=appsink1";
 
-    qDebug() << "Video pipeline:\n" << QString::fromStdString(pipelineStr);
+    qDebug() << QString::fromStdString(pipelineStr);
 
     _pipeline = gst_parse_launch(pipelineStr.c_str(), NULL);
     if (_pipeline == NULL)
