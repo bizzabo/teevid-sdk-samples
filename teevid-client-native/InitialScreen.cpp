@@ -44,7 +44,7 @@ InitialScreen::InitialScreen(QWidget *parent) : QWidget(parent), ui(new Ui::Init
     InitUI();
     //InitSDK();
 
-    _publishVideoSettings.videoFormatType = VideoFormatType::kI420; // consider using I420 for 4K webcam
+    _publishVideoSettings.videoFormatType = VideoFormatType::kUYVY; // consider using I420 for 4K webcam
 
     _subscribeVideoSettings.videoFormatType = VideoFormatType::kRGBA;
 
@@ -298,6 +298,9 @@ void InitialScreen::OnStreamAdded (long streamId, const std::string& name, const
     {
         ui->frameCallPart_Local->setStreamId(streamId);
         ui->frameCallPart_Local->setParticipantOrder(order);
+        ui->frameCallPart_Local->setVideoFormat(kRGBA);
+
+        teeVidClient_->Subscribe(streamId, _subscribeVideoSettings, ui->frameCallPart_Local);
     }
     else
     {

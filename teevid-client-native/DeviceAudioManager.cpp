@@ -56,7 +56,12 @@ bool DeviceAudioManager::Start(int fps, int frames, int channels, const std::str
     std::string pipelineStr = "alsasrc ! queue ! audioconvert ! audio/x-raw,format=" +
                               format + ",rate=" +
                               std::to_string(_frames) + ",channels=" + std::to_string(_channels) +
-                              " ! audiobuffersplit name=splitter ! appsink name=appsink_audio";
+                              " ! appsink name=appsink_audio";
+
+//    std::string pipelineStr = "alsasrc ! queue ! audioconvert ! audio/x-raw,format=" +
+//                              format + ",rate=" +
+//                              std::to_string(_frames) + ",channels=" + std::to_string(_channels) +
+//                              " ! audiobuffersplit name=splitter ! appsink name=appsink_audio";
 
     qDebug() << QString::fromStdString(pipelineStr);
 
@@ -67,11 +72,14 @@ bool DeviceAudioManager::Start(int fps, int frames, int channels, const std::str
         return false;
     }
 
-    GstElement* splitter = gst_bin_get_by_name(GST_BIN(_pipeline), "splitter");
-    if (splitter != NULL)
-    {
-        g_object_set(splitter, "output-buffer-duration", 1, _fps, NULL);
-    }
+    // BE AWARE: for now audiobuffersplit item is not used.
+    // If you use it (see commented pipeline) then un-comment the code below:
+
+//    GstElement* splitter = gst_bin_get_by_name(GST_BIN(_pipeline), "splitter");
+//    if (splitter != NULL)
+//    {
+//        g_object_set(splitter, "output-buffer-duration", 1, _fps, NULL);
+//    }
 
     _appsink = gst_bin_get_by_name(GST_BIN(_pipeline), "appsink_audio");
 
