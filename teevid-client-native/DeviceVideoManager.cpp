@@ -5,8 +5,9 @@
 
 const int cDefaultWidth = 1280;
 const int cDefaultHeight = 720;
+const int cRetryCount = 2;
 
-DeviceVideoManager::DeviceVideoManager(QObject *parent) : QObject(parent)
+DeviceVideoManager::DeviceVideoManager(QObject *parent) : QObject(parent), _retryCount(cRetryCount)
 {
 }
 
@@ -88,7 +89,7 @@ bool DeviceVideoManager::Start(int width, int height, const std::string &format)
 
     std::string pipelineStr = "v4l2src device=/dev/video0 ! video/x-raw,width=";
                     pipelineStr += std::to_string(_width) + ",height=" + std::to_string(_height) +
-                    " ! videoconvert ! video/x-raw,format=" + _publishFormat +
+                    " ! videoconvert n-threads=4 ! video/x-raw,format=" + _publishFormat +
                     " ! appsink drop=true max-buffers=60 name=appsink0";
 
     qDebug() << QString::fromStdString(pipelineStr);
@@ -133,22 +134,8 @@ bool DeviceVideoManager::Start(int width, int height, const std::string &format)
 
 void DeviceVideoManager::Stop()
 {
-    if (_pipeline == NULL || _loop == NULL)
-    {
-        // to ensure the stop is not called several times
-        return;
-    }
-
-    gst_element_set_state(_pipeline, GST_STATE_NULL);
-    g_main_loop_quit(_loop);
-
-    gst_object_unref(GST_OBJECT(_pipeline));
-    g_source_remove(_bus_watch_id);
-    g_main_loop_unref(_loop);
-
-    _pipeline = NULL;
-    _loop = NULL;
-    _bus_watch_id = 0;
+    StopInternal();
+    _retryCount = cRetryCount;
 }
 
 void DeviceVideoManager::StartVideo()
@@ -180,6 +167,26 @@ void DeviceVideoManager::GstTimerFunc()
     {
         g_main_loop_run(_loop);
     }
+}
+
+void DeviceVideoManager::StopInternal()
+{
+    if (_pipeline == NULL || _loop == NULL)
+    {
+        // to ensure the stop is not called several times
+        return;
+    }
+
+    gst_element_set_state(_pipeline, GST_STATE_NULL);
+    g_main_loop_quit(_loop);
+
+    gst_object_unref(GST_OBJECT(_pipeline));
+    g_source_remove(_bus_watch_id);
+    g_main_loop_unref(_loop);
+
+    _pipeline = NULL;
+    _loop = NULL;
+    _bus_watch_id = 0;
 }
 
 void DeviceVideoManager::PullBuffer(eVideoType type)
@@ -218,6 +225,6 @@ void DeviceVideoManager::PullBuffer(eVideoType type)
 
 void DeviceVideoManager::Retry()
 {
-    Stop();
+    StopInternal();
     Start(cDefaultWidth, cDefaultHeight, _publishFormat);
 }

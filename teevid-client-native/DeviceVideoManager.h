@@ -47,6 +47,7 @@ signals:
 
 protected:
     void GstTimerFunc();
+    void StopInternal();
 
 private:
     int _fps = 30;

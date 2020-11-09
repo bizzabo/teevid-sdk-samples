@@ -1,6 +1,7 @@
 #ifndef TEEVID_SDK_SETTINGS_H
 #define TEEVID_SDK_SETTINGS_H
 
+#include "SourceMode.h"
 namespace teevid_sdk
 {
 
@@ -72,6 +73,7 @@ struct VideoSettings
 typedef struct {
   AudioSettings audioSettings;
   VideoSettings videoSettings;
+  SourceMode sourceMode;
 } MediaSettings;
 
 }

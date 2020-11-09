@@ -30,7 +30,8 @@ const int cAudioIntervalSeconds = 20; // sound/silence duration
 const int cAudioIntervals = 2; // sound and silence
 const int cTimerCountReset = cAudioFps * cAudioIntervalSeconds * cAudioIntervals;
 
-const int cAudioSampleRate = 48000;
+const int cAudioPublishSampleRate = 48000;
+const int cAudioSubscribeSampleRate = 48000;
 const int cMaxAudioSetsCount = 512;
 
 const QString cSourceDir = "teevid-client-native";
@@ -41,16 +42,30 @@ const QString cAudioSampleFile = "audio-sample-48000.wav";
 
 InitialScreen::InitialScreen(QWidget *parent) : QWidget(parent), ui(new Ui::InitialScreen)
 {
+    // _sourceMode is used inside InitUI, so initialize it's value before the InitUI call
+    _sourceMode = kInternalSourceMode;
+
     InitUI();
     //InitSDK();
 
-    _publishVideoSettings.videoFormatType = VideoFormatType::kUYVY; // consider using I420 for 4K webcam
+    _publishSettings.videoSettings.videoFormatType = VideoFormatType::kUYVY; // consider using I420 for 4K webcam
+    _publishSettings.videoSettings.videoFps = cVideoFps;
 
-    _subscribeVideoSettings.videoFormatType = VideoFormatType::kRGBA;
+    _publishSettings.audioSettings.audioChannels = kStereo;
+    _publishSettings.audioSettings.audioBpsType = kS16LE;
+    _publishSettings.audioSettings.audioSampleRate = cAudioPublishSampleRate;
+
+    _publishSettings.sourceMode = _sourceMode;
+
+    _subscribeSettings.videoSettings.videoFormatType = VideoFormatType::kRGBA;
 
     // values to prevent video resizing
-    _subscribeVideoSettings.videoWidth = 0;
-    _subscribeVideoSettings.videoHeight = 0;
+    _subscribeSettings.videoSettings.videoWidth = 0;
+    _subscribeSettings.videoSettings.videoHeight = 0;
+
+    _subscribeSettings.audioSettings.audioChannels = kStereo;
+    _subscribeSettings.audioSettings.audioSampleRate = cAudioSubscribeSampleRate;
+    _subscribeSettings.audioSettings.audioBpsType = kS16LE;
 }
 
 InitialScreen::~InitialScreen()
@@ -66,8 +81,11 @@ InitialScreen::~InitialScreen()
     }
 
     // Please note: this should be called AFTER disconnection from TeeVidClient !!!
-    _deviceVideoMgr.Stop();
-    _deviceAudioMgr.Stop();
+    if(_sourceMode == kExternalSourceMode)
+    {
+        _deviceVideoMgr.Stop();
+        _deviceAudioMgr.Stop();
+    }
 
     delete ui;
 }
@@ -98,15 +116,11 @@ void InitialScreen::InitSDK()
 
         // TODO: set desired logging level
         // if you need no SDK signalling traces - set any level except DEBUG
-        teeVidClient_->Initialize(validationToken, teevidServer, LogLevel::DEBUG, (ITeeVidClientObserver*)this);
+        teeVidClient_->Initialize(validationToken, teevidServer, LogLevel::INFO, (ITeeVidClientObserver*)this);
 
         // TODO: uncomment this if default configuration is required
 //        TeeVidSettings settings;
-//        settings.media_settings.audioSettings.audioChannels = kStereo;
-//        settings.media_settings.audioSettings.audioBpsType = kS16LE;
-//        settings.media_settings.audioSettings.audioSampleRate = cAudioSampleRate;
-//        settings.media_settings.videoSettings.videoFormatType = VideoFormatType::kRGBA;
-//        settings.media_settings.videoSettings.videoFps = cVideoFps;
+//        settings.media_settings = _publishSettings;
 //        teeVidClient_->Configure(settings);
 
     }
@@ -166,7 +180,14 @@ void InitialScreen::InitUI()
 
     ui->listViewFriends->setSelectionMode(QAbstractItemView::ExtendedSelection);
 
-    ui->frameCallPart_Local->setAudioSampleRate(cAudioSampleRate);
+    ui->frameCallPart_Local->setAudioSampleRate(cAudioPublishSampleRate);
+
+    // dummy participants names
+    ui->frameCallPart_Local->setParticipantName("Local preview");
+    ui->frameCallPart_1->setParticipantName("Participant #1");
+    ui->frameCallPart_2->setParticipantName("Participant #2");
+    ui->frameCallPart_3->setParticipantName("Participant #3");
+    ui->frameCallPart_4->setParticipantName("Participant #4");
 
     // add all video items except local
     callItems_.push_back(ui->frameCallPart_1);
@@ -177,12 +198,10 @@ void InitialScreen::InitUI()
     for (auto iterCallItem = callItems_.begin(); iterCallItem != callItems_.end(); ++iterCallItem)
     {
         CallItemVideoView* itemView = *iterCallItem;
-        itemView->setAudioSampleRate(cAudioSampleRate);
         connect(itemView, SIGNAL(lowQualitySelected(long)), this, SLOT(onLowQualitySelected(long)));
         connect(itemView, SIGNAL(highQualitySelected(long)), this, SLOT(onHighQualitySelected(long)));
     }
 
-    ui->frameCallPart_Local->setAudioSampleRate(cAudioSampleRate);
     connect(ui->frameCallPart_Local, SIGNAL(lowQualitySelected(long)), this, SLOT(onLowQualitySelected(long)));
     connect(ui->frameCallPart_Local, SIGNAL(highQualitySelected(long)), this, SLOT(onHighQualitySelected(long)));
 
@@ -212,13 +231,16 @@ void InitialScreen::InitUI()
 //    _dummyAudioFramesTimer.setSingleShot(false);
 //    connect(&_dummyAudioFramesTimer, SIGNAL(timeout()), this, SLOT(OnDummyAudioFrameTimer()));
 
-    connect(&_deviceVideoMgr, SIGNAL(publishVideoFrame(unsigned char*,long,int)), this, SLOT(OnPublishVideoFrame(unsigned char*,long,int)));
-    connect(&_deviceVideoMgr, SIGNAL(internalVideoFrame(unsigned char*,long,int)), this, SLOT(OnInternalVideoFrame(unsigned char*,long,int)));
-    connect(&_deviceVideoMgr, SIGNAL(videoError(QString)), this, SLOT(OnVideoError(QString)));
-    connect(&_deviceVideoMgr, SIGNAL(videoStarted(int, int)), this, SLOT(OnVideoStarted(int,int)));
+    if(_sourceMode == kExternalSourceMode)
+    {
+        connect(&_deviceVideoMgr, SIGNAL(publishVideoFrame(unsigned char*,long,int)), this, SLOT(OnPublishVideoFrame(unsigned char*,long,int)));
+        connect(&_deviceVideoMgr, SIGNAL(internalVideoFrame(unsigned char*,long,int)), this, SLOT(OnInternalVideoFrame(unsigned char*,long,int)));
+        connect(&_deviceVideoMgr, SIGNAL(videoError(QString)), this, SLOT(OnVideoError(QString)));
+        connect(&_deviceVideoMgr, SIGNAL(videoStarted(int, int)), this, SLOT(OnVideoStarted(int,int)));
 
-    connect(&_deviceAudioMgr, SIGNAL(audioFrame(unsigned char*,long)), this, SLOT(OnAudioFrame(unsigned char*,long)));
-    connect(&_deviceAudioMgr, SIGNAL(audioError(QString)), this, SLOT(OnAudioError(QString)));
+        connect(&_deviceAudioMgr, SIGNAL(audioFrame(unsigned char*,long)), this, SLOT(OnAudioFrame(unsigned char*,long)));
+        connect(&_deviceAudioMgr, SIGNAL(audioError(QString)), this, SLOT(OnAudioError(QString)));
+    }
 }
 
 void InitialScreen::setFriendsData(std::vector<Contact> friends)
@@ -262,6 +284,31 @@ void InitialScreen::OnConnected (long streamId, const std::string& invitationTok
     emit sdkOnConnectedRecieved(token);
 }
 
+void InitialScreen::ChangeVideoSource(){
+    if (teeVidClient_ && _sourceMode == kInternalSourceMode)
+    {
+        std::vector<SourceInfo> info = teeVidClient_->GetSources(eVideo);
+        for (int i = 0; i < info.size (); i++)
+        {
+            std::cout << "Device: " << info[i].name << " - " <<  info[i].deviceId << "\n";
+        }
+
+        if(info.size() > 0){
+            teeVidClient_->ChangeSource(eVideo, info[info.size() - 1].deviceId);
+        }
+
+        info = teeVidClient_->GetSources(eAudio);
+        for (int i = 0; i < info.size (); i++)
+        {
+            std::cout << "Device: " << info[i].name << " - " <<  info[i].deviceId << "\n";
+        }
+
+        if(info.size() > 0){
+            teeVidClient_->ChangeSource(eAudio, info[info.size() - 1].deviceId);
+        }
+    }
+}
+
 void InitialScreen::OnRoomConnected(const RoomParameters &roomParameters)
 {
     int width = roomParameters.video_resolution_.width;
@@ -269,26 +316,21 @@ void InitialScreen::OnRoomConnected(const RoomParameters &roomParameters)
 
     emit roomConnectReceived(width, height);
 
-    _publishVideoSettings.videoWidth = width;
-    _publishVideoSettings.videoHeight = height;
+    _publishSettings.videoSettings.videoWidth = width;
+    _publishSettings.videoSettings.videoHeight = height;
 
     // BE AWARE
     // for now incoming video is set to be resized to the resolution from the room settings
     // to prevent resizing just comment (or remove these 2 lines below):
-    _subscribeVideoSettings.videoWidth = width;
-    _subscribeVideoSettings.videoHeight = height;
+    _subscribeSettings.videoSettings.videoWidth = width;
+    _subscribeSettings.videoSettings.videoHeight = height;
 
     if (teeVidClient_)
     {
         TeeVidSettings settings;
-        settings.media_settings.audioSettings.audioChannels = kStereo;
-        settings.media_settings.audioSettings.audioBpsType = kS16LE;
-        settings.media_settings.audioSettings.audioSampleRate = cAudioSampleRate;
-        settings.media_settings.videoSettings.videoFormatType = _publishVideoSettings.videoFormatType;
-        settings.media_settings.videoSettings.videoWidth = width;
-        settings.media_settings.videoSettings.videoHeight = height;
-        settings.media_settings.videoSettings.videoFps = cVideoFps;
+        settings.media_settings = _publishSettings;
         teeVidClient_->Configure(settings);
+        ChangeVideoSource();
     }
 }
 
@@ -299,8 +341,9 @@ void InitialScreen::OnStreamAdded (long streamId, const std::string& name, const
         ui->frameCallPart_Local->setStreamId(streamId);
         ui->frameCallPart_Local->setParticipantOrder(order);
         ui->frameCallPart_Local->setVideoFormat(kRGBA);
+        ui->frameCallPart_Local->setAudioSampleRate(_subscribeSettings.audioSettings.audioSampleRate);
 
-        teeVidClient_->Subscribe(streamId, _subscribeVideoSettings, ui->frameCallPart_Local);
+        teeVidClient_->Subscribe(streamId, _subscribeSettings, ui->frameCallPart_Local);
     }
     else
     {
@@ -310,8 +353,9 @@ void InitialScreen::OnStreamAdded (long streamId, const std::string& name, const
             callItem->setStreamId(streamId);
             callItem->setParticipantOrder(order);
             callItem->setVideoFormat(kRGBA);
+            callItem->setAudioSampleRate(_subscribeSettings.audioSettings.audioSampleRate);
 
-            teeVidClient_->Subscribe(streamId, _subscribeVideoSettings, callItem);
+            teeVidClient_->Subscribe(streamId, _subscribeSettings, callItem);
         }
     }
 }
@@ -379,7 +423,7 @@ void InitialScreen::OnParticipantMute(long streamId, bool audioMuted, bool video
         }
         else
         {
-            teeVidClient_->Subscribe(streamId, _subscribeVideoSettings, callItem);
+            teeVidClient_->Subscribe(streamId, _subscribeSettings, callItem);
         }
     }
 
@@ -515,9 +559,20 @@ void InitialScreen::onBtnEndCallPressed()
         teeVidClient_->Disconnect();
     }
 
-    // Please note: this should be called AFTER disconnection from TeeVidClient !!!
-    _deviceVideoMgr.Stop();
-    _deviceAudioMgr.Stop();
+    if(_sourceMode == kExternalSourceMode)
+    {
+        // Please note: this should be called AFTER disconnection from TeeVidClient !!!
+        _deviceVideoMgr.Stop();
+        _deviceAudioMgr.Stop();
+    }
+
+    // this is a clean-up - just in case some artifacts were left
+    ui->frameCallPart_Local->clear();
+    for (auto iter = callItems_.begin(); iter != callItems_.end(); ++iter)
+    {
+        CallItemVideoView* callItem = *iter;
+        callItem->clear();
+    }
 
     QMessageBox mb(QMessageBox::Information, "Invitation", "Call ended");
     mb.exec();
@@ -617,9 +672,15 @@ void InitialScreen::OnRoomConnectReceived(int videoWidth, int videoHeight)
     //_dummyVideoFramesTimer.start();
     //_dummyAudioFramesTimer.start();
 
-    std::string videoFormat = GetVideoFormatName(_publishVideoSettings);
-    _deviceVideoMgr.Start(videoWidth, videoHeight, videoFormat);
-    _deviceAudioMgr.Start(cAudioFps, cAudioSampleRate, 2, "S16LE");
+    std::string videoFormat = GetVideoFormatName(_publishSettings.videoSettings);
+    if(_sourceMode == kExternalSourceMode)
+    {
+        _deviceVideoMgr.Start(videoWidth, videoHeight, videoFormat);
+        _deviceAudioMgr.Start(cAudioFps,
+                              _publishSettings.audioSettings.audioSampleRate,
+                              _publishSettings.audioSettings.audioChannels,
+                              GetAudioFormatName(_publishSettings.audioSettings));
+    }
 }
 
 void InitialScreen::OnSdkOnConnectedReceived(QString token)
@@ -713,31 +774,26 @@ void InitialScreen::OnVideoError(QString message)
 
 void InitialScreen::OnVideoStarted(int width, int height)
 {
-    if (width == _publishVideoSettings.videoWidth && height == _publishVideoSettings.videoHeight)
+    if (width == _publishSettings.videoSettings.videoWidth && height == _publishSettings.videoSettings.videoHeight)
     {
         // the settings are the same as original - no need to reconfigure
         return;
     }
 
-    _publishVideoSettings.videoWidth = width;
-    _publishVideoSettings.videoHeight = height;
+    _publishSettings.videoSettings.videoWidth = width;
+    _publishSettings.videoSettings.videoHeight = height;
     if (ui->frameCallPart_Local->getStreamId() > 0)
     {
         // we already have our stream so we need to reconfigure it
-        teeVidClient_->SetStreamVideoSettings(ui->frameCallPart_Local->getStreamId(), _publishVideoSettings);
+        teeVidClient_->SetStreamMediaSettings(ui->frameCallPart_Local->getStreamId(), _publishSettings);
     }
     else
     {
         // not published yet, so just update settings
         TeeVidSettings settings;
-        settings.media_settings.audioSettings.audioChannels = kStereo;
-        settings.media_settings.audioSettings.audioBpsType = kS16LE;
-        settings.media_settings.audioSettings.audioSampleRate = cAudioSampleRate;
-        settings.media_settings.videoSettings.videoFormatType = _publishVideoSettings.videoFormatType;
-        settings.media_settings.videoSettings.videoWidth = _publishVideoSettings.videoWidth;
-        settings.media_settings.videoSettings.videoHeight = _publishVideoSettings.videoHeight;
-        settings.media_settings.videoSettings.videoFps = cVideoFps;
+        settings.media_settings = _publishSettings;
         teeVidClient_->Configure(settings);
+        ChangeVideoSource();
     }
 }
 
@@ -855,8 +911,8 @@ void InitialScreen::GenerateDummyAudioFrames()
 
     if (!isAudioFileValid)
     {
-        _audioParams.SetSampleRate(cAudioSampleRate);
-        _audioParams.SetFrameSampleRate(cAudioSampleRate / cAudioFps);
+        _audioParams.SetSampleRate(cAudioPublishSampleRate);
+        _audioParams.SetFrameSampleRate(cAudioPublishSampleRate / cAudioFps);
         // failed to read sample file, generate dummy noize frames
         for (int i = 0; i < _dummyAudioFrameSetsCount; ++i)
         {
@@ -902,4 +958,102 @@ std::string InitialScreen::GetVideoFormatName (const VideoSettings& videoSetting
   }
 
   return format;
+}
+
+std::string InitialScreen::GetAudioFormatName(const AudioSettings &audioSettings)
+{
+    std::string format;
+    switch (audioSettings.audioBpsType)
+    {
+    case kF64LE:
+        format = "F64LE";
+        break;
+    case kF64BE:
+        format = "F64BE";
+        break;
+    case kF32LE:
+        format = "F32LE";
+        break;
+    case kF32BE:
+        format = "F32BE";
+        break;
+    case kS32LE:
+        format = "S32LE";
+        break;
+    case kS32BE:
+        format = "S32BE";
+        break;
+    case kU32LE:
+        format = "U32LE";
+        break;
+    case kU32BE:
+        format = "U32BE";
+        break;
+    case kS24_32BE:
+        format = "S24_32BE";
+        break;
+    case kU24_32LE:
+        format = "U24_32LE";
+        break;
+    case kU24_32BE:
+        format = "U24_32BE";
+        break;
+    case kS24LE:
+        format = "S24LE";
+        break;
+    case kS24BE:
+        format = "S24BE";
+        break;
+    case kU24LE:
+        format = "U24LE";
+        break;
+    case kU24BE:
+        format = "U24BE";
+        break;
+    case kS20LE:
+        format = "S20LE";
+        break;
+    case kS20BE:
+        format = "S20BE";
+        break;
+    case kU20LE:
+        format = "U20LE";
+        break;
+    case kU20BE:
+        format = "U20BE";
+        break;
+    case kS18LE:
+        format = "S18LE";
+        break;
+    case kS18BE:
+        format = "S18BE";
+        break;
+    case kU18LE:
+        format = "kU18LE";
+        break;
+    case kU18BE:
+        format = "U18BE";
+        break;
+    case kS16BE:
+        format = "S16BE";
+        break;
+    case kU16LE:
+        format = "U16LE";
+        break;
+    case kU16BE:
+        format = "U16BE";
+        break;
+    case kS8:
+        format = "S8";
+        break;
+    case kU8:
+        format = "U8";
+        break;
+    case kS16LE:
+    default:
+        format = "S16LE";
+        break;
+    }
+
+    return format;
 }

@@ -7,8 +7,14 @@
 namespace teevid_sdk
 {
     typedef enum {
-        eVideo,
-        eAudio
+        eAudio = 0,
+        eVideo = 1
     } SourceType;
+
+    typedef struct{
+        SourceType type;
+        int deviceId;
+        std::string name;
+    }SourceInfo;
 }
 #endif //_SOURCETYPE_H_

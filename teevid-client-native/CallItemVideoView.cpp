@@ -2,6 +2,7 @@
 #include "ui_CallItemVideoView.h"
 
 #include "VideoQualityDialog.h"
+#include "ExternalVideoContainer.h"
 #include <stdio.h>
 #include <sys/time.h>
 #include <time.h>
@@ -41,6 +42,12 @@ CallItemVideoView::~CallItemVideoView()
         _audioInitialized = false;
 
     }
+
+    if (_largeContainer)
+    {
+        _largeContainer->deleteLater();
+    }
+
     delete ui;
 }
 
@@ -49,11 +56,7 @@ void CallItemVideoView::setStreamId(long id)
     _streamId = id;
     if (_streamId == 0)
     {
-        setImage(QImage());
-        ui->labelSize->clear();
-        ui->labelAudio->clear();
-        ui->labelVideo->clear();
-        ui->labelOrder->clear();
+        clear();
     }
 }
 
@@ -109,17 +112,54 @@ void CallItemVideoView::OnVideoFrame(unsigned char *data, size_t size, size_t st
 
     if (_streamId > 0)
     {
+        if (_videoQuality == eVideoQuality::High && _largeContainer != nullptr)
+        {
+            if (_prevWidth != width || _prevHeight != height)
+            {
+                // adjust window size if needed
+                _largeContainer->setFixedSize(width, height);
+            }
+        }
+
         QImage image(data, width, height, stride, QImage::Format_RGBA8888);
 
-        image = image.scaled(ui->frameContainer->size());
-        setImage(image);
+        if (_videoQuality == eVideoQuality::High)
+        {
+            _largeContainer->setImage(image);
+
+            if (_prevVideoQuality != _videoQuality)
+            {
+                // if video quallity has been switched from low to high - clear default container
+                _largeContainer->show();
+                setImage(QImage());
+                _prevVideoQuality = _videoQuality;
+            }
+        }
+        else
+        {
+            image = image.scaled(ui->frameContainer->size());
+            setImage(image);
+        }
+
         QString sizeStr = QString::number(width) + "x" + QString::number(height) + ", orient: " + QString::number((int) orientation) ;
         ui->labelSize->setText(sizeStr);
+        ui->labelParticipant->setText(_participantName);
+
+        _prevWidth = width;
+        _prevHeight = height;
     }
     else
     {
-        setImage(QImage());
+        if (_videoQuality == eVideoQuality::High)
+        {
+            _largeContainer->setImage(QImage());
+        }
+        else
+        {
+            setImage(QImage());
+        }
         ui->labelSize->clear();
+        ui->labelParticipant->clear();
 #ifdef QT_DEBUG
         if (_printLogs)
         {
@@ -171,6 +211,11 @@ void CallItemVideoView::clear()
 {
     // set an empty image
     setImage(QImage());
+    ui->labelSize->clear();
+    ui->labelAudio->clear();
+    ui->labelVideo->clear();
+    ui->labelOrder->clear();
+    ui->labelParticipant->clear();
 }
 
 void CallItemVideoView::setAudioMuted(bool muted)
@@ -206,6 +251,11 @@ void CallItemVideoView::setParticipantOrder(int order)
     ui->labelOrder->setText(QString::number(order));
 }
 
+void CallItemVideoView::setParticipantName(QString name)
+{
+    _participantName = name;
+}
+
 void CallItemVideoView::setAudioSampleRate(int rate)
 {
     _audioSampleRate = rate;
@@ -221,7 +271,7 @@ void CallItemVideoView::paintEvent(QPaintEvent *event)
 
 bool CallItemVideoView::event(QEvent *event)
 {
-    if (event && event->type() == QEvent::MouseButtonPress)
+    if (event && event->type() == QEvent::MouseButtonPress && _streamId > 0)
     {
         if (!_qualityDialog)
         {
@@ -239,17 +289,36 @@ bool CallItemVideoView::event(QEvent *event)
 
 void CallItemVideoView::onLowQualitySelected()
 {
+    _videoQuality = eVideoQuality::Low;
+    if (_largeContainer)
+    {
+        _largeContainer->hide();
+    }
+
     emit lowQualitySelected(_streamId);
 }
 
 void CallItemVideoView::onHighQualitySelected()
 {
+    _prevVideoQuality = eVideoQuality::Low;
+    _videoQuality = eVideoQuality::High;
+
+    // create separate video displaying window with the previous received size
+    if (_largeContainer == nullptr)
+    {
+        _largeContainer = new ExternalVideoContainer();
+        _largeContainer->setFixedSize(_prevWidth, _prevHeight);
+        _largeContainer->setWindowTitle(_participantName);
+        connect(_largeContainer, SIGNAL(windowClosed()), this, SLOT(onLargeContainerClosed()));
+    }
+    _largeContainer->raise();
+
     emit highQualitySelected(_streamId);
 }
 
 void CallItemVideoView::onImageUpdated()
 {
-    ui->frameContainer->update();
+    ui->frameContainer->repaint();
 }
 
 void CallItemVideoView::onAudioStarted(int channels, int bps)
@@ -274,6 +343,13 @@ void CallItemVideoView::onAudioStarted(int channels, int bps)
         _audioBuffer = _audioOutput->start();
         _audioInitialized = true;
     }
+}
+
+void CallItemVideoView::onLargeContainerClosed()
+{
+    // treat external video container close as switching back to low quality
+    _qualityDialog->reset();
+    _videoQuality = eVideoQuality::Low;
 }
 
 size_t CallItemVideoView::GetWidthFromStride (VideoFormatType videoFormatType, size_t stride)
