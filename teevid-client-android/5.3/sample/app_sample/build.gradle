@@ -1,6 +1,6 @@
 apply plugin: 'com.android.application'
 
-def sampleVersionName = "5.3"
+def sampleVersionName = "5.3-frc-5"
 
 android {
     compileSdkVersion 29
@@ -62,9 +62,9 @@ dependencies {
     implementation "com.google.android.gms:play-services-auth:18.1.0"
 
     implementation 'androidx.appcompat:appcompat:1.2.0'
-    implementation 'androidx.constraintlayout:constraintlayout:2.0.1'
+    implementation 'androidx.constraintlayout:constraintlayout:2.0.2'
     implementation "androidx.preference:preference:1.1.1"
-    testImplementation 'junit:junit:4.13'
+    testImplementation 'junit:junit:4.13.1'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
 }

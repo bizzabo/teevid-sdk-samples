@@ -1,5 +1,6 @@
 package com.teevid.sample;
 
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -8,6 +9,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.Toast;
@@ -23,8 +25,14 @@ import androidx.fragment.app.Fragment;
 import com.teevid.sdk.TeeVidClient;
 import com.teevid.sdk.TeeVidEventListener;
 import com.teevid.sdk.api.SdkErrors;
+import com.teevid.sdk.api.version.ServerVersion;
+import com.teevid.sdk.data.CameraDeviceInfo;
+import com.teevid.sdk.data.ParticipantInfo;
+import com.teevid.sdk.data.RoomInfo;
 import com.teevid.sdk.log.LogLevel;
 import com.teevid.sdk.view.BaseMeetingView;
+
+import java.util.List;
 
 public class CallFragment extends Fragment {
 
@@ -71,6 +79,7 @@ public class CallFragment extends Fragment {
 
         client = new TeeVidClient.Builder(getContext(), sdkToken)
                 .addListener(getEventListener())
+                .setServerVersion(ServerVersion.V5)
                 .setLogLevel(LogLevel.DEBUG)
                 .build();
         client.setView(viewTeeVid);
@@ -161,11 +170,17 @@ public class CallFragment extends Fragment {
     }
 
     private void showEnterPinDialog(Consumer<String> pinConsumer) {
+        Context context = getContext();
+        if (context == null) {
+            return;
+        }
+
         View view = LayoutInflater.from(getContext()).inflate(R.layout.dialog_edit_text, null);
         EditText editText = view.findViewById(R.id.et_input);
         editText.setHint(R.string.enter_pin);
+        editText.setInputType(EditorInfo.TYPE_TEXT_VARIATION_PASSWORD);
 
-        AlertDialog dialog = new AlertDialog.Builder(getContext())
+        AlertDialog dialog = new AlertDialog.Builder(context)
                 .setTitle(R.string.enter_pin_title)
                 .setPositiveButton(R.string.dialog_btn_connect, (dialog1, which) -> {
                     String pin = editText.getText().toString();
@@ -226,8 +241,19 @@ public class CallFragment extends Fragment {
         startActivity(intent);
     }
 
+    private void selectNeededCameraDevice(TeeVidClient client) {
+        List<CameraDeviceInfo> cameraDevices = client.getAvailableCameraDevices();
+        CameraDeviceInfo selectedDevice = cameraDevices.get(1);
+        client.setCameraById(selectedDevice.getId());
+    }
+
     private void showDisconnectDialog() {
-        AlertDialog dialog = new AlertDialog.Builder(requireContext())
+        Context context = getContext();
+        if (context == null) {
+            return;
+        }
+
+        AlertDialog dialog = new AlertDialog.Builder(context)
                 .setMessage(R.string.disconnected_from_room)
                 .setPositiveButton(android.R.string.ok,
                         (dialog1, which) -> getActivity().onBackPressed())
@@ -239,7 +265,7 @@ public class CallFragment extends Fragment {
         return new TeeVidEventListener() {
 
             @Override
-            public void onConnect() {
+            public void onConnect(RoomInfo roomInfo) {
                 Log.d(TAG, "onConnect");
             }
 
@@ -250,13 +276,13 @@ public class CallFragment extends Fragment {
             }
 
             @Override
-            public void onAddParticipant(String participantId) {
-                Log.d(TAG, "onAddParticipant: " + participantId);
+            public void onAddParticipant(ParticipantInfo participantInfo) {
+                Log.d(TAG, "onAddParticipant: " + participantInfo);
             }
 
             @Override
-            public void onRemoveParticipant(String participantId) {
-                Log.d(TAG, "onRemoveParticipant: " + participantId);
+            public void onRemoveParticipant(ParticipantInfo participantInfo) {
+                Log.d(TAG, "onRemoveParticipant: " + participantInfo);
             }
 
             @Override
