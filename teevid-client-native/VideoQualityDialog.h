@@ -23,6 +23,8 @@ public:
     explicit VideoQualityDialog(QWidget *parent = 0);
     ~VideoQualityDialog();
 
+    void reset();
+
 signals:
     void lowQualitySelected();
     void highQualitySelected();

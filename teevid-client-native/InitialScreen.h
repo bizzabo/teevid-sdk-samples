@@ -112,6 +112,9 @@ private:
     void InitUI();
 
     std::string GetVideoFormatName(const VideoSettings& videoSettings);
+    std::string GetAudioFormatName(const AudioSettings& audioSettings);
+
+    void ChangeVideoSource();
 
 private:
     Ui::InitialScreen *ui;
@@ -137,9 +140,10 @@ private:
     AudioParams _audioParams;
     DeviceVideoManager _deviceVideoMgr;
     DeviceAudioManager _deviceAudioMgr;
+    SourceMode _sourceMode;
 
-    VideoSettings _publishVideoSettings;
-    VideoSettings _subscribeVideoSettings;
+    MediaSettings _publishSettings;
+    MediaSettings _subscribeSettings;
 };
 
 #endif // INITIALSCREEN_H

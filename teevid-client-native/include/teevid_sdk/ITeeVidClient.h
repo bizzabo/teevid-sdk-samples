@@ -15,6 +15,7 @@
 #include "TeeVidSettings.h"
 #include "LogLevel.h"
 #include "RoomParameters.h"
+#include "SourceMode.h"
 
 namespace teevid_sdk {
     struct ITeeVidClient {
@@ -23,7 +24,7 @@ namespace teevid_sdk {
         // Initialize SDK with token, provided by TeeVid support. Also need to provide
         // DNS name of media server and pointer to Observer class
         virtual bool Initialize(const std::string& token, const std::string& server, LogLevel logLevel,
-            ITeeVidClientObserver* clientObserver) = 0;
+            ITeeVidClientObserver* clientObserver, SourceMode sourceMode = kInternalSourceMode) = 0;
 
         // This method should be called if client need to change default settings
         virtual void Configure(const TeeVidSettings&) = 0;
@@ -49,11 +50,11 @@ namespace teevid_sdk {
 
         // videoSettings parameter contains the resolution to which incoming video should be resized
         // to prevent resizing (receiving video as is) videoWidth and videoHeight fields in videoSettings should be set to 0
-        virtual void Subscribe(long streamId, const VideoSettings& videoSettings, IStreamSubscriber* streamSubscriber) = 0;
+        virtual void Subscribe(long streamId, const MediaSettings& mediaSettings, IStreamSubscriber* streamSubscriber) = 0;
         virtual void Unsubscribe(long streamId) = 0;
 
         // Allows to change settings (e.g. video format) for the video from already subscribed stream - without stopping
-        virtual void SetStreamVideoSettings(long streamId, const VideoSettings& videoSettings) = 0;
+        virtual void SetStreamMediaSettings(long streamId, const MediaSettings& mediaSettings) = 0;
 
         // Disconnect from room and stop receiving/sending media
         virtual bool Disconnect() = 0;
@@ -72,7 +73,7 @@ namespace teevid_sdk {
         // By default, first video/audio  source is using for publishing.
         // Client can select media sources from the list of available sources.
         // This method allows to show list of available resources
-        virtual std::vector<std::string> GetSources(SourceType) = 0;
+        virtual std::vector<SourceInfo> GetSources(SourceType) = 0;
 
         // This method allows to select source from the list, returned by GetSources()
         virtual bool ChangeSource(SourceType, int deviceId) = 0;

@@ -13,6 +13,7 @@
 
 class QImage;
 class VideoQualityDialog;
+class ExternalVideoContainer;
 
 namespace Ui {
 class CallItemVideoView;
@@ -23,6 +24,12 @@ using namespace teevid_sdk;
 class CallItemVideoView : public QFrame, public IStreamSubscriber
 {
     Q_OBJECT
+
+    enum eVideoQuality
+    {
+        Low = 0,
+        High = 1
+    };
 
 public:
     explicit CallItemVideoView(QWidget *parent = nullptr);
@@ -41,6 +48,7 @@ public:
     void setVideoMuted(bool muted);
 
     void setParticipantOrder(int order);
+    void setParticipantName(QString name);
 
     void setAudioSampleRate(int rate);
 
@@ -71,12 +79,22 @@ protected slots:
     void onImageUpdated();
     void onAudioStarted(int channels, int bps);
 
+    void onLargeContainerClosed();
+
 private:
     bool _printLogs = false;
     Ui::CallItemVideoView *ui;
     long _streamId = 0;
     QImage _image;
     VideoQualityDialog* _qualityDialog = nullptr;
+
+    ExternalVideoContainer* _largeContainer = nullptr;
+    eVideoQuality _videoQuality = eVideoQuality::Low;
+
+    // store previous video parameters to adjust container if needed
+    eVideoQuality _prevVideoQuality = eVideoQuality::Low;
+    int _prevWidth = 0;
+    int _prevHeight = 0;
 
     bool _audioMuted = false;
     bool _videoMuted = false;
@@ -89,6 +107,9 @@ private:
     QAudioFormat _audioFormat;
     QAudioDeviceInfo _audioDeviceInfo;
     QIODevice* _audioBuffer = nullptr;     // IODevice to connect to m_AudioOutput
+
+    // store participant name here and display only if there's an active stream
+    QString _participantName;
 
     std::mutex mt_audio;
     std::mutex mt_video;
