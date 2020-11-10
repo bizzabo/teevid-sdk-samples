@@ -32,7 +32,7 @@ void VideoQualityDialog::reset()
 {
     // emulate default (low) quality selection
     ui->radioButtonLow->setChecked(true);
-    emit lowQualitySelected();
+    //emit lowQualitySelected();
 }
 
 void VideoQualityDialog::onQualitySelected(int optionId)

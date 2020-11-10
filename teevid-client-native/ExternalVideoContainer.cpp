@@ -7,10 +7,11 @@ ExternalVideoContainer::ExternalVideoContainer(QWidget *parent) : QFrame(parent)
 {
 }
 
-void ExternalVideoContainer::setImage(QImage image)
+void ExternalVideoContainer::setImage(const QImage& image)
 {
-    _image = image;
-    repaint();
+    std::lock_guard<std::mutex> lock(mt);
+    _image = image.copy();
+    this->update();
 }
 
 void ExternalVideoContainer::clear()
@@ -21,8 +22,11 @@ void ExternalVideoContainer::clear()
 
 void ExternalVideoContainer::paintEvent(QPaintEvent *event)
 {
+    std::lock_guard<std::mutex> lock(mt);
     QPainter widgetPainter(this);
-    widgetPainter.drawImage(rect(), _image);
+
+    if (!_image.isNull())
+      widgetPainter.drawImage(rect(), _image);
 
     QFrame::paintEvent(event);
 }

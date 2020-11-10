@@ -11,6 +11,7 @@
 #include <QDebug>
 #include <QEvent>
 #include <QDateTime>
+#include <QDesktopWidget>
 #include <qmath.h>
 
 const int cDummyVideoFrameWidth = 1920;
@@ -32,6 +33,10 @@ CallItemVideoView::CallItemVideoView(QWidget *parent) :
     // signal-slot connection to itself because data is received from different thread
     connect(this, SIGNAL(imageUpdated()), this, SLOT(onImageUpdated()));
     connect(this, SIGNAL(audioStarted(int,int)), this, SLOT(onAudioStarted(int,int)));
+
+    QRect rec = QApplication::desktop()->screenGeometry();
+    _screenWidth = rec.width();
+    _screenHeight = rec.height();
 }
 
 CallItemVideoView::~CallItemVideoView()
@@ -117,7 +122,14 @@ void CallItemVideoView::OnVideoFrame(unsigned char *data, size_t size, size_t st
             if (_prevWidth != width || _prevHeight != height)
             {
                 // adjust window size if needed
-                _largeContainer->setFixedSize(width, height);
+                if (_restrictToScreenResolution && (width > _screenWidth || height > _screenHeight))
+                {
+                    _largeContainer->setFixedSize(_screenWidth, _screenHeight);
+                }
+                else
+                {
+                    _largeContainer->setFixedSize(width, height);
+                }
             }
         }
 
@@ -292,7 +304,7 @@ void CallItemVideoView::onLowQualitySelected()
     _videoQuality = eVideoQuality::Low;
     if (_largeContainer)
     {
-        _largeContainer->hide();
+        _largeContainer->close();
     }
 
     emit lowQualitySelected(_streamId);
@@ -300,6 +312,7 @@ void CallItemVideoView::onLowQualitySelected()
 
 void CallItemVideoView::onHighQualitySelected()
 {
+    std::lock_guard<std::mutex> lock(mt_video);
     _prevVideoQuality = eVideoQuality::Low;
     _videoQuality = eVideoQuality::High;
 
@@ -307,7 +320,15 @@ void CallItemVideoView::onHighQualitySelected()
     if (_largeContainer == nullptr)
     {
         _largeContainer = new ExternalVideoContainer();
-        _largeContainer->setFixedSize(_prevWidth, _prevHeight);
+        if (_restrictToScreenResolution && (_prevWidth > _screenWidth || _prevHeight > _screenHeight))
+        {
+            _largeContainer->setFixedSize(_screenWidth, _screenHeight);
+        }
+        else
+        {
+            _largeContainer->setFixedSize(_prevWidth, _prevHeight);
+        }
+
         _largeContainer->setWindowTitle(_participantName);
         connect(_largeContainer, SIGNAL(windowClosed()), this, SLOT(onLargeContainerClosed()));
     }
@@ -347,6 +368,8 @@ void CallItemVideoView::onAudioStarted(int channels, int bps)
 
 void CallItemVideoView::onLargeContainerClosed()
 {
+    std::lock_guard<std::mutex> lock(mt_video);
+
     // treat external video container close as switching back to low quality
     _qualityDialog->reset();
     _videoQuality = eVideoQuality::Low;
