@@ -88,14 +88,6 @@ private:
     QImage _image;
     VideoQualityDialog* _qualityDialog = nullptr;
 
-    ExternalVideoContainer* _largeContainer = nullptr;
-    eVideoQuality _videoQuality = eVideoQuality::Low;
-
-    // store previous video parameters to adjust container if needed
-    eVideoQuality _prevVideoQuality = eVideoQuality::Low;
-    int _prevWidth = 0;
-    int _prevHeight = 0;
-
     bool _audioMuted = false;
     bool _videoMuted = false;
 
@@ -113,6 +105,21 @@ private:
 
     std::mutex mt_audio;
     std::mutex mt_video;
+
+    // enlarged video section
+    ExternalVideoContainer* _largeContainer = nullptr;
+    eVideoQuality _videoQuality = eVideoQuality::Low;
+    int _screenWidth = 0;
+    int _screenHeight = 0;
+
+    // prevent enlarge video window size bigger than the screen resolution
+    // set "false" to disable
+    bool _restrictToScreenResolution = true;
+
+    // store previous video parameters to adjust container if needed
+    eVideoQuality _prevVideoQuality = eVideoQuality::Low;
+    int _prevWidth = 0;
+    int _prevHeight = 0;
 };
 
 #endif // CALLITEMVIDEOVIEW_H

@@ -2,6 +2,7 @@
 #define EXTERNALVIDEOCONTAINER_H
 
 #include <QFrame>
+#include <mutex>
 
 class ExternalVideoContainer : public QFrame
 {
@@ -9,7 +10,7 @@ class ExternalVideoContainer : public QFrame
 public:
     explicit ExternalVideoContainer(QWidget *parent = nullptr);
 
-    void setImage(QImage image);
+    void setImage(const QImage& image);
     void clear();
 
 signals:
@@ -21,6 +22,7 @@ protected:
 
 private:
     QImage _image;
+    std::mutex mt;
 };
 
 #endif // EXTERNALVIDEOCONTAINER_H
