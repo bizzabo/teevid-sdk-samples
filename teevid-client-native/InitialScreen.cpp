@@ -50,6 +50,7 @@ InitialScreen::InitialScreen(QWidget *parent) : QWidget(parent), ui(new Ui::Init
 
     _publishSettings.videoSettings.videoFormatType = VideoFormatType::kUYVY; // consider using I420 for 4K webcam
     _publishSettings.videoSettings.videoFps = cVideoFps;
+    _publishSettings.videoSettings.allowMJPG = false;
 
     _publishSettings.audioSettings.audioChannels = kStereo;
     _publishSettings.audioSettings.audioBpsType = kS16LE;
