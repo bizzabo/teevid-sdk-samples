@@ -68,6 +68,11 @@ struct VideoSettings
   int videoFps = 30;
   int videoWidth = 1920;
   int videoHeight = 1080;
+
+  // this flag allows MJPG camera format usage
+  // available only for INTERNAL pipeline mode and ONLY for EMBEDDED architecture
+  // disabled by default
+  bool allowMJPG = false;
 };
 
 typedef struct {
