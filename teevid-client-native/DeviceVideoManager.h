@@ -33,6 +33,7 @@ public:
     void StartVideo();
     void QuitMainLoop();
     void HandleError(QString error);
+    void UpdateCaps(int width, int height, int fps);
 
     int RemainingRetryCount();
 
@@ -44,6 +45,7 @@ signals:
     void internalVideoFrame(unsigned char* data, long size, int stride);
     void videoError(QString message);
     void videoStarted(int, int);
+    void capsUpdated(int, int, int);
 
 protected:
     void GstTimerFunc();

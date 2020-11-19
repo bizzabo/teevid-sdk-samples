@@ -238,6 +238,7 @@ void InitialScreen::InitUI()
         connect(&_deviceVideoMgr, SIGNAL(internalVideoFrame(unsigned char*,long,int)), this, SLOT(OnInternalVideoFrame(unsigned char*,long,int)));
         connect(&_deviceVideoMgr, SIGNAL(videoError(QString)), this, SLOT(OnVideoError(QString)));
         connect(&_deviceVideoMgr, SIGNAL(videoStarted(int, int)), this, SLOT(OnVideoStarted(int,int)));
+        connect(&_deviceVideoMgr, SIGNAL(capsUpdated(int,int,int)), this, SLOT(OnVideoCapsUpdated(int,int,int)));
 
         connect(&_deviceAudioMgr, SIGNAL(audioFrame(unsigned char*,long)), this, SLOT(OnAudioFrame(unsigned char*,long)));
         connect(&_deviceAudioMgr, SIGNAL(audioError(QString)), this, SLOT(OnAudioError(QString)));
@@ -795,6 +796,14 @@ void InitialScreen::OnVideoStarted(int width, int height)
         settings.media_settings = _publishSettings;
         teeVidClient_->Configure(settings);
         ChangeVideoSource();
+    }
+}
+
+void InitialScreen::OnVideoCapsUpdated(int width, int height, int fps)
+{
+    if (teeVidClient_ && _sourceMode == kExternalSourceMode)
+    {
+        teeVidClient_->UpdateVideoCaps(width, height, fps);
     }
 }
 

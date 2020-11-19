@@ -12,7 +12,8 @@ namespace teevid_sdk
       ERROR = 0,
       WARNING = 1,
       INFO = 2,
-      DEBUG = 3
+      DEBUG = 3,
+      TRACE = 4
     } LogLevel;
 }
 

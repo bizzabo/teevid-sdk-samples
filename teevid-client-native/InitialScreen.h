@@ -95,6 +95,7 @@ protected slots:
     void OnInternalVideoFrame(unsigned char* data, long size, int stride);
     void OnVideoError(QString message);
     void OnVideoStarted(int width, int height);
+    void OnVideoCapsUpdated(int width, int height, int fps);
 
     void OnAudioFrame(unsigned char* data, long size);
     void OnAudioError(QString message);
