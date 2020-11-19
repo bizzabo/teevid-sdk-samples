@@ -149,6 +149,7 @@ void CallItemVideoView::OnVideoFrame(unsigned char *data, size_t size, size_t st
         }
         else
         {
+            image = image.scaled(ui->frameContainer->size());
             setImage(image);
         }
 

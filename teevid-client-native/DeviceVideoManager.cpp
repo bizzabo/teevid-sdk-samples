@@ -56,16 +56,48 @@ static gboolean bus_call(GstBus *bus, GstMessage *msg, gpointer data)
     return TRUE;
 }
 
+static GstPadProbeReturn
+sink_pad_probe (GstPad *pad, GstPadProbeInfo *info, gpointer data)
+{
+  if (GST_PAD_PROBE_INFO_TYPE (info) & GST_PAD_PROBE_TYPE_EVENT_DOWNSTREAM)
+  {
+    GstEvent *event = GST_PAD_PROBE_INFO_EVENT (info);
+
+    if (GST_EVENT_TYPE (event) == GST_EVENT_CAPS)
+    {
+      GstCaps *event_caps = NULL;
+      gst_event_parse_caps (event, &event_caps);
+
+      int width = 0;
+      int height = 0;
+      int fps_numerator = 0;
+      int fps_denominator = 1;
+
+      GstStructure *convert_caps_struct = gst_caps_get_structure((GstCaps *) event_caps, 0);
+      gst_structure_get_int(convert_caps_struct, "width", &width);
+      gst_structure_get_int(convert_caps_struct, "height", &height);
+      gst_structure_get_fraction(convert_caps_struct, "framerate", &fps_numerator, &fps_denominator);
+
+      DeviceVideoManager *self = (DeviceVideoManager *)data;
+      int fps_to_send = (fps_denominator > 0) ? (fps_numerator / fps_denominator) : 0;
+      self->UpdateCaps(width, height, (fps_numerator / fps_denominator));
+    }
+  }
+  return GST_PAD_PROBE_OK;
+}
+
 static GstFlowReturn new_sample_publish (GstElement *sink, gpointer data)
 {
     DeviceVideoManager *self = (DeviceVideoManager *)data;
     self->PullBuffer(DeviceVideoManager::eVideoType::Publish);
+    return GST_FLOW_OK;
 }
 
 static GstFlowReturn new_sample_internal (GstElement *sink, gpointer data)
 {
     DeviceVideoManager *self = (DeviceVideoManager *)data;
     self->PullBuffer(DeviceVideoManager::eVideoType::Internal);
+    return GST_FLOW_OK;
 }
 
 bool DeviceVideoManager::Start(int width, int height, const std::string &format)
@@ -102,7 +134,13 @@ bool DeviceVideoManager::Start(int width, int height, const std::string &format)
     }
 
     _appsinkPublish = gst_bin_get_by_name(GST_BIN(_pipeline), "appsink0");
-    _appsinkInternal = gst_bin_get_by_name(GST_BIN(_pipeline), "appsink1");
+//    _appsinkInternal = gst_bin_get_by_name(GST_BIN(_pipeline), "appsink1");
+
+    GstPad *sink_pad = gst_element_get_static_pad(_appsinkPublish, "sink");
+    gst_pad_add_probe (sink_pad, (GstPadProbeType) (GST_PAD_PROBE_TYPE_QUERY_DOWNSTREAM | GST_PAD_PROBE_TYPE_EVENT_DOWNSTREAM),
+                       (GstPadProbeCallback) sink_pad_probe, this, NULL);
+
+    gst_object_unref (sink_pad);
 
     GstStateChangeReturn ret = gst_element_set_state(_pipeline, GST_STATE_PLAYING);
     if (ret == GST_STATE_CHANGE_FAILURE)
@@ -123,8 +161,8 @@ bool DeviceVideoManager::Start(int width, int height, const std::string &format)
     g_object_set (G_OBJECT (_appsinkPublish), "emit-signals", TRUE, NULL);
     g_signal_connect (_appsinkPublish, "new-sample", G_CALLBACK (new_sample_publish), this);
 
-    g_object_set (G_OBJECT (_appsinkInternal), "emit-signals", TRUE, NULL);
-    g_signal_connect (_appsinkInternal, "new-sample", G_CALLBACK (new_sample_internal), this);
+//    g_object_set (G_OBJECT (_appsinkInternal), "emit-signals", TRUE, NULL);
+//    g_signal_connect (_appsinkInternal, "new-sample", G_CALLBACK (new_sample_internal), this);
 
     std::thread t(&DeviceVideoManager::GstTimerFunc, this);
     t.detach();
@@ -154,6 +192,15 @@ void DeviceVideoManager::QuitMainLoop()
 void DeviceVideoManager::HandleError(QString error)
 {
     emit videoError(error);
+}
+
+void DeviceVideoManager::UpdateCaps(int width, int height, int fps)
+{
+    _width = width;
+    _height = height;
+    _fps = fps;
+
+    emit capsUpdated(width, height, fps);
 }
 
 int DeviceVideoManager::RemainingRetryCount()
