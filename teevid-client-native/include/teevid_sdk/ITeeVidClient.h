@@ -56,6 +56,8 @@ namespace teevid_sdk {
         // Allows to change settings (e.g. video format) for the video from already subscribed stream - without stopping
         virtual void SetStreamMediaSettings(long streamId, const MediaSettings& mediaSettings) = 0;
 
+        virtual void UpdateVideoCaps(int width, int height, int fps) = 0;
+
         // Disconnect from room and stop receiving/sending media
         virtual bool Disconnect() = 0;
 
