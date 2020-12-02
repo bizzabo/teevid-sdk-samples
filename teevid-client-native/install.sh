@@ -72,6 +72,3 @@ sudo cp $CUSTOM_LIB_DIR/gstreamer-1.0/libgstwebrtc.so $INSTALL_LIB_DIR/gstreamer
 #  sudo ln -sf $INSTALL_LIB_DIR/tegra/libnvjpeg.so $INSTALL_LIB_DIR/libjpeg.so
 #  sudo ln -sf $INSTALL_LIB_DIR/tegra/libnvjpeg.so $INSTALL_LIB_DIR/libjpeg.so.8
 #fi
-
-sudo chmod +x build-debug.sh
-sudo chmod +x build-release.sh
