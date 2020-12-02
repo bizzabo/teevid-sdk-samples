@@ -43,7 +43,7 @@ const QString cAudioSampleFile = "audio-sample-48000.wav";
 InitialScreen::InitialScreen(QWidget *parent) : QWidget(parent), ui(new Ui::InitialScreen)
 {
     // _sourceMode is used inside InitUI, so initialize it's value before the InitUI call
-    _sourceMode = kInternalSourceMode;
+    _sourceMode = kExternalSourceMode;
 
     InitUI();
     //InitSDK();

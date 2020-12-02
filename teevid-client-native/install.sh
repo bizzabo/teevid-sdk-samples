@@ -66,8 +66,12 @@ sudo cp $CUSTOM_LIB_DIR/gstreamer-1.0/libgstwebrtc.la $INSTALL_LIB_DIR/gstreamer
 echo "Install $CUSTOM_LIB_DIR/gstreamer-1.0/libgstwebrtc.so"
 sudo cp $CUSTOM_LIB_DIR/gstreamer-1.0/libgstwebrtc.so $INSTALL_LIB_DIR/gstreamer-1.0/
 
-echo "Install $CUSTOM_LIB_DIR/gstreamer-1.0/libgstrtp.la"
-sudo cp $CUSTOM_LIB_DIR/gstreamer-1.0/libgstrtp.la $INSTALL_LIB_DIR/gstreamer-1.0/
+#if [ "$ARCHITECTURE" = "aarch64" ]; then
+#  echo "Install $CUSTOM_LIB_DIR/gstreamer-1.0/libgstnvjpeg.so"
+#  sudo cp $CUSTOM_LIB_DIR/gstreamer-1.0/libgstjpeg.so $INSTALL_LIB_DIR/gstreamer-1.0/
+#  sudo ln -sf $INSTALL_LIB_DIR/tegra/libnvjpeg.so $INSTALL_LIB_DIR/libjpeg.so
+#  sudo ln -sf $INSTALL_LIB_DIR/tegra/libnvjpeg.so $INSTALL_LIB_DIR/libjpeg.so.8
+#fi
 
-echo "Install $CUSTOM_LIB_DIR/gstreamer-1.0/libgstrtp.so"
-sudo cp $CUSTOM_LIB_DIR/gstreamer-1.0/libgstrtp.so $INSTALL_LIB_DIR/gstreamer-1.0/
+sudo chmod +x build-debug.sh
+sudo chmod +x build-release.sh
