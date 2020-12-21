@@ -27,4 +27,6 @@ public interface VideoViewContainer<T> {
     void clear();
 
     int itemCount();
+
+    void setVisibility(int visibility);
 }

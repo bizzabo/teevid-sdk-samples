@@ -3,6 +3,7 @@ package com.teevid.sample.view;
 import android.animation.AnimatorSet;
 import android.animation.ValueAnimator;
 import android.graphics.Point;
+import android.os.Build;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,6 +12,8 @@ public class DragTouchListener implements View.OnTouchListener {
 
     private static final int DURATION_ANIMATION_CORNER = 500;
     private static final int CLICK_THRESHOLD = 100;
+    private static final int LAYOUT_SETTLE_TIME = Build.VERSION.SDK_INT < Build.VERSION_CODES.M
+            ? 500 : 1;
 
     private final View viewDrag;
     private boolean enabled = true;
@@ -55,19 +58,19 @@ public class DragTouchListener implements View.OnTouchListener {
     }
 
     public void onOrientationChanged() {
-        viewDrag.post(() -> { // Need time for layout to settle
+        viewDrag.postDelayed(() -> { // Need time for layout to settle
             calculateMaxMargins();
             applyMaxMargins();
-        });
+        }, LAYOUT_SETTLE_TIME);
     }
 
     public void enable() {
         enabled = true;
 
-        viewDrag.post(() -> { // Need time for layout to settle
+        viewDrag.postDelayed(() -> { // Need time for layout to settle
             calculateMaxMargins();
             applyMaxMargins();
-        });
+        }, LAYOUT_SETTLE_TIME);
     }
 
     public void disable() {
@@ -90,8 +93,18 @@ public class DragTouchListener implements View.OnTouchListener {
         oldMaxMarginLeft = maxMarginLeft;
         oldMaxMarginTop = maxMarginTop;
 
-        maxMarginLeft = parent.getWidth() - viewDrag.getWidth();
-        maxMarginTop = parent.getHeight() - viewDrag.getHeight();
+        ViewGroup.LayoutParams layoutParams = viewDrag.getLayoutParams();
+        int viewWidth = layoutParams.width;
+        int viewHeight = layoutParams.height;
+        if (viewWidth == ViewGroup.LayoutParams.MATCH_PARENT) {
+            viewWidth = viewDrag.getWidth();
+        }
+        if (viewHeight == ViewGroup.LayoutParams.MATCH_PARENT) {
+            viewHeight = viewDrag.getHeight();
+        }
+
+        maxMarginLeft = parent.getWidth() - viewWidth;
+        maxMarginTop = parent.getHeight() - viewHeight;
     }
 
     private void applyMaxMargins() {

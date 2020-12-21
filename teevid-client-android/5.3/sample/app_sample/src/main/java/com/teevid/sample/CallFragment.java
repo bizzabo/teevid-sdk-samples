@@ -25,8 +25,8 @@ import androidx.fragment.app.Fragment;
 import com.teevid.sdk.TeeVidClient;
 import com.teevid.sdk.TeeVidEventListener;
 import com.teevid.sdk.api.SdkErrors;
-import com.teevid.sdk.api.version.ServerVersion;
 import com.teevid.sdk.data.CameraDeviceInfo;
+import com.teevid.sdk.data.HardMuteRequest;
 import com.teevid.sdk.data.ParticipantInfo;
 import com.teevid.sdk.data.RoomInfo;
 import com.teevid.sdk.log.LogLevel;
@@ -79,7 +79,7 @@ public class CallFragment extends Fragment {
 
         client = new TeeVidClient.Builder(getContext(), sdkToken)
                 .addListener(getEventListener())
-                .setServerVersion(ServerVersion.V5)
+                .setDebugMode(true)
                 .setLogLevel(LogLevel.DEBUG)
                 .build();
         client.setView(viewTeeVid);
@@ -110,7 +110,7 @@ public class CallFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        client.disconnect();
+        client.dispose();
     }
 
     private void onCameraButtonClicked(ToggleButton button) {
@@ -322,6 +322,19 @@ public class CallFragment extends Fragment {
             public void onReceiveUnmuteVideoRequest(Consumer<Boolean> resultConsumer) {
                 Log.d(TAG, "onReceiveUnmuteVideoRequest");
                 showUnmuteVideoRequestDialog(resultConsumer);
+            }
+
+            @Override
+            public void onReceiveHardMuteRequest(HardMuteRequest hardMuteRequest) {
+                Log.d(TAG, "onReceiveHardMuteRequest");
+                if (hardMuteRequest.isRequired()) {
+                    client.stopVideo();
+                    client.mute();
+
+                    btnCamera.setChecked(false);
+                    btnMicrophone.setChecked(false);
+                }
+                hardMuteRequest.proceed();
             }
 
             @Override

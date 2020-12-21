@@ -1,6 +1,6 @@
 apply plugin: 'com.android.application'
 
-def sampleVersionName = "5.3-frc-5"
+def sampleVersionName = "5.3-frc-6"
 
 android {
     compileSdkVersion 29
@@ -19,7 +19,7 @@ android {
 
     signingConfigs {
 
-        release { // TODO Test key store is used
+        release {
             storeFile file("keystore.jks")
             storePassword '111111'
             keyAlias 'key0'

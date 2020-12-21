@@ -76,13 +76,13 @@ public class CustomMeetingViewExample extends BaseMeetingView {
 //            view.setOnClickListener(view1 -> {
 //                log.d(TAG, "onClick: remove " + view);
 //                getRemoteVideoViews().remove(view);
-//                onRemoveVideoView(participantId, id, view);
+//                onRemoveVideoView(view, null);
 //            });
 //
 //            view.setBackgroundColor(color);
 //
 //            getRemoteVideoViews().add(view);
-//            onAddVideoView(participantId, id, view);
+//            onAddVideoView(view, null);
 //        });
     }
 
@@ -101,6 +101,7 @@ public class CustomMeetingViewExample extends BaseMeetingView {
                 viewScreenSharing.getLayoutParams();
 
         LinearLayout.LayoutParams paramsList = (LinearLayout.LayoutParams) viewList.getLayoutParams();
+        FrameLayout.LayoutParams paramsLocalVideo = (LayoutParams) viewPictureInPicture.getLayoutParams();
 
         if (orientation == Configuration.ORIENTATION_PORTRAIT) {
             layoutOrientation = LinearLayout.VERTICAL;
@@ -113,6 +114,13 @@ public class CustomMeetingViewExample extends BaseMeetingView {
 
             paramsList.width = ViewGroup.LayoutParams.MATCH_PARENT;
             paramsList.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+
+            if (paramsLocalVideo.height != ViewGroup.LayoutParams.MATCH_PARENT) {
+                paramsLocalVideo.width = (int) getResources()
+                        .getDimension(R.dimen.local_video_small_width);
+                paramsLocalVideo.height = (int) getResources()
+                        .getDimension(R.dimen.local_video_small_height);
+            }
         } else {
             layoutOrientation = LinearLayout.HORIZONTAL;
 
@@ -124,12 +132,20 @@ public class CustomMeetingViewExample extends BaseMeetingView {
 
             paramsList.width = ViewGroup.LayoutParams.WRAP_CONTENT;
             paramsList.height = ViewGroup.LayoutParams.MATCH_PARENT;
+
+            if (paramsLocalVideo.height != ViewGroup.LayoutParams.MATCH_PARENT) {
+                paramsLocalVideo.width = (int) getResources()
+                        .getDimension(R.dimen.local_video_small_height);
+                paramsLocalVideo.height = (int) getResources()
+                        .getDimension(R.dimen.local_video_small_width);
+            }
         }
 
         layoutLinear.setOrientation(layoutOrientation);
         viewGrid.setLayoutParams(paramsGrid);
         viewScreenSharing.setLayoutParams(paramsScreenSharing);
         viewList.setLayoutParams(paramsList);
+        viewPictureInPicture.setLayoutParams(paramsLocalVideo);
     }
 
     @Override
@@ -152,6 +168,25 @@ public class CustomMeetingViewExample extends BaseMeetingView {
         viewScreenSharing.setVisibility(View.GONE);
         viewPictureInPicture.setVisibility(View.VISIBLE);
         moveViewsFromListToGridIfPossible();
+    }
+
+    @Override
+    protected VideoView getStoryboardVideoView() {
+        Log.d(TAG, "getStoryboardVideoView");
+        viewScreenSharing.setVisibility(View.VISIBLE);
+        viewPictureInPicture.setVisibility(View.GONE);
+        viewGrid.setVisibility(View.GONE);
+        viewList.setVisibility(View.GONE);
+        return viewScreenSharing;
+    }
+
+    @Override
+    protected void onRemoveStoryboardVideoView() {
+        Log.d(TAG, "onRemoveStoryboardVideoView");
+        viewScreenSharing.setVisibility(View.GONE);
+        viewPictureInPicture.setVisibility(View.VISIBLE);
+        viewGrid.setVisibility(View.VISIBLE);
+        viewList.setVisibility(View.VISIBLE);
     }
 
     @Override
@@ -189,14 +224,18 @@ public class CustomMeetingViewExample extends BaseMeetingView {
             viewGrid.removeView(view);
 
             // If there's any view in list, move the first one to grid
-            if (!viewList.isEmpty() && getMode() != MODE_SCREEN_SHARE) {
+            boolean canMoveToGrid = !viewList.isEmpty() && getMode() != MODE_SCREEN_SHARE
+                    && getMode() != MODE_STORYBOARD;
+            if (canMoveToGrid) {
                 VideoView listChildView = viewList.get(0);
                 viewList.removeView(listChildView);
 
                 addViewToGridViewContainer(listChildView);
             }
         }
-        if (count == 0 && getMode() != MODE_SCREEN_SHARE) {
+        boolean needToMakeFullscreen = count == 0 && getMode() != MODE_SCREEN_SHARE
+                && getMode() != MODE_STORYBOARD;
+        if (needToMakeFullscreen) {
             makeLocalVideoFullscreen();
         }
     }
@@ -214,6 +253,13 @@ public class CustomMeetingViewExample extends BaseMeetingView {
     @Override
     protected void onSetMaxViewsInGrid(int maxViewsInGrid) {
         this.maxViewsInGrid = maxViewsInGrid;
+    }
+
+    @Override
+    protected boolean allowVideoViewReordering() {
+        // Called to clarify whether a video view reordering is allowed. Video view reordering is
+        // usually caused by the change of active speaker.
+        return true;
     }
 
     @Override
@@ -241,9 +287,11 @@ public class CustomMeetingViewExample extends BaseMeetingView {
         List<VideoView> gridViews = new ArrayList<>(viewGrid.getVideoViews());
         viewGrid.clear();
 
-        for (VideoView gridVideoView : gridViews) {
-            onAddVideoView(gridVideoView, null);
-        }
+        handler.post(() -> {
+            for (VideoView gridVideoView : gridViews) {
+                onAddVideoView(gridVideoView, null);
+            }
+        });
     }
 
     private void moveViewsFromListToGridIfPossible() {
@@ -263,8 +311,15 @@ public class CustomMeetingViewExample extends BaseMeetingView {
     }
 
     private void makeLocalVideoSmall() {
-        int width = (int) getResources().getDimension(R.dimen.local_video_small_width);
-        int height = (int) getResources().getDimension(R.dimen.local_video_small_height);
+        int width;
+        int height;
+        if (Configuration.ORIENTATION_PORTRAIT == getOrientation()) {
+            width = (int) getResources().getDimension(R.dimen.local_video_small_width);
+            height = (int) getResources().getDimension(R.dimen.local_video_small_height);
+        } else {
+            width = (int) getResources().getDimension(R.dimen.local_video_small_height);
+            height = (int) getResources().getDimension(R.dimen.local_video_small_width);
+        }
         setLocalVideoSize(width, height);
 
         dragTouchListener.enable();
