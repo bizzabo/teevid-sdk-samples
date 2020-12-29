@@ -71,3 +71,9 @@ sudo cp $CUSTOM_LIB_DIR/gstreamer-1.0/libgstrtp.la $INSTALL_LIB_DIR/gstreamer-1.
 
 echo "Install $CUSTOM_LIB_DIR/gstreamer-1.0/libgstrtp.so"
 sudo cp $CUSTOM_LIB_DIR/gstreamer-1.0/libgstrtp.so $INSTALL_LIB_DIR/gstreamer-1.0/
+
+echo "Setting the kernel buffer size for UDP sockets"
+sudo -s 'echo "net.core.wmem_default=4194304" >> /etc/sysctl.conf'
+sudo -s 'echo "net.core.wmem_max=4194304" >> /etc/sysctl.conf'
+sudo -s 'echo "net.core.rmem_default=4194304" >> /etc/sysctl.conf'
+sudo -s 'echo "net.core.rmem_max=4194304" >> /etc/sysctl.conf'
