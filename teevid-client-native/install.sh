@@ -73,16 +73,6 @@ sudo cp $CUSTOM_LIB_DIR/gstreamer-1.0/libgstrtp.la $INSTALL_LIB_DIR/gstreamer-1.
 echo "Install $CUSTOM_LIB_DIR/gstreamer-1.0/libgstrtp.so"
 sudo cp $CUSTOM_LIB_DIR/gstreamer-1.0/libgstrtp.so $INSTALL_LIB_DIR/gstreamer-1.0/
 
-#if [ "$ARCHITECTURE" = "aarch64" ]; then
-#  echo "Install $CUSTOM_LIB_DIR/gstreamer-1.0/libgstnvjpeg.so"
-#  sudo cp $CUSTOM_LIB_DIR/gstreamer-1.0/libgstjpeg.so $INSTALL_LIB_DIR/gstreamer-1.0/
-#  sudo ln -sf $INSTALL_LIB_DIR/tegra/libnvjpeg.so $INSTALL_LIB_DIR/libjpeg.so
-#  sudo ln -sf $INSTALL_LIB_DIR/tegra/libnvjpeg.so $INSTALL_LIB_DIR/libjpeg.so.8
-#fi
-
-sudo chmod +x build-debug.sh
-sudo chmod +x build-release.sh
-
 echo "Setting the kernel buffer size for UDP sockets"
 sysctl -w net.core.wmem_default=$SOCKET_BUFFER_SIZE
 sysctl -w net.core.rmem_default=$SOCKET_BUFFER_SIZE
