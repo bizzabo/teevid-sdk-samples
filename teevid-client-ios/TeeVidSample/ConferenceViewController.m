@@ -41,7 +41,7 @@
         conferenceView.autoresizingMask = self.view.autoresizingMask;
         [self.view addSubview:conferenceView];
         [self.view sendSubviewToBack:conferenceView];
-        teeVidClient    = [[TeeVidClient alloc] initWithView:conferenceView options:nil andDelegate:self];
+        teeVidClient    = [[TeeVidClient alloc] initWithView:conferenceView server:serverAddress room:roomId userName:@"TeeVidSample iOS" options:nil andDelegate:self];
     }
     else {
         // Create client without passing view, instead get and manage individual participant video views directly
@@ -51,7 +51,7 @@
     }
     
     // Initiate conference room connection
-    [teeVidClient connectTo:roomId at:serverAddress as:@"TeeVidSample iOS" withPin:nil];
+    [teeVidClient connectToServer:serverAddress room:roomId asUser:@"TeeVidSample iOS" meetingType:MeetingTypeRegularRoom withAccessPin:nil];
     
     // Prevent screen from dimming while in a call
     [[UIApplication sharedApplication] setIdleTimerDisabled: YES];

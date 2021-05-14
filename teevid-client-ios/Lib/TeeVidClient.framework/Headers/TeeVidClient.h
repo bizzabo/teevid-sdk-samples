@@ -126,6 +126,17 @@ typedef enum {
 } TeeVidClientRecordingState;
 
 
+/*!
+@brief Enumeration of meeting type.
+@discussion This enumeration defines type of meeting user is trying to conect to.
+*/
+typedef enum {
+    MeetingTypeDefault,
+    MeetingTypeRegularRoom,
+    MeetingTypeEventAttendee,
+    MeetingTypeEventPanelist
+} MeetingType;
+
 
 
 @class TeeVidClient;
@@ -134,6 +145,7 @@ typedef enum {
  @discussion This delegate is required and must be implemented by application which utilizes TeeVidClient. Client will use delegate methods to inform application when specific phases of call setup reached and/or conference state changes.
  */
 @protocol TeeVidClientDelegate <NSObject>
+
 
 /*!
  @brief Notifies application that conference room requires access PIN.
@@ -179,8 +191,54 @@ typedef enum {
 
  @param client instance of the client this call came from
  @param roomId conference room id
+ @param reason text explanation of disconnect action
  */
-- (void)client:(TeeVidClient *)client didDisconnect:(NSString *)roomId;
+- (void)client:(TeeVidClient *)client didDisconnect:(NSString *)roomId reason:(NSString *)reason;
+
+/*!
+ @brief Notifies application about SmartJoin page needed to be shown.
+ @discussion Upon receiving this call, application should show SmartJoin page where user can see themself, and can set camera and mic settigns they want (this is the required part of regular room connection flow).
+
+ @param client instance of the client this call came from
+ @param publisherCount number of already conected participants who are publishing their audio/video stream
+ */
+- (void)client:(TeeVidClient *)client showSmartJoinWithPublisherCount:(NSInteger)publisherCount;
+
+/*!
+ @brief Notifies application about Event type of room appication is trying to connect to.
+ @discussion Upon receiving this call, application should show pre-Event page according to current status details received (instead of regular SmartJoin page).
+
+ @param client instance of the client this call came from
+ @param params dictionary with Event details
+ @param credentialRequirements dictionary with credential requirements details
+ */
+- (void)client:(TeeVidClient *)client showPreEventScreenWithParams:(NSDictionary *)params credentialRequirements:(NSArray <NSString *> *)credentialRequirements;
+
+/*!
+ @brief Notifies application about changed Event state details.
+ @discussion Upon receiving this call, application can update pre-Event page with changed status (Event started, terminated, etc).
+
+ @param client instance of the client this call came from
+ @param params dictionary with Event details
+ */
+- (void)client:(TeeVidClient *)client didUpdateEventStateWithParams:(NSDictionary *)params;
+
+/*!
+ @brief Notifies application that attendee or panelist pin verification passed.
+ @discussion Upon receiving this call, application can allow attendee or panelist join to Event.
+
+ @param client instance of the client this call came from
+ */
+- (void)clientEventPersonVerificationPassed:(TeeVidClient *)client;
+
+/*!
+ @brief Notifies application that client received a poll updates information.
+ @discussion Upon receiving this call, application can show screen or popup with poll information (topic and options) - and user can vote.
+
+ @param client instance of the client this call came from
+ @param params dictionary with poll details
+ */
+- (void)client:(TeeVidClient *)client didUpdatePollWithParams:(NSDictionary *)params;
 
 /*!
  @brief Notifies application that client received an error after being connected connected to conference room.
@@ -603,6 +661,11 @@ Note that this selector is optional.
 */
 @property (strong, nonatomic, readonly) UIImage *localUserAvatar;
 
+/*!
+@brief Indicates whether local user is room owner or has moderator role.
+@discussion Application can use this flag to show additional functionality available for room owner or room moderator.
+*/
+@property (assign, nonatomic, readonly, getter=isUserOwnerOrModerator) BOOL userIsOwnerOrModerator;
 
 /*!
  @brief Creates new instance of TeeVidClient.
@@ -612,11 +675,14 @@ Note that this selector is optional.
  Note that options parameter is reserved for future use.
  
  @param view view to render conference room participants videos in
+ @param server server address (typically DNS name)
+ @param roomId conference room id
+ @param userName userName participant name
  @param options conference room options (reserved for future use)
  @param delegate TeeVidClient delegate
  @return new istance of TeeVidClient
  */
-- (instancetype)initWithView:(UIView *)view options:(NSDictionary *)options andDelegate:(id<TeeVidClientDelegate>)delegate;
+- (instancetype)initWithView:(UIView *)view server:(NSString *)server room:(NSString *)roomId userName:(NSString *)userName options:(NSDictionary *)options andDelegate:(id <TeeVidClientDelegate>)delegate;
 
 /*!
  @brief Creates new instance of TeeVidClient.
@@ -629,7 +695,7 @@ Note that this selector is optional.
  @param delegate TeeVidClient delegate
  @return new istance of TeeVidClient
  */
-- (instancetype)initWithOptions:(NSDictionary *)options andDelegate:(id<TeeVidClientDelegate>)delegate;
+- (instancetype)initWithOptions:(NSDictionary *)options andDelegate:(id <TeeVidClientDelegate>)delegate;
 
 /*!
  @brief Connects to a conference room.
@@ -637,24 +703,27 @@ Note that this selector is optional.
  
  Note that if user does not know whether room is PIN protected, connection can be initiated without PIN. In such case, if client detects that room requires PIN to connect, it will request PIN by calling approrpiate delegate method.
 
+ @param server server address (typically DNS name)
  @param roomId conference room id
- @param serverAddress address server address (typically DNS name)
  @param userName userName participant name
+ @param meetingType enum to specify type of meeting user is connecting to
  @param pin optional conference room owner or guest PIN
  */
-- (void)connectTo:(NSString *)roomId at:(NSString *)serverAddress as:(NSString *)userName withPin:(NSString *)pin;
+- (void)connectToServer:(NSString *)server room:(NSString *)roomId asUser:(NSString *)userName meetingType:(MeetingType)meetingType withAccessPin:(NSString *)pin;
 
 /*!
  @brief Connects to a conference room.
  @discussion This method is typically used when application receives invitation link or other type of invite containing invitation token. Passing valid invitation token allows application to connect to PIN protected room without knowing its PIN. Connection is performed asynchronously after all parameters are validated. Any change in connection state (including errors) will be reported to application using appropiate delegate methods.
  @warning Each invitation token can be only used one time.
-
+ 
+ @param server server address (typically DNS name)
  @param roomId conference room id
- @param serverAddress address server address (typically DNS name)
  @param userName userName participant name
+ @param meetingType enum to specify type of meeting user is connecting to
  @param invitationToken invitation token
  */
-- (void)connectTo:(NSString *)roomId at:(NSString *)serverAddress as:(NSString *)userName withInvitationToken:(NSString *)invitationToken;
+- (void)connectToServer:(NSString *)server room:(NSString *)roomId asUser:(NSString *)userName meetingType:(MeetingType)meetingType withInvitationToken:(NSString *)invitationToken;
+
 
 /*!
 @brief Connects to a conference via intermediate SmartJoin room.
@@ -673,6 +742,16 @@ Note that this selector is optional.
  @return invitation token
  */
 - (NSString *)createInvitationToken;
+
+/*!
+@brief Creates invitation token.
+@discussion This method can be used to generate invitation token in order to invite someone to a conference room. Application then is responsible to deliver such invitation using out of band channel (instant message, email, etc.)
+
+Note that in order to generate invitation token, client must be successfully connected to a conference room first.
+
+@return invitation token via block completion
+*/
+- (void)generateInvitationTokenWithCompletion:(void (^)(NSString *invitationToken))completion;
 
 /*!
  @brief Disconnects from the conference room.
@@ -783,44 +862,67 @@ Note that this selector is optional.
 - (NSArray *)getLecturerSelectedParticipants;
 
 /*!
-@brief Mutes client's audio in SmartJoin room.
-@discussion Application can use this method to mute local audio in SmartJoin room. This state will be used furhter after user connected to the meeting
+ @brief Mutes client's audio in SmartJoin room.
+ @discussion Application can use this method to mute local audio in SmartJoin room. This state will be used furhter after user connected to the meeting
 */
 - (void)smartJoinMuteMic;
 
 /*!
-@brief Unmutes client's audio in SmartJoin room.
-@discussion Application can use this method to unmute local audio in SmartJoin room. This state will be used furhter after user connected to the meeting
+ @brief Unmutes client's audio in SmartJoin room.
+ @discussion Application can use this method to unmute local audio in SmartJoin room. This state will be used furhter after user connected to the meeting
 */
 - (void)smartJoinUnmuteMic;
 
 /*!
-@brief Stops client's video in SmartJoin room.
-@discussion Application can use this method to stop local video in SmartJoin room. This state will be used furhter after user connected to the meeting
+ @brief Stops client's video in SmartJoin room.
+ @discussion Application can use this method to stop local video in SmartJoin room. This state will be used furhter after user connected to the meeting
 */
 - (void)smartJoinStopVideo;
 
 /*!
-@brief Resumes client's video in SmartJoin room.
-@discussion Application can use this method to resume local video in SmartJoin room. This state will be used furhter after user connected to the meeting
+ @brief Resumes client's video in SmartJoin room.
+ @discussion Application can use this method to resume local video in SmartJoin room. This state will be used furhter after user connected to the meeting
 */
 - (void)smartJoinResumeVideo;
 
 /*!
-@brief Switches front and back cameras in SmartJoin room.
-@discussion Application can use this method to switch video from front to back camera (or backward). Initially from camera is being used. This selected camera will be used furhter after user connected to the meeting
+ @brief Switches front and back cameras in SmartJoin room.
+ @discussion Application can use this method to switch video from front to back camera (or backward). Initially from camera is being used. This selected camera will be used furhter after user connected to the meeting
 */
 - (void)smartJoinSwitchCamera;
 
-
 /*!
-@brief Notifies client about request to update user image thumbnail
-@discussion Application can use this method to request user image update. Actual avatar update will no be performed if local video is stopped.
+ @brief Notifies client about request to update user image thumbnail
+ @discussion Application can use this method to request user image update. Actual avatar update will no be performed if local video is stopped.
 
-@return Current methods doesn't return the generated thumbnail
-Hovewer the resulted image thumbnail will be returned via TeeVidClientDelegate protocol's method [client: didUpdateUserImage:]
+ @return Current methods doesn't return the generated thumbnail
+ Hovewer the resulted image thumbnail will be returned via TeeVidClientDelegate protocol's method [client: didUpdateUserImage:]
 */
 - (void)userImageUpdateRequested;
 
+/*!
+ @brief Sends user vote
+ @discussion Application can use this method to send user's vote with specific option they picked.
+
+ @param pollId current poll id user is voting for
+ @param optionName specific option user is voting with
+ */
+- (void)voteInPoll:(NSString *)pollId withOptionName:(NSString *)optionName;
+
+/*!
+ @brief Sends attendee pin for verification
+ @discussion Application can use this method to send attendee's access pin for Event meeting to be verified on server.
+
+ @param pin access pin value in String format
+ */
+- (void)verifyAttendeePin:(NSString *)pin;
+
+/*!
+ @brief Sends panelist pin for verification
+ @discussion Application can use this method to send panelist's access pin for Event meeting to be verified on server.
+
+ @param pin access pin value in String format
+ */
+- (void)verifyPanelistsPin:(NSString *)pin;
 
 @end
