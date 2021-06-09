@@ -16,6 +16,7 @@
 #include "LogLevel.h"
 #include "RoomParameters.h"
 #include "SourceMode.h"
+#include "IFrameModifier.h"
 
 namespace teevid_sdk {
     struct ITeeVidClient {
@@ -38,12 +39,12 @@ namespace teevid_sdk {
         // sendAudio - should audio be sent or mute it (true dy default)
         // sendVideo - should video be sent or mute it (true dy default)
         virtual void ConnectTo(const std::string& roomName, const std::string& name, const std::string& password,
-                               int accessPin, int ownerPin, bool sendAudio, bool sendVideo) = 0;
+                               int accessPin, int ownerPin, bool sendAudio, bool sendVideo, IFrameModifier* frameModifier) = 0;
 
         // By this method, client can enter the room by invitation token received from another client
         // Need to provide invitation token and own name
         virtual void ConnectTo(const std::string& invitationToken, const std::string& roomName,
-                const std::string& name, const std::string& password, bool sendAudio, bool sendVideo) = 0;
+                const std::string& name, const std::string& password, bool sendAudio, bool sendVideo, IFrameModifier* frameModifier) = 0;
 
         // Each stream which return by OnStreamAdded callback can e subscribed by client's application
         // Subscriber provides callback interface which wil be used to deliver media data
