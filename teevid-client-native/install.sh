@@ -79,7 +79,7 @@ if [ "$ARCHITECTURE" = "aarch64" ]; then
 fi
 
 echo "Install video modifying libraries"
-sudo cp $CUSTOM_LIB_DIR/gstreamer-1.0/libteevid_gst_elements.so $INSTALL_LIB_DIR/gstreamer-1.0/
+sudo cp $CUSTOM_LIB_DIR/libteevid_gst_elements.so $INSTALL_LIB_DIR/gstreamer-1.0/
 
 echo "Setting the kernel buffer size for UDP sockets"
 sysctl -w net.core.wmem_default=$SOCKET_BUFFER_SIZE
