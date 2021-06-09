@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="16096" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+    <device id="retina6_1" orientation="portrait" appearance="light"/>
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="16087"/>
+        <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <objects>
+        <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner" customClass="DotsAnimationView">
+            <connections>
+                <outlet property="centerDot" destination="Uyn-VH-X0V" id="cri-9a-cQL"/>
+                <outlet property="leftDot" destination="oHI-LW-3Jg" id="sBp-oH-fPE"/>
+                <outlet property="rightDot" destination="pG8-YK-O35" id="Xp6-O7-c6X"/>
+            </connections>
+        </placeholder>
+        <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
+        <view contentMode="scaleAspectFit" id="iN0-l3-epB">
+            <rect key="frame" x="0.0" y="0.0" width="242" height="44"/>
+            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+            <subviews>
+                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="oHI-LW-3Jg" userLabel="leftDot" customClass="CircleDot">
+                    <rect key="frame" x="93" y="14" width="16" height="16"/>
+                    <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                    <constraints>
+                        <constraint firstAttribute="width" secondItem="oHI-LW-3Jg" secondAttribute="height" multiplier="1:1" id="5ym-tB-wo3"/>
+                        <constraint firstAttribute="width" constant="16" id="YUw-Oo-CNs"/>
+                    </constraints>
+                    <userDefinedRuntimeAttributes>
+                        <userDefinedRuntimeAttribute type="color" keyPath="fillColor">
+                            <color key="value" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                        </userDefinedRuntimeAttribute>
+                    </userDefinedRuntimeAttributes>
+                </view>
+                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Uyn-VH-X0V" userLabel="centerDot" customClass="CircleDot">
+                    <rect key="frame" x="113" y="14" width="16" height="16"/>
+                    <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                    <constraints>
+                        <constraint firstAttribute="width" secondItem="Uyn-VH-X0V" secondAttribute="height" multiplier="1:1" id="oDP-D3-kOk"/>
+                    </constraints>
+                    <userDefinedRuntimeAttributes>
+                        <userDefinedRuntimeAttribute type="color" keyPath="fillColor">
+                            <color key="value" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                        </userDefinedRuntimeAttribute>
+                    </userDefinedRuntimeAttributes>
+                </view>
+                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="pG8-YK-O35" userLabel="rightDot" customClass="CircleDot">
+                    <rect key="frame" x="133" y="14" width="16" height="16"/>
+                    <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                    <constraints>
+                        <constraint firstAttribute="width" secondItem="pG8-YK-O35" secondAttribute="height" multiplier="1:1" id="BS6-HJ-zwl"/>
+                    </constraints>
+                    <userDefinedRuntimeAttributes>
+                        <userDefinedRuntimeAttribute type="color" keyPath="fillColor">
+                            <color key="value" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                        </userDefinedRuntimeAttribute>
+                    </userDefinedRuntimeAttributes>
+                </view>
+            </subviews>
+            <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+            <constraints>
+                <constraint firstItem="pG8-YK-O35" firstAttribute="centerY" secondItem="iN0-l3-epB" secondAttribute="centerY" id="646-5l-26k"/>
+                <constraint firstItem="Uyn-VH-X0V" firstAttribute="centerY" secondItem="iN0-l3-epB" secondAttribute="centerY" id="Fzi-12-bQ5"/>
+                <constraint firstItem="Uyn-VH-X0V" firstAttribute="width" secondItem="oHI-LW-3Jg" secondAttribute="width" id="atZ-M1-MDb"/>
+                <constraint firstItem="Uyn-VH-X0V" firstAttribute="centerX" secondItem="iN0-l3-epB" secondAttribute="centerX" id="bsV-nC-WyG"/>
+                <constraint firstItem="pG8-YK-O35" firstAttribute="leading" secondItem="Uyn-VH-X0V" secondAttribute="trailing" constant="4" id="dKD-AU-KFy"/>
+                <constraint firstItem="pG8-YK-O35" firstAttribute="width" secondItem="oHI-LW-3Jg" secondAttribute="width" id="dko-vy-Ylz"/>
+                <constraint firstItem="oHI-LW-3Jg" firstAttribute="centerY" secondItem="iN0-l3-epB" secondAttribute="centerY" id="ubr-n9-GEg"/>
+                <constraint firstItem="oHI-LW-3Jg" firstAttribute="trailing" secondItem="Uyn-VH-X0V" secondAttribute="leading" constant="-4" id="wiF-7x-3rw"/>
+            </constraints>
+            <nil key="simulatedTopBarMetrics"/>
+            <nil key="simulatedBottomBarMetrics"/>
+            <freeformSimulatedSizeMetrics key="simulatedDestinationMetrics"/>
+            <viewLayoutGuide key="safeArea" id="vUN-kp-3ea"/>
+            <point key="canvasLocation" x="133" y="154"/>
+        </view>
+    </objects>
+</document>

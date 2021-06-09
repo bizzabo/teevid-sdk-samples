@@ -1,0 +1,6 @@
+framework module Pods_TeeVidSample {
+  umbrella header "Pods-TeeVidSample-umbrella.h"
+
+  export *
+  module * { export * }
+}

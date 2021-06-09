@@ -6,9 +6,13 @@
 //
 
 #import "ConferenceViewController.h"
+#import "SmartJoinViewController.h"
+#import "Utils.h"
 
+@interface ConferenceViewController () <SmartJoinViewControllerDelegate>
 
-@interface ConferenceViewController ()
+@property (strong, nonatomic) SmartJoinViewController *smartJoinView;
+
 @end
 
 
@@ -45,19 +49,12 @@
     }
     else {
         // Create client without passing view, instead get and manage individual participant video views directly
-        teeVidClient    = [[TeeVidClient alloc] initWithOptions:nil andDelegate:self];
+        teeVidClient    = [[TeeVidClient alloc] initWithView:nil server:serverAddress room:roomId userName:@"TeeVidSample iOS" options:nil andDelegate:self];
         videoViews      = [[NSMutableDictionary alloc] init];
         screenSharingViews = [[NSMutableDictionary alloc] init];
     }
-    
-    // Initiate conference room connection
-    [teeVidClient connectToServer:serverAddress room:roomId asUser:@"TeeVidSample iOS" meetingType:MeetingTypeRegularRoom withAccessPin:nil];
-    
-    // Prevent screen from dimming while in a call
-    [[UIApplication sharedApplication] setIdleTimerDisabled: YES];
+        
 }
-
-
 
 #pragma mark - TeeVidClientDelegate
 - (void)client:(TeeVidClient *)client didRequestAccessPIN:(NSString *)roomId {
@@ -75,15 +72,55 @@
 - (void)client:(TeeVidClient *)client didConnect:(NSString *)roomId {
     // Client has connected to the conference room
     // Perform any appropriate actions - enable controls, etc.
+    
+    self.disconnectButton.hidden = NO;
+    // prevent screen from dimming while in a call
+    [[UIApplication sharedApplication] setIdleTimerDisabled: YES];
+    [self closeSmartJoinViewWithAnimation:YES];
 }
 
-- (void)client:(TeeVidClient *)client didDisconnect:(NSString *)roomId {
+- (void)client:(TeeVidClient *)client didDisconnect:(NSString *)roomId reason:(NSString *)reason {
     // Client has disconnected from the conference room
     // Note that this can be result of disconnect segue, or disconnect on remote end
     // If disconnected remotely, need to perform disconnect seque to return to entry screen
     if (!disconnecing) {
         [self quitMeeting];
     }
+}
+
+- (void)client:(TeeVidClient *)client showSmartJoinWithPublisherCount:(NSInteger)publisherCount {
+    [self showSmartJoinWithPublisherCount:publisherCount];
+}
+
+- (void)client:(TeeVidClient *)client showPreEventScreenWithParams:(NSDictionary *)params credentialRequirements:(NSArray<NSString *> *)credentialRequirements {
+    
+}
+
+- (void)client:(TeeVidClient *)client didUpdateEventStateWithParams:(NSDictionary *)params {
+    
+}
+
+- (void)clientEventPersonVerificationPassed:(TeeVidClient *)client {
+    
+}
+
+- (void)client:(TeeVidClient *)client didUpdatePollWithParams:(NSDictionary *)params {
+    
+}
+
+- (void)client:(TeeVidClient *)client didReceiveError:(NSString *)error {
+    [Utils showMessage:error withTitle:@"Error" handler:^(UIAlertAction *action) {
+        [self quitMeeting];
+    }];
+}
+
+- (void)client:(TeeVidClient *)client didRequestLayoutRefresh:(NSString *)reason {
+    // Conference view layout changed - instruct client to show new layout
+    // Note that client will request layout refresh only if video layout is managed by client
+    // Add any animatiom you want while refreshind layout
+    [UIView transitionWithView:conferenceView duration:0.3 options:(UIViewAnimationOptionLayoutSubviews) animations:^{
+        [client refreshLayout];
+    } completion:nil];
 }
 
 - (void)client:(TeeVidClient *)client didEnterLectureMode:(NSString *)roomId {
@@ -105,31 +142,17 @@
     // Lecturer has disconnected. Perform whatever action is appropriate or ask user what to do
 }
 
-- (void)client:(TeeVidClient *)client didReceiveError:(NSString *)error {
-    // Display error and perform disconnect segue
-    UIAlertController *alert    = [UIAlertController alertControllerWithTitle:@"Error" message:error preferredStyle:UIAlertControllerStyleAlert];
-    UIAlertAction *action       = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
-        [self quitMeeting];
-    }];
-    [alert addAction:action];
-    [self presentViewController:alert animated:YES completion:nil];
+- (void)client:(TeeVidClient *)client didRecieveUnmuteRequest:(NSDictionary*)request completionHandler:(void (^)(BOOL allowUnmute))completionHandler {
+    // completionHandler should called when a user make a choice about approving or discard the request. allowUnmute is a BOOL value that represent a user's answer
+    completionHandler(YES);
 }
 
-- (void)client:(TeeVidClient *)client didRequestLayoutRefresh:(NSString *)reason {
-    // Conference view layout changed - instruct client to show new layout
-    // Note that client will request layout refresh only if video layout is managed by client
-    // Add any animatiom you want while refreshind layout
-    [UIView transitionWithView:conferenceView duration:0.3 options:(UIViewAnimationOptionLayoutSubviews) animations:^{
-        [client refreshLayout];
-    } completion:nil];
-}
-
-- (void)client:(TeeVidClient *)client didAddParticipant:(NSString *)participantId withAttributes:(NSDictionary *)attributes {
-    // New participant has been added
-    // Application can use this call to update participant list
-    // If video layout is managed by application, application is also responsible to get and manage view for each participant
+- (void)client:(TeeVidClient *)client didAddParticipants:(NSDictionary *)participants {
     if (!clientManagedLayout) {
-        [self addViewForParticipant:participantId withAttributes:attributes];
+        for (NSString *participantId in participants) {
+            NSDictionary *attributes = participants[participantId];
+            [self addViewForParticipant:participantId withAttributes:attributes];
+        }
     }
 }
 
@@ -151,7 +174,7 @@
     }
 }
 
-- (void)client:(TeeVidClient *)client didChangeVideoSize:(CGSize)videoSize forParticipant:(NSString *)participantId inView:(UIView *)view {
+- (void)client:(TeeVidClient *)client didChangeVideoSize:(CGSize)videoSize forParticipant:(NSString *)participantId {
     // Note that client will notify about video size change only if video layout is managed by application
     // Application must use this event to set correct aspect ratio of rendered video by adjusting view size, and,
     // hiding/masking part of the view or using any other appropriate technique
@@ -162,12 +185,6 @@
     // Application should use this call to remove view from video layout
     [self removeView:view forParticipant:participantId];
 }
-
-- (void)client:(TeeVidClient *)client didRecieveUnmuteRequest:(NSDictionary*)request completionHandler:(void (^)(BOOL allowUnmute))completionHandler {
-    // completionHandler should called when a user make a choice about approving or discard the request. allowUnmute is a BOOL value that represent a user's answer
-    completionHandler(YES);
-}
-
 
 
 #pragma mark - Navigation
@@ -329,5 +346,95 @@
     }
 }
 
+#pragma mark - SmartJoinScreen, SmartJoinViewControllerDelegate
+- (void)showSmartJoinWithPublisherCount:(NSInteger)countOfPublisers {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        self.disconnectButton.hidden = YES;
+        UIStoryboard *storyboard    = [UIStoryboard storyboardWithName:@"Main" bundle:nil];
+        self.smartJoinView          = [storyboard instantiateViewControllerWithIdentifier:@"smartjoinView"];
+        self.smartJoinView.delegate = self;
+        self.smartJoinView.view.backgroundColor = [UIColor clearColor];
+        [self.smartJoinView setRoomName:self.roomId];
+                
+        [self->teeVidClient connectToSmartJoinScreenAs:@"TeeVid sample iOS"];
+        [self addChildViewController:self.smartJoinView];
+        [self.view addSubview:self.smartJoinView.view];
+        [self.smartJoinView didMoveToParentViewController:self];
+        
+    });
+}
+
+- (void)refreshSmartJoinMicLevel:(float)inputLevel {
+    [self.smartJoinView updateMicLevelIndicator:inputLevel];
+}
+
+
+- (void)closeSmartJoinViewWithAnimation:(BOOL)withAnimation {
+    [self.smartJoinView willMoveToParentViewController:self];
+    [self.smartJoinView.view removeFromSuperview];
+    [self.smartJoinView removeFromParentViewController];
+    
+    self.smartJoinView.delegate = nil;
+    self.smartJoinView          = nil;
+}
+
+- (void)smartJoinScreen:(SmartJoinViewController *)smartJoinScreen deviceRotationRefreshRequested:(id)sender {
+    //[self.client refreshLayout];
+}
+
+
+- (void)smartJoinScreen:(SmartJoinViewController *)smartJoinScreen userImageRefreshRequested:(id)sender {
+    [teeVidClient userImageUpdateRequested];
+}
+
+
+- (void)smartJoinScreen:(SmartJoinViewController *)smartJoinScreen closeButtonTapped:(id)sender {
+    [self closeSmartJoinViewWithAnimation:NO];
+    [self quitMeeting];
+}
+
+- (void)smartJoinScreen:(SmartJoinViewController *)smartJoinScreen closeAndDisconnect:(id)sender {
+    [self closeSmartJoinViewWithAnimation:NO];
+    [self quitMeeting];
+}
+
+
+- (void)smartJoinScreen:(SmartJoinViewController *)smartJoinScreen joinButtonTapped:(id)sender {
+    [teeVidClient connectToServer:serverAddress room:roomId asUser:@"TeeVidSample iOS" meetingType:MeetingTypeRegularRoom withAccessPin:nil];
+}
+
+
+- (void)smartJoinScreen:(SmartJoinViewController *)smartJoinScreen switchCamButtonTapped:(id)sender {
+    [teeVidClient smartJoinSwitchCamera];
+}
+
+
+- (void)smartJoinScreen:(SmartJoinViewController *)smartJoinScreen camButtonTapped:(id)sender {
+    if (teeVidClient.videoStopped) { // resume video
+        [teeVidClient smartJoinResumeVideo];
+        [self.smartJoinView unmuteCamera];
+    }
+    else { // stop video
+        [teeVidClient smartJoinStopVideo];
+        [self.smartJoinView muteCamera];
+    }
+}
+
+
+- (void)smartJoinScreen:(SmartJoinViewController *)smartJoinScreen micButtonTapped:(id)sender {
+    if (teeVidClient.muted) { // unmute audio
+        [teeVidClient smartJoinUnmuteMic];
+        [self.smartJoinView unmuteMicrophone];
+    }
+    else { // mute audio
+        [teeVidClient smartJoinMuteMic];
+        [self.smartJoinView muteMicrophone];
+    }
+}
+
+
+- (void)smartJoinScreen:(SmartJoinViewController *)smartJoinScreen connectWithPin:(NSString *)pin {
+    
+}
 
 @end

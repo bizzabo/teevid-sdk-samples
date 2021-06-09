@@ -303,7 +303,7 @@ typedef enum {
  @brief Notifies application that moderator wants to unmute current participant
  
  @param request dictionary contains information about the request. Describes what exactly should be unmuted a video or audio input
- @param completionHandler should called when a user make a choice about approving or discard the request. allowUnmute is a BOOL value that represent a user's answer
+ @param completionHandler should be called when a user makes a choice about approving or discard the request. allowUnmute is a BOOL value that represent a user's answer
  */
 - (void)client:(TeeVidClient *)client didRecieveUnmuteRequest:(NSDictionary*)request completionHandler:(void (^)(BOOL allowUnmute))completionHandler;
 
@@ -321,16 +321,15 @@ typedef enum {
 - (void)client:(TeeVidClient *)client didUpdateNumberOfVideoStreams:(int)numberOfVideoStreams;
 
 /*!
- @brief Notifies application that new participant joined room this client is connected to.
+ @brief Notifies application that new participant(s) joined room this client is connected to.
  @discussion See TEEVID_ATTRIBUTE constants for list of supported participant attributes.
  
  Note that this selector is optional.
  
  @param client instance of the client this call came from
- @param participantId participant id
- @param attributes participant attributes
+ @param participantsData dictionary vith keys corresponding to participant ids and values to participant attributes (see TEEVID_ATTRIBUTE constants for list of supported participant attributes)
  */
-- (void)client:(TeeVidClient *)client didAddParticipant:(NSString *)participantId withAttributes:(NSDictionary *)attributes;
+- (void)client:(TeeVidClient *)client didAddParticipants:(NSDictionary *)participantsData;
 
 /*!
  @brief Notifies application that new participant was added to the room client is connected to.
@@ -470,6 +469,17 @@ Note that this selector is optional.
 */
 - (void)client:(TeeVidClient *)client didUpdateUserImage:(UIImage *)userImage;
 
+
+/*!
+@brief Asks for already logged in user token.
+@discussion Asks for already logged in user token (retrieved earlier with Middlware REST API).
+
+Note that this selector is optional.
+
+@param client instance of the client this call came from
+@param getLoggedInUserTokenWithCompletion a callback  which delegate must call after fetching the user token
+*/
+- (void)client:(TeeVidClient *)client getLoggedInUserTokenWithCompletion:(void (^)(NSString *token))completion;
 
 @end
 
@@ -669,12 +679,13 @@ Note that this selector is optional.
 
 /*!
  @brief Creates new instance of TeeVidClient.
- @discussion View and delegate parameters are required. TeeVidClient created by this method will manage participants video layout inside of a view provided by application. Application will be able to control only certain elements of video layout: switch between mutliple ans single video layouts, iterate video streams in single video layout, control position of local video.
- If application needs more fine grained control of video layout, it should instantiate TeeVidClient using overloaded init method without passing view to render video layout in. In such mode, application can obtain views where participant video is being rendered for individual participants, and, then size and position them on the screen on its own.
+ @discussion Delegate parameter is required.
+ If  view is not nil than TeeVidClient will manage participants video layout inside of a view provided by application. Application will be able to control only certain elements of video layout: switch between mutliple and single video layouts, iterate video streams in single video layout, control position of local video.
+ If application needs more fine grained control of video layout, pass nil for view parameter. In such mode, application can obtain views where participant video is being rendered for individual participants, and then size and position them on the screen on its own.
  
  Note that options parameter is reserved for future use.
  
- @param view view to render conference room participants videos in
+ @param view view to render conference room participants videos in or nil
  @param server server address (typically DNS name)
  @param roomId conference room id
  @param userName userName participant name
@@ -682,20 +693,7 @@ Note that this selector is optional.
  @param delegate TeeVidClient delegate
  @return new istance of TeeVidClient
  */
-- (instancetype)initWithView:(UIView *)view server:(NSString *)server room:(NSString *)roomId userName:(NSString *)userName options:(NSDictionary *)options andDelegate:(id <TeeVidClientDelegate>)delegate;
-
-/*!
- @brief Creates new instance of TeeVidClient.
- @discussion Delegate parameter is required. TeeVidClient created by this method will leave application responsible for managing participants video layout. Application should obtain views where participant video is being rendered, and, then size and position them on the screen.
- If application does not need fine grained control of video layout, it should instantiate TeeVidClient using overloaded init method and pass a view to be used by TeeVidClient to render participants video in. In such mode, TeeVidClient will manage position, size and aspect ration of each participant video in the layout. Application will be able to control only certain elements of video layout: switch between mutliple ans single video layouts, iterate video streams in single video layout, control position of local video.
- 
- Note that options parameter is reserved for future use.
- 
- @param options conference room options (reserved for future use)
- @param delegate TeeVidClient delegate
- @return new istance of TeeVidClient
- */
-- (instancetype)initWithOptions:(NSDictionary *)options andDelegate:(id <TeeVidClientDelegate>)delegate;
+- (instancetype)initWithView:(UIView *)viewOrNil server:(NSString *)server room:(NSString *)roomId userName:(NSString *)userName options:(NSDictionary *)options andDelegate:(id <TeeVidClientDelegate>)delegate;
 
 /*!
  @brief Connects to a conference room.
@@ -731,7 +729,7 @@ Note that this selector is optional.
 
 @param userName userName participant name
 */
-- (void)connectToSmartJoinScreenAs:(NSString *)username;
+- (void)connectToSmartJoinScreenAs:(NSString *)userName;
 
 /*!
  @brief Creates invitation token.
@@ -749,7 +747,8 @@ Note that this selector is optional.
 
 Note that in order to generate invitation token, client must be successfully connected to a conference room first.
 
-@return invitation token via block completion
+@param completion callback which is called after the invitation token is generated
+@param invitationToken (callback parameter) a string containing invitation token
 */
 - (void)generateInvitationTokenWithCompletion:(void (^)(NSString *invitationToken))completion;
 
@@ -894,9 +893,7 @@ Note that in order to generate invitation token, client must be successfully con
 /*!
  @brief Notifies client about request to update user image thumbnail
  @discussion Application can use this method to request user image update. Actual avatar update will no be performed if local video is stopped.
-
- @return Current methods doesn't return the generated thumbnail
- Hovewer the resulted image thumbnail will be returned via TeeVidClientDelegate protocol's method [client: didUpdateUserImage:]
+ The resulted image thumbnail will be returned via TeeVidClientDelegate protocol's method [client: didUpdateUserImage:]
 */
 - (void)userImageUpdateRequested;
 

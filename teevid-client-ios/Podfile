@@ -1,0 +1,14 @@
+ENV['SWIFT_VERSION'] = '5.5'
+source 'https://github.com/CocoaPods/Specs.git'
+use_frameworks!
+
+platform :ios, :deployment_target => '10.0'
+
+workspace './TeeVidSample.xcworkspace'
+
+target 'TeeVidSample' do
+  platform :ios, :deployment_target => '10.0'
+  pod 'Socket.IO-Client-Swift', "13.0.0"
+  pod 'OCMockito', '~> 4.0'
+end
+
