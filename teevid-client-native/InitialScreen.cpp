@@ -527,7 +527,7 @@ void InitialScreen::onInvitePressed()
     {
         bool sendAudio = isMicrophoneOn();
         bool sendVideo = isCameraOn();
-        teeVidClient_->ConnectTo(room, user, password, accessPin, 0, sendAudio, sendVideo);
+        teeVidClient_->ConnectTo(room, user, password, accessPin, 0, sendAudio, sendVideo, this);
     }
     catch (std::exception& e)
     {
@@ -643,7 +643,7 @@ void InitialScreen::onRoomSubmitted(const QString &caller, const QString &invita
             std::string password = _connectParamsDialog->GetPassword().toStdString();
             bool sendAudio = isMicrophoneOn();
             bool sendVideo = isCameraOn();
-            teeVidClient_->ConnectTo(inviteParams.token_, inviteParams.room_, user, password, sendAudio, sendVideo);
+            teeVidClient_->ConnectTo(inviteParams.token_, inviteParams.room_, user, password, sendAudio, sendVideo, this);
         }
         catch (std::exception& e)
         {
@@ -1066,4 +1066,38 @@ std::string InitialScreen::GetAudioFormatName(const AudioSettings &audioSettings
     }
 
     return format;
+}
+
+
+void InitialScreen::OnVideoSourceFrame (unsigned char *data, size_t size, size_t stride)
+{
+    // PLEASE NOTE:
+    // un-comment the code below to see modified video (cyan field in the top of each frame)
+
+//    int index = 0;
+//    for (int j = 0; j < size / 3; j += 4)
+//    {
+//        if (j < size / 3)
+//        {
+//            data[j] = 0x00;
+//            data[j + 1] = (index < 16) ? 0xff - (index * 4) : 0xff - (32 - index) * 4;
+//            data[j + 2] = (index < 16) ? 0xff - (index * 4) : 0xff - (32 - index) * 4;
+//        }
+//        else if (j < size * 2 / 3)
+//        {
+//            data[j] = (index < 16) ? 0xff - (index * 4) : 0xff - (32 - index) * 4;
+//            data[j + 1] = 0x00;
+//            data[j + 2] = (index < 16) ? 0xff - (index * 4) : 0xff - (32 - index) * 4;
+//        }
+//        else
+//        {
+//            data[j] = (index < 16) ? 0xff - (index * 4) : 0xff - (32 - index) * 4;
+//            data[j + 1] = (index < 16) ? 0xff - (index * 4) : 0xff - (32 - index) * 4;
+//            data[j + 2] = 0x00;
+//        }
+//    }
+}
+
+void InitialScreen::OnAudioSourceFrame (unsigned char *data, size_t size, int channels, int bps) {
+// not implemented yet
 }

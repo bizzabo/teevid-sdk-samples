@@ -23,7 +23,7 @@ namespace Ui {
 class InitialScreen;
 }
 
-class InitialScreen : public QWidget, ITeeVidClientObserver
+class InitialScreen : public QWidget, ITeeVidClientObserver, IFrameModifier
 {
     Q_OBJECT
 
@@ -58,6 +58,9 @@ public:
     void OnParticipantUpdated (const std::string& participantId, const MuteAttributes& muteAttr) override;
     void OnRaiseHandStatusUpdated (bool allowed) override;
 
+    // IFrameModifier
+    void OnVideoSourceFrame (unsigned char *data, size_t size, size_t stride) override;
+    void OnAudioSourceFrame (unsigned char *data, size_t size, int channels, int bps) override;
 signals:
     void roomConnectReceived(int videoWidth, int videoHeight);
     void sdkOnConnectedRecieved(QString token);

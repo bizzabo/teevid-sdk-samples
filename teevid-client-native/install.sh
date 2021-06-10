@@ -78,6 +78,9 @@ if [ "$ARCHITECTURE" = "aarch64" ]; then
     sudo cp $CUSTOM_LIB_DIR/gstreamer-1.0/libgstnvvideo4linux2.so $INSTALL_LIB_DIR/gstreamer-1.0/
 fi
 
+echo "Install video modifying libraries"
+sudo cp $CUSTOM_LIB_DIR/libteevid_gst_elements.so $INSTALL_LIB_DIR/gstreamer-1.0/
+
 echo "Setting the kernel buffer size for UDP sockets"
 sysctl -w net.core.wmem_default=$SOCKET_BUFFER_SIZE
 sysctl -w net.core.rmem_default=$SOCKET_BUFFER_SIZE
