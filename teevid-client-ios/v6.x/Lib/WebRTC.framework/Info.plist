@@ -1,0 +1,29 @@
+// !!! BINARY PROPERTY LIST WARNING !!!
+//
+// The pretty-printed property list below has been created
+// from a binary version on disk and should not be saved as
+// the ASCII format is a subset of the binary representation!
+//
+{	BuildMachineOSBuild = "19A602";
+	CFBundleDevelopmentRegion = "en";
+	CFBundleExecutable = "WebRTC";
+	CFBundleIdentifier = "org.webrtc.WebRTC";
+	CFBundleInfoDictionaryVersion = "6.0";
+	CFBundleName = "WebRTC";
+	CFBundlePackageType = "FMWK";
+	CFBundleShortVersionString = "1.0";
+	CFBundleSignature = "????";
+	CFBundleSupportedPlatforms = ( "iPhoneOS" );
+	CFBundleVersion = "1.0.0";
+	DTCompiler = "com.apple.compilers.llvm.clang.1_0";
+	DTPlatformBuild = "17A820";
+	DTPlatformName = "iphoneos";
+	DTPlatformVersion = "13.1";
+	DTSDKBuild = "17A820";
+	DTSDKName = "iphoneos13.1";
+	DTXcode = "1110";
+	DTXcodeBuild = "11A1027";
+	MinimumOSVersion = "10.0";
+	NSPrincipalClass = "";
+	UIDeviceFamily = ( 1, 2 );
+}
