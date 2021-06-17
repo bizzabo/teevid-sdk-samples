@@ -1,0 +1,2 @@
+rootProject.name='TeeVid Sample'
+include ':app_sample'

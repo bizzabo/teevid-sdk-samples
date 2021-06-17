@@ -1,0 +1,24 @@
+<resources>
+
+    <string name="app_name">TeeVid Sample</string>
+
+    <string name="dialog_btn_cancel">Cancel</string>
+    <string name="dialog_btn_connect">Connect</string>
+
+    <string name="enter_pin">Enter PIN</string>
+    <string name="enter_pin_title">Enter the PIN to access this meeting</string>
+    <string name="invalid_pin">Invalid PIN</string>
+
+    <string name="camera_front">Front facing camera</string>
+    <string name="camera_back">Back facing camera</string>
+
+    <string name = "dialog_unmute_audio_title">Moderator wants to unmute your microphone</string>
+    <string name = "dialog_unmute_video_title">Moderator wants to unmute your camera</string>
+    <string name = "dialog_unmute_positive">Accept</string>
+    <string name = "dialog_unmute_negative">Deny</string>
+    <string name = "dialog_unmute_microphone_unmuted">Your microphone has been unmuted</string>
+    <string name = "dialog_unmute_camera_unmuted">Your camera has been unmuted</string>
+
+    <string name = "disconnected_from_room">Disconnected from room</string>
+
+</resources>
