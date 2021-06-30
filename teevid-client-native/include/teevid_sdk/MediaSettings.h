@@ -55,6 +55,26 @@ typedef enum {
   kU8 = 29
 } AudioBpsType;
 
+typedef enum
+{
+  kNone,               // Identity (no rotation)
+  kCounterClockwise,   // Rotate counter-clockwise 90 degrees
+  kRotate180,          // Rotate 180 degrees
+  kClockwise,          // Rotate clockwise 90 degrees
+  kHorizontalFlip,     // Flip horizontally
+  kUpperRightDiagonal, // Flip across upper right/lower left diagonal
+  kVerticalFlip,       // Flip vertically
+  kUpperLeftDiagonal   // Flip across upper left/lower right diagonal
+} FlipMethod;
+
+struct CropSettings
+{
+  int left;   // Pixels to crop at left
+  int right;  // Pixels to crop at right
+  int top;    // Pixels to crop at top
+  int bottom; // Pixels to crop at bottom
+};
+
 struct AudioSettings
 {
   AudioChannels audioChannels = kStereo;
@@ -73,12 +93,16 @@ struct VideoSettings
   // available only for INTERNAL pipeline mode and ONLY for EMBEDDED architecture
   // disabled by default
   bool allowMJPG = false;
+
+  FlipMethod flipMethod;
+  CropSettings cropSettings;
 };
 
 typedef struct {
   AudioSettings audioSettings;
   VideoSettings videoSettings;
   SourceMode sourceMode;
+  unsigned int previewWindowId = 0;
 } MediaSettings;
 
 }
