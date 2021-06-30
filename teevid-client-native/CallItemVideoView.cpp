@@ -22,7 +22,8 @@ const int cAudioSubscribeSampleRate = 48000;
 CallItemVideoView::CallItemVideoView(QWidget *parent) :
     QFrame(parent),
     ui(new Ui::CallItemVideoView),
-    _audioInitialized(false)
+    _audioInitialized(false),
+    _directPreview(false)
 {
     ui->setupUi(this);
 
@@ -224,6 +225,7 @@ void CallItemVideoView::EnableFramesLogs(bool enable)
 
 void CallItemVideoView::setDirectVideoRendering(bool direct)
 {
+    _directPreview = direct;
     _subscribeSettings.previewWindowId = direct ? ui->frameContainer->winId() : 0;
 }
 
@@ -343,7 +345,7 @@ void CallItemVideoView::onLowQualitySelected()
     {
         _largeContainer->close();
     }
-    _subscribeSettings.previewWindowId = ui->frameContainer->winId();
+    _subscribeSettings.previewWindowId = _directPreview ? ui->frameContainer->winId() : 0;
 
     emit lowQualitySelected(_streamId);
 }
@@ -377,7 +379,7 @@ void CallItemVideoView::onHighQualitySelected()
     _largeContainer->raise();
     _largeContainer->show();
 
-    _subscribeSettings.previewWindowId = _largeContainer->winId();
+    _subscribeSettings.previewWindowId = _directPreview ? _largeContainer->winId() : 0;
 
     emit highQualitySelected(_streamId);
 }
@@ -419,7 +421,7 @@ void CallItemVideoView::onLargeContainerClosed()
     _qualityDialog->reset();
     _videoQuality = eVideoQuality::Low;
 
-    _subscribeSettings.previewWindowId = ui->frameContainer->winId();
+    _subscribeSettings.previewWindowId = _directPreview ? ui->frameContainer->winId() : 0;
 
     emit lowQualitySelected(_streamId);
 }

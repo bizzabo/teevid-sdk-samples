@@ -143,6 +143,7 @@ private:
     int _prevHeight = 0;
 
     TransformSettings _transformSettings;
+    std::atomic<bool> _directPreview;
 };
 
 #endif // CALLITEMVIDEOVIEW_H
