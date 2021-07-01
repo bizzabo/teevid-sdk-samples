@@ -42,7 +42,9 @@ SOURCES += \
     AudioParams.cpp \
     DeviceVideoManager.cpp \
     DeviceAudioManager.cpp \
-    ExternalVideoContainer.cpp
+    ExternalVideoContainer.cpp \
+    TransformSettings.cpp \
+    TransformSettingsDialog.cpp
 
 HEADERS += \
     AudioFrameData.h \
@@ -60,7 +62,9 @@ HEADERS += \
     AudioParams.h \
     DeviceVideoManager.h \
     DeviceAudioManager.h \
-    ExternalVideoContainer.h
+    ExternalVideoContainer.h \
+    TransformSettings.h \
+    TransformSettingsDialog.h
 
 FORMS += \
     CallItemVideoView.ui \
@@ -69,7 +73,8 @@ FORMS += \
     InitialScreen.ui \
     FriendItem.ui \
     ServerSimulationDialog.ui \
-    VideoQualityDialog.ui
+    VideoQualityDialog.ui \
+    TransformSettingsDialog.ui
 
 RESOURCES += \
     resourses.qrc

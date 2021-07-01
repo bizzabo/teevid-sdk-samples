@@ -58,15 +58,7 @@ InitialScreen::InitialScreen(QWidget *parent) : QWidget(parent), ui(new Ui::Init
 
     _publishSettings.sourceMode = _sourceMode;
 
-    _subscribeSettings.videoSettings.videoFormatType = VideoFormatType::kRGBA;
-
-    // values to prevent video resizing
-    _subscribeSettings.videoSettings.videoWidth = 0;
-    _subscribeSettings.videoSettings.videoHeight = 0;
-
-    _subscribeSettings.audioSettings.audioChannels = kStereo;
-    _subscribeSettings.audioSettings.audioSampleRate = cAudioSubscribeSampleRate;
-    _subscribeSettings.audioSettings.audioBpsType = kS16LE;
+    _publishSettings.previewWindowId = ui->frameCallPart_Local->_subscribeSettings.previewWindowId;
 }
 
 InitialScreen::~InitialScreen()
@@ -201,10 +193,12 @@ void InitialScreen::InitUI()
         CallItemVideoView* itemView = *iterCallItem;
         connect(itemView, SIGNAL(lowQualitySelected(long)), this, SLOT(onLowQualitySelected(long)));
         connect(itemView, SIGNAL(highQualitySelected(long)), this, SLOT(onHighQualitySelected(long)));
+        connect(itemView, SIGNAL(transformSettingsUpdated(long)), this, SLOT(onTransformSettingsUpdated(long)));
     }
 
     connect(ui->frameCallPart_Local, SIGNAL(lowQualitySelected(long)), this, SLOT(onLowQualitySelected(long)));
     connect(ui->frameCallPart_Local, SIGNAL(highQualitySelected(long)), this, SLOT(onHighQualitySelected(long)));
+    connect(ui->frameCallPart_Local, SIGNAL(transformSettingsUpdated(long)), this, SLOT(onTransformSettingsUpdated(long)));
 
     ui->checkBoxLocalVideo->setChecked(true);
     connect(ui->checkBoxLocalVideo, SIGNAL(stateChanged(int)), this, SLOT(onDisplayLocalVideoChecked(int)));
@@ -231,6 +225,14 @@ void InitialScreen::InitUI()
 //    _dummyAudioFramesTimer.setInterval(cAudioTimerInterval);
 //    _dummyAudioFramesTimer.setSingleShot(false);
 //    connect(&_dummyAudioFramesTimer, SIGNAL(timeout()), this, SLOT(OnDummyAudioFrameTimer()));
+
+    ui->frameCallPart_Local->setDirectVideoRendering(false);
+    _publishSettings.previewWindowId = ui->frameCallPart_Local->_subscribeSettings.previewWindowId;
+
+    ui->frameCallPart_1->setDirectVideoRendering(false);
+    ui->frameCallPart_2->setDirectVideoRendering(false);
+    ui->frameCallPart_3->setDirectVideoRendering(false);
+    ui->frameCallPart_4->setDirectVideoRendering(false);
 
     if(_sourceMode == kExternalSourceMode)
     {
@@ -321,11 +323,20 @@ void InitialScreen::OnRoomConnected(const RoomParameters &roomParameters)
     _publishSettings.videoSettings.videoWidth = width;
     _publishSettings.videoSettings.videoHeight = height;
 
+    UpdatePublishSettings();
+
     // BE AWARE
     // for now incoming video is set to be resized to the resolution from the room settings
     // to prevent resizing just comment (or remove these 2 lines below):
-    _subscribeSettings.videoSettings.videoWidth = width;
-    _subscribeSettings.videoSettings.videoHeight = height;
+    ui->frameCallPart_Local->_subscribeSettings.videoSettings.videoWidth = width;
+    ui->frameCallPart_Local->_subscribeSettings.videoSettings.videoHeight = height;
+
+    for (auto iterCallItem = callItems_.begin(); iterCallItem != callItems_.end(); ++iterCallItem)
+    {
+        CallItemVideoView* itemView = *iterCallItem;
+        itemView->_subscribeSettings.videoSettings.videoWidth = width;
+        itemView->_subscribeSettings.videoSettings.videoHeight = height;
+    }
 
     if (teeVidClient_)
     {
@@ -343,9 +354,9 @@ void InitialScreen::OnStreamAdded (long streamId, const std::string& name, const
         ui->frameCallPart_Local->setStreamId(streamId);
         ui->frameCallPart_Local->setParticipantOrder(order);
         ui->frameCallPart_Local->setVideoFormat(kRGBA);
-        ui->frameCallPart_Local->setAudioSampleRate(_subscribeSettings.audioSettings.audioSampleRate);
+        ui->frameCallPart_Local->setAudioSampleRate(cAudioSubscribeSampleRate);
 
-        teeVidClient_->Subscribe(streamId, _subscribeSettings, ui->frameCallPart_Local);
+        teeVidClient_->Subscribe(streamId, ui->frameCallPart_Local->_subscribeSettings, ui->frameCallPart_Local);
     }
     else
     {
@@ -355,9 +366,9 @@ void InitialScreen::OnStreamAdded (long streamId, const std::string& name, const
             callItem->setStreamId(streamId);
             callItem->setParticipantOrder(order);
             callItem->setVideoFormat(kRGBA);
-            callItem->setAudioSampleRate(_subscribeSettings.audioSettings.audioSampleRate);
+            callItem->setAudioSampleRate(cAudioSubscribeSampleRate);
 
-            teeVidClient_->Subscribe(streamId, _subscribeSettings, callItem);
+            teeVidClient_->Subscribe(streamId, callItem->_subscribeSettings, callItem);
         }
     }
 }
@@ -425,7 +436,7 @@ void InitialScreen::OnParticipantMute(long streamId, bool audioMuted, bool video
         }
         else
         {
-            teeVidClient_->Subscribe(streamId, _subscribeSettings, callItem);
+            teeVidClient_->Subscribe(streamId, callItem->_subscribeSettings, callItem);
         }
     }
 
@@ -527,7 +538,7 @@ void InitialScreen::onInvitePressed()
     {
         bool sendAudio = isMicrophoneOn();
         bool sendVideo = isCameraOn();
-        teeVidClient_->ConnectTo(room, user, password, accessPin, 0, sendAudio, sendVideo, this);
+        teeVidClient_->ConnectTo(room, user, password, accessPin, 0, sendAudio, sendVideo, nullptr);
     }
     catch (std::exception& e)
     {
@@ -643,7 +654,7 @@ void InitialScreen::onRoomSubmitted(const QString &caller, const QString &invita
             std::string password = _connectParamsDialog->GetPassword().toStdString();
             bool sendAudio = isMicrophoneOn();
             bool sendVideo = isCameraOn();
-            teeVidClient_->ConnectTo(inviteParams.token_, inviteParams.room_, user, password, sendAudio, sendVideo, this);
+            teeVidClient_->ConnectTo(inviteParams.token_, inviteParams.room_, user, password, sendAudio, sendVideo, nullptr);
         }
         catch (std::exception& e)
         {
@@ -656,10 +667,60 @@ void InitialScreen::onRoomSubmitted(const QString &caller, const QString &invita
 
 void InitialScreen::onLowQualitySelected(long streamId)
 {
+    CallItemVideoView *callItem = nullptr;
+    if (streamId == ui->frameCallPart_Local->getStreamId())
+    {
+        callItem = ui->frameCallPart_Local;
+    }
+    else
+    {
+        callItem = GetVideoViewById(streamId);
+    }
+
+    if (callItem != nullptr)
+    {
+        teeVidClient_->Subscribe(streamId, callItem->_subscribeSettings, callItem);
+    }
 }
 
 void InitialScreen::onHighQualitySelected(long streamId)
 {
+    CallItemVideoView *callItem = nullptr;
+    if (streamId == ui->frameCallPart_Local->getStreamId())
+    {
+        callItem = ui->frameCallPart_Local;
+    }
+    else
+    {
+        callItem = GetVideoViewById(streamId);
+    }
+
+    if (callItem != nullptr)
+    {
+        teeVidClient_->Subscribe(streamId, callItem->_subscribeSettings, callItem);
+
+        // clear small preview
+        callItem->setImage(QImage());
+    }
+}
+
+void InitialScreen::onTransformSettingsUpdated(long streamId)
+{
+    MediaSettings mediaSettings;
+    if (streamId == ui->frameCallPart_Local->getStreamId())
+    {
+        mediaSettings = ui->frameCallPart_Local->_subscribeSettings;
+
+        TeeVidSettings settings;
+        settings.media_settings = _publishSettings;
+        teeVidClient_->Configure(settings);
+    }
+    else
+    {
+        CallItemVideoView* callItem = GetVideoViewById(streamId);
+        mediaSettings = callItem->_subscribeSettings;
+    }
+    teeVidClient_->SetStreamMediaSettings(streamId, mediaSettings);
 }
 
 void InitialScreen::onDisplayLocalVideoChecked(int state)
@@ -673,6 +734,14 @@ void InitialScreen::OnRoomConnectReceived(int videoWidth, int videoHeight)
     //GenerateDummyVideoFrames(videoWidth, videoHeight);
     //_dummyVideoFramesTimer.start();
     //_dummyAudioFramesTimer.start();
+
+    ui->frameCallPart_Local->setExternalVideoSize(videoWidth, videoHeight);
+
+    for (auto iterCallItem = callItems_.begin(); iterCallItem != callItems_.end(); ++iterCallItem)
+    {
+        CallItemVideoView* callItem = *iterCallItem;
+        callItem->setExternalVideoSize(videoWidth, videoHeight);
+    }
 
     std::string videoFormat = GetVideoFormatName(_publishSettings.videoSettings);
     if(_sourceMode == kExternalSourceMode)
@@ -784,6 +853,9 @@ void InitialScreen::OnVideoStarted(int width, int height)
 
     _publishSettings.videoSettings.videoWidth = width;
     _publishSettings.videoSettings.videoHeight = height;
+
+    UpdatePublishSettings();
+
     if (ui->frameCallPart_Local->getStreamId() > 0)
     {
         // we already have our stream so we need to reconfigure it
@@ -932,6 +1004,24 @@ void InitialScreen::GenerateDummyAudioFrames()
     _silentAudioFrame = std::make_shared<AudioFrameData>(_audioParams);
 }
 
+void InitialScreen::UpdatePublishSettings()
+{
+    TransformSettings publishTransformSettings = ui->frameCallPart_Local->GetTransformSettings();
+
+    if (publishTransformSettings.resizeWidth > 0 && publishTransformSettings.resizeHeight > 0)
+    {
+        _publishSettings.videoSettings.videoWidth = publishTransformSettings.resizeWidth;
+        _publishSettings.videoSettings.videoHeight = publishTransformSettings.resizeHeight;
+    }
+
+    _publishSettings.videoSettings.cropSettings.left = publishTransformSettings.cropLeft;
+    _publishSettings.videoSettings.cropSettings.top = publishTransformSettings.cropTop;
+    _publishSettings.videoSettings.cropSettings.right = publishTransformSettings.cropRight;
+    _publishSettings.videoSettings.cropSettings.bottom = publishTransformSettings.cropBottom;
+
+    _publishSettings.videoSettings.flipMethod = (FlipMethod)publishTransformSettings.rotateType;
+}
+
 std::string InitialScreen::GetVideoFormatName (const VideoSettings& videoSettings)
 {
   std::string format;
@@ -1071,31 +1161,29 @@ std::string InitialScreen::GetAudioFormatName(const AudioSettings &audioSettings
 
 void InitialScreen::OnVideoSourceFrame (unsigned char *data, size_t size, size_t stride)
 {
-    // PLEASE NOTE:
-    // un-comment the code below to see modified video (cyan field in the top of each frame)
-
-//    int index = 0;
-//    for (int j = 0; j < size / 3; j += 4)
-//    {
-//        if (j < size / 3)
-//        {
-//            data[j] = 0x00;
-//            data[j + 1] = (index < 16) ? 0xff - (index * 4) : 0xff - (32 - index) * 4;
-//            data[j + 2] = (index < 16) ? 0xff - (index * 4) : 0xff - (32 - index) * 4;
-//        }
-//        else if (j < size * 2 / 3)
-//        {
-//            data[j] = (index < 16) ? 0xff - (index * 4) : 0xff - (32 - index) * 4;
-//            data[j + 1] = 0x00;
-//            data[j + 2] = (index < 16) ? 0xff - (index * 4) : 0xff - (32 - index) * 4;
-//        }
-//        else
-//        {
-//            data[j] = (index < 16) ? 0xff - (index * 4) : 0xff - (32 - index) * 4;
-//            data[j + 1] = (index < 16) ? 0xff - (index * 4) : 0xff - (32 - index) * 4;
-//            data[j + 2] = 0x00;
-//        }
-//    }
+    // comment this to remove a blu line on top of the video
+    int index = 0;
+    for (int j = 0; j < size / 3; j += 4)
+    {
+      if (j < size / 3)
+      {
+        data[j] = 0x00;
+        data[j + 1] = (index < 16) ? 0xff - (index * 4) : 0xff - (32 - index) * 4;
+        data[j + 2] = (index < 16) ? 0xff - (index * 4) : 0xff - (32 - index) * 4;
+      }
+      else if (j < size * 2 / 3)
+      {
+        data[j] = (index < 16) ? 0xff - (index * 4) : 0xff - (32 - index) * 4;
+        data[j + 1] = 0x00;
+        data[j + 2] = (index < 16) ? 0xff - (index * 4) : 0xff - (32 - index) * 4;
+      }
+      else
+      {
+        data[j] = (index < 16) ? 0xff - (index * 4) : 0xff - (32 - index) * 4;
+        data[j + 1] = (index < 16) ? 0xff - (index * 4) : 0xff - (32 - index) * 4;
+        data[j + 2] = 0x00;
+      }
+    }
 }
 
 void InitialScreen::OnAudioSourceFrame (unsigned char *data, size_t size, int channels, int bps) {

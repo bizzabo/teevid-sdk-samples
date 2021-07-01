@@ -4,6 +4,8 @@
 #include "teevid_sdk/IStreamSubscriber.h"
 #include "teevid_sdk/MediaSettings.h"
 
+#include "TransformSettings.h"
+
 #include <QFrame>
 
 #include <QtMultimedia/QAudioInput>
@@ -13,6 +15,7 @@
 
 class QImage;
 class VideoQualityDialog;
+class TransformSettingsDialog;
 class ExternalVideoContainer;
 
 namespace Ui {
@@ -52,12 +55,24 @@ public:
 
     void setAudioSampleRate(int rate);
 
+    void setExternalVideoSize(int width, int height);
+
+    int getContainerWindowId();
+    int getExternalContainerWindowId();
+
     // IStreamSubscriber
     virtual void OnVideoFrame(unsigned char *data, size_t size, size_t stride, VideoOrientation orientation) override;
     virtual void OnAudioFrame(unsigned char *data, size_t size, int channels, int bps) override;
     virtual void OnVideoSizeChanged(const std::string& participantId, const Resolution& res) override;
 
     void EnableFramesLogs(bool enable);
+
+    void setDirectVideoRendering(bool direct);
+
+    TransformSettings GetTransformSettings() const;
+
+    // set as public for simplification
+    MediaSettings _subscribeSettings;
 
 protected:
     void paintEvent(QPaintEvent *event);
@@ -69,10 +84,15 @@ signals:
     void lowQualitySelected(long);
     void highQualitySelected(long);
 
+    void transformSettingsUpdated(long);
+
     void imageUpdated();
     void audioStarted(int, int);
 
 protected slots:
+    void onTransformSettingsPressed();
+    void onTransformSettingsApplied();
+
     void onLowQualitySelected();
     void onHighQualitySelected();
 
@@ -87,6 +107,7 @@ private:
     long _streamId = 0;
     QImage _image;
     VideoQualityDialog* _qualityDialog = nullptr;
+    TransformSettingsDialog* _transformSettingsDialog = nullptr;
 
     bool _audioMuted = false;
     bool _videoMuted = false;
@@ -120,6 +141,9 @@ private:
     eVideoQuality _prevVideoQuality = eVideoQuality::Low;
     int _prevWidth = 0;
     int _prevHeight = 0;
+
+    TransformSettings _transformSettings;
+    std::atomic<bool> _directPreview;
 };
 
 #endif // CALLITEMVIDEOVIEW_H

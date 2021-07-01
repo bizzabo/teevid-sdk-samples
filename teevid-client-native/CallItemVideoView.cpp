@@ -2,6 +2,7 @@
 #include "ui_CallItemVideoView.h"
 
 #include "VideoQualityDialog.h"
+#include "TransformSettingsDialog.h"
 #include "ExternalVideoContainer.h"
 #include <stdio.h>
 #include <sys/time.h>
@@ -16,11 +17,13 @@
 
 const int cDummyVideoFrameWidth = 1920;
 const int cDummyVideoFrameHeight = 1080;
+const int cAudioSubscribeSampleRate = 48000;
 
 CallItemVideoView::CallItemVideoView(QWidget *parent) :
     QFrame(parent),
     ui(new Ui::CallItemVideoView),
-    _audioInitialized(false)
+    _audioInitialized(false),
+    _directPreview(false)
 {
     ui->setupUi(this);
 
@@ -33,10 +36,19 @@ CallItemVideoView::CallItemVideoView(QWidget *parent) :
     // signal-slot connection to itself because data is received from different thread
     connect(this, SIGNAL(imageUpdated()), this, SLOT(onImageUpdated()));
     connect(this, SIGNAL(audioStarted(int,int)), this, SLOT(onAudioStarted(int,int)));
+    connect(ui->btnTransformSettings, SIGNAL(pressed()), this, SLOT(onTransformSettingsPressed()));
 
     QRect rec = QApplication::desktop()->screenGeometry();
     _screenWidth = rec.width();
     _screenHeight = rec.height();
+
+    _subscribeSettings.videoSettings.videoFormatType = VideoFormatType::kRGBA;
+    _subscribeSettings.videoSettings.videoWidth = 0;
+    _subscribeSettings.videoSettings.videoHeight = 0;
+
+    _subscribeSettings.audioSettings.audioChannels = kStereo;
+    _subscribeSettings.audioSettings.audioSampleRate = cAudioSubscribeSampleRate;
+    _subscribeSettings.audioSettings.audioBpsType = kS16LE;
 }
 
 CallItemVideoView::~CallItemVideoView()
@@ -211,6 +223,17 @@ void CallItemVideoView::EnableFramesLogs(bool enable)
     _printLogs = enable;
 }
 
+void CallItemVideoView::setDirectVideoRendering(bool direct)
+{
+    _directPreview = direct;
+    _subscribeSettings.previewWindowId = direct ? ui->frameContainer->winId() : 0;
+}
+
+TransformSettings CallItemVideoView::GetTransformSettings() const
+{
+    return _transformSettings;
+}
+
 void CallItemVideoView::setImage(QImage image)
 {
     _image = image;
@@ -273,6 +296,22 @@ void CallItemVideoView::setAudioSampleRate(int rate)
     _audioSampleRate = rate;
 }
 
+void CallItemVideoView::setExternalVideoSize(int width, int height)
+{
+    _prevWidth = width;
+    _prevHeight = height;
+}
+
+int CallItemVideoView::getContainerWindowId()
+{
+    return ui->frameContainer->winId();
+}
+
+int CallItemVideoView::getExternalContainerWindowId()
+{
+    return _largeContainer ? _largeContainer->winId() : 0;
+}
+
 void CallItemVideoView::paintEvent(QPaintEvent *event)
 {
     QPainter widgetPainter(this);
@@ -306,6 +345,7 @@ void CallItemVideoView::onLowQualitySelected()
     {
         _largeContainer->close();
     }
+    _subscribeSettings.previewWindowId = _directPreview ? ui->frameContainer->winId() : 0;
 
     emit lowQualitySelected(_streamId);
 }
@@ -320,19 +360,26 @@ void CallItemVideoView::onHighQualitySelected()
     if (_largeContainer == nullptr)
     {
         _largeContainer = new ExternalVideoContainer();
-        if (_restrictToScreenResolution && (_prevWidth > _screenWidth || _prevHeight > _screenHeight))
+
+        if (_prevWidth > 0 && _prevHeight > 0)
         {
-            _largeContainer->setFixedSize(_screenWidth, _screenHeight);
-        }
-        else
-        {
-            _largeContainer->setFixedSize(_prevWidth, _prevHeight);
+            if (_restrictToScreenResolution && (_prevWidth > _screenWidth || _prevHeight > _screenHeight))
+            {
+                _largeContainer->setFixedSize(_screenWidth, _screenHeight);
+            }
+            else
+            {
+                _largeContainer->setFixedSize(_prevWidth, _prevHeight);
+            }
         }
 
         _largeContainer->setWindowTitle(_participantName);
         connect(_largeContainer, SIGNAL(windowClosed()), this, SLOT(onLargeContainerClosed()));
     }
     _largeContainer->raise();
+    _largeContainer->show();
+
+    _subscribeSettings.previewWindowId = _directPreview ? _largeContainer->winId() : 0;
 
     emit highQualitySelected(_streamId);
 }
@@ -373,6 +420,10 @@ void CallItemVideoView::onLargeContainerClosed()
     // treat external video container close as switching back to low quality
     _qualityDialog->reset();
     _videoQuality = eVideoQuality::Low;
+
+    _subscribeSettings.previewWindowId = _directPreview ? ui->frameContainer->winId() : 0;
+
+    emit lowQualitySelected(_streamId);
 }
 
 size_t CallItemVideoView::GetWidthFromStride (VideoFormatType videoFormatType, size_t stride)
@@ -406,4 +457,45 @@ size_t CallItemVideoView::GetWidthFromStride (VideoFormatType videoFormatType, s
     }
 
     return width;
+}
+
+void CallItemVideoView::onTransformSettingsPressed()
+{
+    if (!_transformSettingsDialog)
+    {
+        _transformSettingsDialog = new TransformSettingsDialog(this);
+        connect(_transformSettingsDialog, SIGNAL(settingsApplied()), this, SLOT(onTransformSettingsApplied()));
+    }
+    if (_transformSettingsDialog->isHidden())
+    {
+        _transformSettingsDialog->show();
+    }
+}
+
+void CallItemVideoView::onTransformSettingsApplied()
+{
+    if (_transformSettingsDialog)
+    {
+        _transformSettings.cropLeft = _transformSettingsDialog->GetCropLeft();
+        _transformSettings.cropTop = _transformSettingsDialog->GetCropTop();
+        _transformSettings.cropRight = _transformSettingsDialog->GetCropRight();
+        _transformSettings.cropBottom = _transformSettingsDialog->GetCropBottom();
+
+        _transformSettings.resizeWidth = _transformSettingsDialog->GetResizeWidth();
+        _transformSettings.resizeHeight = _transformSettingsDialog->GetResizeHeight();
+
+        _transformSettings.rotateType = _transformSettingsDialog->GetRotateType();
+
+        _subscribeSettings.videoSettings.cropSettings.left = _transformSettingsDialog->GetCropLeft();
+        _subscribeSettings.videoSettings.cropSettings.top = _transformSettingsDialog->GetCropTop();
+        _subscribeSettings.videoSettings.cropSettings.right = _transformSettingsDialog->GetCropRight();
+        _subscribeSettings.videoSettings.cropSettings.bottom = _transformSettingsDialog->GetCropBottom();
+
+        _subscribeSettings.videoSettings.videoWidth = _transformSettingsDialog->GetResizeWidth();
+        _subscribeSettings.videoSettings.videoHeight = _transformSettingsDialog->GetResizeHeight();
+
+        _subscribeSettings.videoSettings.flipMethod = (FlipMethod)_transformSettingsDialog->GetRotateType();
+
+        emit transformSettingsUpdated(_streamId);
+    }
 }

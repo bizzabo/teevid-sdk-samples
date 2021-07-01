@@ -84,6 +84,7 @@ protected slots:
 
     void onLowQualitySelected(long streamId);
     void onHighQualitySelected(long streamId);
+    void onTransformSettingsUpdated(long streamId);
 
     void onDisplayLocalVideoChecked(int state);
 
@@ -110,6 +111,8 @@ protected:
     CallItemVideoView* GetVideoViewById(long streamId) const;
     void GenerateDummyVideoFrames(int width, int height);
     void GenerateDummyAudioFrames();
+
+    void UpdatePublishSettings();
 
 private:
     void InitSDK();
@@ -147,7 +150,6 @@ private:
     SourceMode _sourceMode;
 
     MediaSettings _publishSettings;
-    MediaSettings _subscribeSettings;
 };
 
 #endif // INITIALSCREEN_H
