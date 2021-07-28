@@ -7,6 +7,9 @@ INSTALL_LIB_DIR=/usr/lib/$ARCHITECTURE-linux-gnu
 if [ "$ARCHITECTURE" = "aarch64" ]; then
   #run the fan
   sudo jetson_clocks
+  LIB_BACKUP_DIR=./3rd_party_libs/embedded/opencv/backup
+else
+  LIB_BACKUP_DIR=./3rd_party_libs/desktop/opencv/backup
 fi
 
 echo "*** Preparing directory for OpenCV..."
@@ -55,6 +58,13 @@ make -j4
 
 echo "*** Installing OpenCV..."
 sudo make install
+
+mkdir -p $LIB_BACKUP_DIR
+
+sudo cp $INSTALL_LIB_DIR/libopencv_core.so.4.1.1 $LIB_BACKUP_DIR
+sudo cp $INSTALL_LIB_DIR/libopencv_imgproc.so.4.1.1 $LIB_BACKUP_DIR
+sudo cp $INSTALL_LIB_DIR/libopencv_imgcodecs.so.4.1.1 $LIB_BACKUP_DIR
+sudo cp $INSTALL_LIB_DIR/libopencv_highgui.so.4.1.1 $LIB_BACKUP_DIR
 
 sudo cp /usr/local/lib/libopencv_core.so.4.1 $INSTALL_LIB_DIR
 sudo cp /usr/local/lib/libopencv_core.so.4.1.1 $INSTALL_LIB_DIR
