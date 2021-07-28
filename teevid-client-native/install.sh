@@ -92,3 +92,4 @@ echo "net.core.rmem_default=$SOCKET_BUFFER_SIZE" >> /etc/sysctl.conf
 echo "net.core.rmem_max=$SOCKET_BUFFER_SIZE" >> /etc/sysctl.conf
 
 sudo chmod a+x $(pwd)/opencv_install.sh
+sudo chmod a+x $(pwd)/opencv_patch.sh
