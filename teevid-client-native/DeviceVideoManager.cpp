@@ -105,8 +105,7 @@ bool DeviceVideoManager::Start(int width, int height, const std::string &format)
     _width = width;
     _height = height;
     _publishFormat = format;
-
-    gst_init(NULL, NULL);
+    _screenSharing = false;
 
 //    std::string pipelineStr = "v4l2src device=/dev/video0 ! tee name=t ! queue ";
 //               pipelineStr += " ! videoconvert ! videoscale ! video/x-raw,format=" +
@@ -124,12 +123,82 @@ bool DeviceVideoManager::Start(int width, int height, const std::string &format)
                     " ! videoconvert n-threads=4 ! video/x-raw,format=" + _publishFormat +
                     " ! appsink drop=true max-buffers=60 name=appsink0";
 
+
+
+    return StartInternal(pipelineStr);
+}
+
+bool DeviceVideoManager::Start(const std::string& format, const DesktopShareOptions& desktopOptions)
+{
+    _publishFormat = format;
+    _desktopOptions = desktopOptions;
+    _screenSharing = true;
+
+    std::string pipelineStr = "ximagesrc startx=";
+                pipelineStr += std::to_string(desktopOptions.start_x) + " starty=" + std::to_string(desktopOptions.start_y) + " endx=" +
+                std::to_string(desktopOptions.end_x) + " endy=" + std::to_string(desktopOptions.end_y) + " ! video/x-raw,framerate=" + std::to_string(desktopOptions.fps) + "/1" +
+                " ! videoconvert n-threads=4 ! video/x-raw,format=" + _publishFormat +
+                " ! appsink drop=true max-buffers=60 name=appsink0";
+
+    return StartInternal(pipelineStr);
+}
+
+void DeviceVideoManager::Stop()
+{
+    StopInternal();
+    _retryCount = cRetryCount;
+}
+
+void DeviceVideoManager::StartVideo()
+{
+    emit videoStarted(_width, _height, _screenSharing);
+}
+
+void DeviceVideoManager::QuitMainLoop()
+{
+    if (_loop != NULL)
+    {
+        g_main_loop_quit(_loop);
+    }
+}
+
+void DeviceVideoManager::HandleError(QString error)
+{
+    emit videoError(error, _screenSharing);
+}
+
+void DeviceVideoManager::UpdateCaps(int width, int height, int fps)
+{
+    _width = width;
+    _height = height;
+    _fps = fps;
+
+    emit capsUpdated(width, height, fps, _screenSharing);
+}
+
+int DeviceVideoManager::RemainingRetryCount()
+{
+    return _retryCount--;
+}
+
+void DeviceVideoManager::GstTimerFunc()
+{
+    if (_loop != NULL)
+    {
+        g_main_loop_run(_loop);
+    }
+}
+
+bool DeviceVideoManager::StartInternal(const std::string &pipelineStr)
+{
+    gst_init(NULL, NULL);
+
     qDebug() << QString::fromStdString(pipelineStr);
 
     _pipeline = gst_parse_launch(pipelineStr.c_str(), NULL);
     if (_pipeline == NULL)
     {
-        emit videoError("Erroneous pipeline");
+        emit videoError("Erroneous pipeline", _screenSharing);
         return false;
     }
 
@@ -145,7 +214,7 @@ bool DeviceVideoManager::Start(int width, int height, const std::string &format)
     GstStateChangeReturn ret = gst_element_set_state(_pipeline, GST_STATE_PLAYING);
     if (ret == GST_STATE_CHANGE_FAILURE)
     {
-        emit videoError("Failed to start pipeline");
+        emit videoError("Failed to start pipeline", _screenSharing);
         gst_object_unref(_pipeline);
         _pipeline = NULL;
         return false;
@@ -170,52 +239,6 @@ bool DeviceVideoManager::Start(int width, int height, const std::string &format)
     return true;
 }
 
-void DeviceVideoManager::Stop()
-{
-    StopInternal();
-    _retryCount = cRetryCount;
-}
-
-void DeviceVideoManager::StartVideo()
-{
-    emit videoStarted(_width, _height);
-}
-
-void DeviceVideoManager::QuitMainLoop()
-{
-    if (_loop != NULL)
-    {
-        g_main_loop_quit(_loop);
-    }
-}
-
-void DeviceVideoManager::HandleError(QString error)
-{
-    emit videoError(error);
-}
-
-void DeviceVideoManager::UpdateCaps(int width, int height, int fps)
-{
-    _width = width;
-    _height = height;
-    _fps = fps;
-
-    emit capsUpdated(width, height, fps);
-}
-
-int DeviceVideoManager::RemainingRetryCount()
-{
-    return _retryCount--;
-}
-
-void DeviceVideoManager::GstTimerFunc()
-{
-    if (_loop != NULL)
-    {
-        g_main_loop_run(_loop);
-    }
-}
-
 void DeviceVideoManager::StopInternal()
 {
     if (_pipeline == NULL || _loop == NULL)
@@ -234,6 +257,16 @@ void DeviceVideoManager::StopInternal()
     _pipeline = NULL;
     _loop = NULL;
     _bus_watch_id = 0;
+}
+
+DesktopShareOptions DeviceVideoManager::desktopOptions() const
+{
+    return _desktopOptions;
+}
+
+void DeviceVideoManager::setDesktopOptions(const DesktopShareOptions &desktopOptions)
+{
+    _desktopOptions = desktopOptions;
 }
 
 void DeviceVideoManager::PullBuffer(eVideoType type)
@@ -259,11 +292,11 @@ void DeviceVideoManager::PullBuffer(eVideoType type)
 
     if (type == eVideoType::Publish)
     {
-        emit publishVideoFrame(map.data, map.size, map.size / _height);
+        emit publishVideoFrame(map.data, map.size, map.size / _height, _screenSharing);
     }
     else
     {
-        emit internalVideoFrame(map.data, map.size, map.size / _height);
+        emit internalVideoFrame(map.data, map.size, map.size / _height, _screenSharing);
     }
 
     gst_buffer_unmap(buffer, &map);
@@ -273,5 +306,12 @@ void DeviceVideoManager::PullBuffer(eVideoType type)
 void DeviceVideoManager::Retry()
 {
     StopInternal();
-    Start(cDefaultWidth, cDefaultHeight, _publishFormat);
+    if (_screenSharing)
+    {
+        Start(_publishFormat, _desktopOptions);
+    }
+    else
+    {
+        Start(cDefaultWidth, cDefaultHeight, _publishFormat);
+    }
 }

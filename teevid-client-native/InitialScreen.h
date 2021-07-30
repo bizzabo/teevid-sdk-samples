@@ -1,4 +1,4 @@
-#ifndef INITIALSCREEN_H
+﻿#ifndef INITIALSCREEN_H
 #define INITIALSCREEN_H
 
 #include <QWidget>
@@ -45,7 +45,7 @@ public:
 
     void OnConnected (long streamId, const std::string& invitationToken) override;
     void OnRoomConnected(const RoomParameters &roomParameters) override;
-    void OnStreamAdded (long streamId, const std::string& name, const std::string& participantId, int type, bool isLocal, int order, const Participant::Status& status) override;
+    void OnStreamAdded (long streamId, const std::string& name, const std::string& participantId, StreamType type, bool isLocal, int order, const Participant::Status& status) override;
     void OnStreamRemoved(long streamId) override;
     void OnDisconnected () override;
     void OnRoomModeChanged (RoomMode mode) override;
@@ -57,6 +57,8 @@ public:
     void OnMuteAttributesUpdated (const MuteAttributes& muteAttr) override;
     void OnParticipantUpdated (const std::string& participantId, const MuteAttributes& muteAttr) override;
     void OnRaiseHandStatusUpdated (bool allowed) override;
+    void OnScreenStarted () override;
+    void OnScreenStopped (const std::string& reason) override;
 
     // IFrameModifier
     void OnVideoSourceFrame (unsigned char *data, size_t size, size_t stride) override;
@@ -79,6 +81,7 @@ protected slots:
     void onBtnEndCallPressed();
     void onBtnMicrophonePressed();
     void onBtnCameraPressed();
+    void onBtnScreenSharePressed();
 
     void onRoomSubmitted(const QString& caller, const QString& invitationUrl);
 
@@ -95,14 +98,14 @@ protected slots:
     void OnDummyVideoFrameTimer();
     void OnDummyAudioFrameTimer();
 
-    void OnPublishVideoFrame(unsigned char* data, long size, int stride);
-    void OnInternalVideoFrame(unsigned char* data, long size, int stride);
-    void OnVideoError(QString message);
-    void OnVideoStarted(int width, int height);
-    void OnVideoCapsUpdated(int width, int height, int fps);
+    void OnPublishVideoFrame(unsigned char* data, long size, int stride, bool screenSharing);
+    void OnInternalVideoFrame(unsigned char* data, long size, int stride, bool screenSharing);
+    void OnVideoError(QString message, bool screenSharing);
+    void OnVideoStarted(int width, int height, bool screenSharing);
+    void OnVideoCapsUpdated(int width, int height, int fps, bool screenSharing);
 
-    void OnAudioFrame(unsigned char* data, long size);
-    void OnAudioError(QString message);
+    void OnAudioFrame(unsigned char* data, long size, bool screenSharing);
+    void OnAudioError(QString message, bool screenSharing);
 
 protected:
     void UnsubscribeFromVideo();
@@ -145,11 +148,13 @@ private:
     QTimer _dummyAudioFramesTimer;
     int _audioTimerIteration = 0;
     AudioParams _audioParams;
-    DeviceVideoManager _deviceVideoMgr;
-    DeviceAudioManager _deviceAudioMgr;
-    SourceMode _sourceMode;
+    DeviceVideoManager _webcamVideoMgr;
+    DeviceAudioManager _webcamAudioMgr;
+    DeviceVideoManager _screenVideoMgr;
+    DeviceAudioManager _screenAudioMgr;
 
-    MediaSettings _publishSettings;
+    MediaSettings _webcamPublishSettings;
+    MediaSettings _screenPublishSettings;
 };
 
 #endif // INITIALSCREEN_H

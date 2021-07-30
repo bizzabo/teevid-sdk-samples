@@ -6,5 +6,9 @@
         <file>microphone_on.png</file>
         <file>end_call.png</file>
         <file>muted.png</file>
+        <file>AudioFrameData.cpp</file>
+        <file>screen_share_start.png</file>
+        <file>screen_share_stop.png</file>
+        <file>screen_share_start_disabled.png</file>
     </qresource>
 </RCC>

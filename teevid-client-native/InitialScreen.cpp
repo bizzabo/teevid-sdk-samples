@@ -42,23 +42,35 @@ const QString cAudioSampleFile = "audio-sample-48000.wav";
 
 InitialScreen::InitialScreen(QWidget *parent) : QWidget(parent), ui(new Ui::InitialScreen)
 {
+    _webcamPublishSettings.videoSettings.videoFormatType = VideoFormatType::kUYVY; // consider using I420 for 4K webcam
+    _webcamPublishSettings.videoSettings.videoFps = cVideoFps;
+    _webcamPublishSettings.videoSettings.allowMJPG = false;
+
+//    _webcamPublishSettings.videoSettings.useWatermark = true;
+//    _webcamPublishSettings.videoSettings.watermarkOptions.imageFileName = "/home/username/watermark.png";
+//    _webcamPublishSettings.videoSettings.watermarkOptions.width = 270;
+//    _webcamPublishSettings.videoSettings.watermarkOptions.height = 240;
+//    _webcamPublishSettings.videoSettings.watermarkOptions.offset_x = 20;
+//    _webcamPublishSettings.videoSettings.watermarkOptions.offset_y = 20;
+//    _webcamPublishSettings.videoSettings.watermarkOptions.position = eWatermarkPosition::BottomLeft;
+//    _webcamPublishSettings.videoSettings.watermarkOptions.alpha = 0.5;
+
+//    _webcamPublishSettings.videoSettings.sourceWidth = 1920;
+//    _webcamPublishSettings.videoSettings.sourceHeight = 1080;
+
+    _webcamPublishSettings.audioSettings.audioChannels = kStereo;
+    _webcamPublishSettings.audioSettings.audioBpsType = kS16LE;
+    _webcamPublishSettings.audioSettings.audioSampleRate = cAudioPublishSampleRate;
+
     // _sourceMode is used inside InitUI, so initialize it's value before the InitUI call
-    _sourceMode = kInternalSourceMode;
+    _webcamPublishSettings.sourceMode = kInternalSourceMode;
+
+    _screenPublishSettings = _webcamPublishSettings;
+    _screenPublishSettings.sourceMode = kInternalSourceMode;
 
     InitUI();
-    //InitSDK();
 
-    _publishSettings.videoSettings.videoFormatType = VideoFormatType::kUYVY; // consider using I420 for 4K webcam
-    _publishSettings.videoSettings.videoFps = cVideoFps;
-    _publishSettings.videoSettings.allowMJPG = false;
-
-    _publishSettings.audioSettings.audioChannels = kStereo;
-    _publishSettings.audioSettings.audioBpsType = kS16LE;
-    _publishSettings.audioSettings.audioSampleRate = cAudioPublishSampleRate;
-
-    _publishSettings.sourceMode = _sourceMode;
-
-    _publishSettings.previewWindowId = ui->frameCallPart_Local->_subscribeSettings.previewWindowId;
+    _webcamPublishSettings.previewWindowId = ui->frameCallPart_Local->_subscribeSettings.previewWindowId;
 }
 
 InitialScreen::~InitialScreen()
@@ -74,10 +86,16 @@ InitialScreen::~InitialScreen()
     }
 
     // Please note: this should be called AFTER disconnection from TeeVidClient !!!
-    if(_sourceMode == kExternalSourceMode)
+    if(_screenPublishSettings.sourceMode == kExternalSourceMode)
     {
-        _deviceVideoMgr.Stop();
-        _deviceAudioMgr.Stop();
+        _screenVideoMgr.Stop();
+        _screenAudioMgr.Stop();
+    }
+
+    if(_webcamPublishSettings.sourceMode == kExternalSourceMode)
+    {
+        _webcamVideoMgr.Stop();
+        _webcamAudioMgr.Stop();
     }
 
     delete ui;
@@ -113,7 +131,7 @@ void InitialScreen::InitSDK()
 
         // TODO: uncomment this if default configuration is required
 //        TeeVidSettings settings;
-//        settings.media_settings = _publishSettings;
+//        settings.media_settings = _webcamPublishSettings;
 //        teeVidClient_->Configure(settings);
 
     }
@@ -141,6 +159,9 @@ void InitialScreen::InitUI()
                          "QPushButton#btnMicrophone[turn_on=\"true\"] { background-color: transparent; background-image: url(:/microphone_on.png); } "
                          "QPushButton#btnCamera { background-color: transparent; background-image: url(:/camera_off.png); } "
                          "QPushButton#btnCamera[turn_on=\"true\"] { background-color: transparent; background-image: url(:/camera_on.png); } "
+                         "QPushButton#btnScreenShare { background-color: transparent; background-image: url(:/screen_share_start.png); } "
+                         "QPushButton#btnScreenShare[turn_on=\"true\"] { background-color: transparent; background-image: url(:/screen_share_stop.png); } "
+                         "QPushButton#btnScreenShare:disabled { background-color: transparent; background-image: url(:/screen_share_start_disabled.png); } "
                          "QLabel#labelCamera, #labelTranslate, #labelLanguage { color: #000000; }"
                          "QLabel#labelCamera[checked=\"true\"], #labelTranslate[checked=\"true\"], #labelLanguage[checked=\"true\"] { color: #ffffff; }"
                          "QLabel#labelUserName { color: #000000; } ";
@@ -166,10 +187,14 @@ void InitialScreen::InitUI()
 
     ui->btnMicrophone->setProperty("turn_on", true);
     ui->btnCamera->setProperty("turn_on", true);
+    ui->btnScreenShare->setProperty("turn_on", false);
+
+    ui->btnScreenShare->setEnabled(false);
 
     connect(ui->btnEndCall, SIGNAL(pressed()), this, SLOT(onBtnEndCallPressed()));
     connect(ui->btnMicrophone, SIGNAL(pressed()), this, SLOT(onBtnMicrophonePressed()));
     connect(ui->btnCamera, SIGNAL(pressed()), this, SLOT(onBtnCameraPressed()));
+    connect(ui->btnScreenShare, SIGNAL(pressed()), this, SLOT(onBtnScreenSharePressed()));
 
     ui->listViewFriends->setSelectionMode(QAbstractItemView::ExtendedSelection);
 
@@ -227,23 +252,35 @@ void InitialScreen::InitUI()
 //    connect(&_dummyAudioFramesTimer, SIGNAL(timeout()), this, SLOT(OnDummyAudioFrameTimer()));
 
     ui->frameCallPart_Local->setDirectVideoRendering(false);
-    _publishSettings.previewWindowId = ui->frameCallPart_Local->_subscribeSettings.previewWindowId;
+    _webcamPublishSettings.previewWindowId = ui->frameCallPart_Local->_subscribeSettings.previewWindowId;
 
     ui->frameCallPart_1->setDirectVideoRendering(false);
     ui->frameCallPart_2->setDirectVideoRendering(false);
     ui->frameCallPart_3->setDirectVideoRendering(false);
     ui->frameCallPart_4->setDirectVideoRendering(false);
 
-    if(_sourceMode == kExternalSourceMode)
+    if(_webcamPublishSettings.sourceMode == kExternalSourceMode)
     {
-        connect(&_deviceVideoMgr, SIGNAL(publishVideoFrame(unsigned char*,long,int)), this, SLOT(OnPublishVideoFrame(unsigned char*,long,int)));
-        connect(&_deviceVideoMgr, SIGNAL(internalVideoFrame(unsigned char*,long,int)), this, SLOT(OnInternalVideoFrame(unsigned char*,long,int)));
-        connect(&_deviceVideoMgr, SIGNAL(videoError(QString)), this, SLOT(OnVideoError(QString)));
-        connect(&_deviceVideoMgr, SIGNAL(videoStarted(int, int)), this, SLOT(OnVideoStarted(int,int)));
-        connect(&_deviceVideoMgr, SIGNAL(capsUpdated(int,int,int)), this, SLOT(OnVideoCapsUpdated(int,int,int)));
+        connect(&_webcamVideoMgr, SIGNAL(publishVideoFrame(unsigned char*, long, int, bool)), this, SLOT(OnPublishVideoFrame(unsigned char*, long, int, bool)));
+        connect(&_webcamVideoMgr, SIGNAL(internalVideoFrame(unsigned char*, long, int, bool)), this, SLOT(OnInternalVideoFrame(unsigned char*, long, int, bool)));
+        connect(&_webcamVideoMgr, SIGNAL(videoError(QString, bool)), this, SLOT(OnVideoError(QString, bool)));
+        connect(&_webcamVideoMgr, SIGNAL(videoStarted(int, int, bool)), this, SLOT(OnVideoStarted(int, int, bool)));
+        connect(&_webcamVideoMgr, SIGNAL(capsUpdated(int, int, int, bool)), this, SLOT(OnVideoCapsUpdated(int, int, int, bool)));
 
-        connect(&_deviceAudioMgr, SIGNAL(audioFrame(unsigned char*,long)), this, SLOT(OnAudioFrame(unsigned char*,long)));
-        connect(&_deviceAudioMgr, SIGNAL(audioError(QString)), this, SLOT(OnAudioError(QString)));
+        connect(&_webcamAudioMgr, SIGNAL(audioFrame(unsigned char*,long,bool)), this, SLOT(OnAudioFrame(unsigned char*,long,bool)));
+        connect(&_webcamAudioMgr, SIGNAL(audioError(QString, bool)), this, SLOT(OnAudioError(QString, bool)));
+    }
+
+    if(_screenPublishSettings.sourceMode == kExternalSourceMode)
+    {
+        connect(&_screenVideoMgr, SIGNAL(publishVideoFrame(unsigned char*, long, int, bool)), this, SLOT(OnPublishVideoFrame(unsigned char*, long, int, bool)));
+        connect(&_screenVideoMgr, SIGNAL(internalVideoFrame(unsigned char*, long, int, bool)), this, SLOT(OnInternalVideoFrame(unsigned char*, long, int, bool)));
+        connect(&_screenVideoMgr, SIGNAL(videoError(QString, bool)), this, SLOT(OnVideoError(QString, bool)));
+        connect(&_screenVideoMgr, SIGNAL(videoStarted(int, int, bool)), this, SLOT(OnVideoStarted(int, int, bool)));
+        connect(&_screenVideoMgr, SIGNAL(capsUpdated(int, int, int, bool)), this, SLOT(OnVideoCapsUpdated(int, int, int, bool)));
+
+        connect(&_screenAudioMgr, SIGNAL(audioFrame(unsigned char*, long, bool)), this, SLOT(OnAudioFrame(unsigned char*, long, bool)));
+        connect(&_screenAudioMgr, SIGNAL(audioError(QString, bool)), this, SLOT(OnAudioError(QString, bool)));
     }
 }
 
@@ -286,10 +323,13 @@ void InitialScreen::OnConnected (long streamId, const std::string& invitationTok
     // invitation token receive notification is implemented via SIGNAL-SLOT connection because this logic is in different thread (not GUI)
     QString token = QString::fromStdString(invitationToken);
     emit sdkOnConnectedRecieved(token);
+
+    ui->btnScreenShare->setEnabled(true);
 }
 
-void InitialScreen::ChangeVideoSource(){
-    if (teeVidClient_ && _sourceMode == kInternalSourceMode)
+void InitialScreen::ChangeVideoSource()
+{
+    if (teeVidClient_ && _webcamPublishSettings.sourceMode == kInternalSourceMode)
     {
         std::vector<SourceInfo> info = teeVidClient_->GetSources(eVideo);
         for (int i = 0; i < info.size (); i++)
@@ -320,8 +360,8 @@ void InitialScreen::OnRoomConnected(const RoomParameters &roomParameters)
 
     emit roomConnectReceived(width, height);
 
-    _publishSettings.videoSettings.videoWidth = width;
-    _publishSettings.videoSettings.videoHeight = height;
+    _webcamPublishSettings.videoSettings.videoWidth = width;
+    _webcamPublishSettings.videoSettings.videoHeight = height;
 
     UpdatePublishSettings();
 
@@ -341,22 +381,27 @@ void InitialScreen::OnRoomConnected(const RoomParameters &roomParameters)
     if (teeVidClient_)
     {
         TeeVidSettings settings;
-        settings.media_settings = _publishSettings;
+        settings.webcam_media_settings = _webcamPublishSettings;
+        settings.screen_media_settings = _screenPublishSettings;
         teeVidClient_->Configure(settings);
         ChangeVideoSource();
     }
 }
 
-void InitialScreen::OnStreamAdded (long streamId, const std::string& name, const std::string& participantId, int type, bool isLocal, int order, const Participant::Status &status)
+void InitialScreen::OnStreamAdded (long streamId, const std::string& name, const std::string& participantId, StreamType type, bool isLocal, int order, const Participant::Status &status)
 {
     if (isLocal)
     {
-        ui->frameCallPart_Local->setStreamId(streamId);
-        ui->frameCallPart_Local->setParticipantOrder(order);
-        ui->frameCallPart_Local->setVideoFormat(kRGBA);
-        ui->frameCallPart_Local->setAudioSampleRate(cAudioSubscribeSampleRate);
+        // subscribe only to webcam video stream but not to screen sharing
+        if (type == eWebCam)
+        {
+            ui->frameCallPart_Local->setStreamId(streamId);
+            ui->frameCallPart_Local->setParticipantOrder(order);
+            ui->frameCallPart_Local->setVideoFormat(kRGBA);
+            ui->frameCallPart_Local->setAudioSampleRate(cAudioSubscribeSampleRate);
 
-        teeVidClient_->Subscribe(streamId, ui->frameCallPart_Local->_subscribeSettings, ui->frameCallPart_Local);
+            teeVidClient_->Subscribe(streamId, ui->frameCallPart_Local->_subscribeSettings, ui->frameCallPart_Local);
+        }
     }
     else
     {
@@ -387,6 +432,7 @@ void InitialScreen::OnDisconnected ()
 {
     // TODO: add needed logic here
     qDebug() << "OnDisconnected";
+    ui->btnScreenShare->setEnabled(false);
 }
 
 void InitialScreen::OnRoomModeChanged (RoomMode ){
@@ -470,6 +516,16 @@ void InitialScreen::OnParticipantUpdated (const std::string& , const MuteAttribu
 void InitialScreen::OnRaiseHandStatusUpdated (bool ){
 }
 
+void InitialScreen::OnScreenStarted()
+{
+
+}
+
+void InitialScreen::OnScreenStopped(const std::string &reason)
+{
+
+}
+
 void InitialScreen::onConnectParamsApplied()
 {
     InitSDK();
@@ -538,7 +594,7 @@ void InitialScreen::onInvitePressed()
     {
         bool sendAudio = isMicrophoneOn();
         bool sendVideo = isCameraOn();
-        teeVidClient_->ConnectTo(room, user, password, accessPin, 0, sendAudio, sendVideo, nullptr);
+        teeVidClient_->ConnectTo(room, user, password, accessPin, 0, sendAudio, sendVideo, this);
     }
     catch (std::exception& e)
     {
@@ -572,11 +628,18 @@ void InitialScreen::onBtnEndCallPressed()
         teeVidClient_->Disconnect();
     }
 
-    if(_sourceMode == kExternalSourceMode)
+    if(_screenPublishSettings.sourceMode == kExternalSourceMode)
     {
         // Please note: this should be called AFTER disconnection from TeeVidClient !!!
-        _deviceVideoMgr.Stop();
-        _deviceAudioMgr.Stop();
+        _screenVideoMgr.Stop();
+        _screenAudioMgr.Stop();
+    }
+
+    if(_webcamPublishSettings.sourceMode == kExternalSourceMode)
+    {
+        // Please note: this should be called AFTER disconnection from TeeVidClient !!!
+        _webcamVideoMgr.Stop();
+        _webcamAudioMgr.Stop();
     }
 
     // this is a clean-up - just in case some artifacts were left
@@ -625,6 +688,44 @@ void InitialScreen::onBtnCameraPressed()
     ui->frameCallPart_Local->setVideoMuted(!enabled);
 }
 
+void InitialScreen::onBtnScreenSharePressed()
+{
+    bool enabled = ui->btnScreenShare->property("turn_on").toBool();
+    enabled = !enabled;
+
+    ui->btnScreenShare->setProperty("turn_on", enabled);
+    style()->polish(ui->btnScreenShare);
+
+    // TODO: uncomment when SDK part is ready
+    if (teeVidClient_)
+    {
+        if (enabled)
+        {
+            DesktopShareOptions options;
+            options.fps = 5;
+            if (_screenPublishSettings.sourceMode == kInternalSourceMode)
+            {
+                teeVidClient_->StartScreenSharing(_screenPublishSettings, options);
+            }
+            else
+            {
+                std::string videoFormat = GetVideoFormatName(_screenPublishSettings.videoSettings);
+                if(_screenPublishSettings.sourceMode == kExternalSourceMode)
+                {
+                    _screenVideoMgr.Start(videoFormat, options);
+                    _screenAudioMgr.Start(GetAudioFormatName(_webcamPublishSettings.audioSettings));
+                }
+
+                teeVidClient_->StartScreenSharing(_screenPublishSettings);
+            }
+        }
+        else
+        {
+            teeVidClient_->StopScreenSharing();
+        }
+    }
+}
+
 void InitialScreen::onRoomSubmitted(const QString &caller, const QString &invitationUrl)
 {
     InvitationParams inviteParams = InvitationManager::GetInvitationParams(invitationUrl);
@@ -654,7 +755,7 @@ void InitialScreen::onRoomSubmitted(const QString &caller, const QString &invita
             std::string password = _connectParamsDialog->GetPassword().toStdString();
             bool sendAudio = isMicrophoneOn();
             bool sendVideo = isCameraOn();
-            teeVidClient_->ConnectTo(inviteParams.token_, inviteParams.room_, user, password, sendAudio, sendVideo, nullptr);
+            teeVidClient_->ConnectTo(inviteParams.token_, inviteParams.room_, user, password, sendAudio, sendVideo, this);
         }
         catch (std::exception& e)
         {
@@ -697,7 +798,12 @@ void InitialScreen::onHighQualitySelected(long streamId)
 
     if (callItem != nullptr)
     {
-        teeVidClient_->Subscribe(streamId, callItem->_subscribeSettings, callItem);
+        if (!teeVidClient_->Subscribe(streamId, callItem->_subscribeSettings, callItem))
+        {
+            QMessageBox mb(QMessageBox::Critical, "Error", "Failed to update window ID for nVidia sink element");
+            mb.exec();
+            return;
+        }
 
         // clear small preview
         callItem->setImage(QImage());
@@ -712,7 +818,9 @@ void InitialScreen::onTransformSettingsUpdated(long streamId)
         mediaSettings = ui->frameCallPart_Local->_subscribeSettings;
 
         TeeVidSettings settings;
-        settings.media_settings = _publishSettings;
+        settings.webcam_media_settings = _webcamPublishSettings;
+        settings.screen_media_settings = _screenPublishSettings;
+
         teeVidClient_->Configure(settings);
     }
     else
@@ -743,14 +851,14 @@ void InitialScreen::OnRoomConnectReceived(int videoWidth, int videoHeight)
         callItem->setExternalVideoSize(videoWidth, videoHeight);
     }
 
-    std::string videoFormat = GetVideoFormatName(_publishSettings.videoSettings);
-    if(_sourceMode == kExternalSourceMode)
+    std::string videoFormat = GetVideoFormatName(_webcamPublishSettings.videoSettings);
+    if(_webcamPublishSettings.sourceMode == kExternalSourceMode)
     {
-        _deviceVideoMgr.Start(videoWidth, videoHeight, videoFormat);
-        _deviceAudioMgr.Start(cAudioFps,
-                              _publishSettings.audioSettings.audioSampleRate,
-                              _publishSettings.audioSettings.audioChannels,
-                              GetAudioFormatName(_publishSettings.audioSettings));
+        _webcamVideoMgr.Start(videoWidth, videoHeight, videoFormat);
+        _webcamAudioMgr.Start(cAudioFps,
+                              _webcamPublishSettings.audioSettings.audioSampleRate,
+                              _webcamPublishSettings.audioSettings.audioChannels,
+                              GetAudioFormatName(_webcamPublishSettings.audioSettings));
     }
 }
 
@@ -824,70 +932,74 @@ void InitialScreen::OnDummyAudioFrameTimer()
     }
 }
 
-void InitialScreen::OnPublishVideoFrame(unsigned char *data, long size, int stride)
+void InitialScreen::OnPublishVideoFrame(unsigned char *data, long size, int stride, bool screenSharing)
 {
     if (teeVidClient_)
     {
-        teeVidClient_->PutVideoFrame(data, size, stride);
+        StreamType streamType = screenSharing ? eScreen : eWebCam;
+        teeVidClient_->PutVideoFrame(data, size, stride, streamType);
     }
 }
 
-void InitialScreen::OnInternalVideoFrame(unsigned char *data, long size, int stride)
+void InitialScreen::OnInternalVideoFrame(unsigned char *data, long size, int stride, bool screenSharing)
 {
+    Q_UNUSED(screenSharing);
     ui->frameCallPart_Local->OnVideoFrame(data, size, stride, VideoOrientation::kOrientationIdentity);
 }
 
-void InitialScreen::OnVideoError(QString message)
+void InitialScreen::OnVideoError(QString message, bool screenSharing)
 {
     QMessageBox mb(QMessageBox::Critical, "Video error", message);
     mb.exec();
 }
 
-void InitialScreen::OnVideoStarted(int width, int height)
+void InitialScreen::OnVideoStarted(int width, int height, bool screenSharing)
 {
-    if (width == _publishSettings.videoSettings.videoWidth && height == _publishSettings.videoSettings.videoHeight)
+    if (width == _webcamPublishSettings.videoSettings.videoWidth && height == _webcamPublishSettings.videoSettings.videoHeight)
     {
         // the settings are the same as original - no need to reconfigure
         return;
     }
 
-    _publishSettings.videoSettings.videoWidth = width;
-    _publishSettings.videoSettings.videoHeight = height;
+    _webcamPublishSettings.videoSettings.videoWidth = width;
+    _webcamPublishSettings.videoSettings.videoHeight = height;
 
     UpdatePublishSettings();
 
     if (ui->frameCallPart_Local->getStreamId() > 0)
     {
         // we already have our stream so we need to reconfigure it
-        teeVidClient_->SetStreamMediaSettings(ui->frameCallPart_Local->getStreamId(), _publishSettings);
+        teeVidClient_->SetStreamMediaSettings(ui->frameCallPart_Local->getStreamId(), _webcamPublishSettings);
     }
     else
     {
         // not published yet, so just update settings
         TeeVidSettings settings;
-        settings.media_settings = _publishSettings;
+        settings.webcam_media_settings = _webcamPublishSettings;
+        settings.screen_media_settings = _screenPublishSettings;
         teeVidClient_->Configure(settings);
         ChangeVideoSource();
     }
 }
 
-void InitialScreen::OnVideoCapsUpdated(int width, int height, int fps)
+void InitialScreen::OnVideoCapsUpdated(int width, int height, int fps, bool screenSharing)
 {
-    if (teeVidClient_ && _sourceMode == kExternalSourceMode)
+    if (teeVidClient_ && _webcamPublishSettings.sourceMode == kExternalSourceMode)
     {
         teeVidClient_->UpdateVideoCaps(width, height, fps);
     }
 }
 
-void InitialScreen::OnAudioFrame(unsigned char *data, long size)
+void InitialScreen::OnAudioFrame(unsigned char *data, long size, bool screenSharing)
 {
     if (teeVidClient_)
     {
-        teeVidClient_->PutAudioFrame(data, size);
+        StreamType streamType = screenSharing ? eScreen : eWebCam;
+        teeVidClient_->PutAudioFrame(data, size, streamType);
     }
 }
 
-void InitialScreen::OnAudioError(QString message)
+void InitialScreen::OnAudioError(QString message, bool screenSharing)
 {
     QMessageBox mb(QMessageBox::Critical, "Audio error", message);
     mb.exec();
@@ -1010,16 +1122,16 @@ void InitialScreen::UpdatePublishSettings()
 
     if (publishTransformSettings.resizeWidth > 0 && publishTransformSettings.resizeHeight > 0)
     {
-        _publishSettings.videoSettings.videoWidth = publishTransformSettings.resizeWidth;
-        _publishSettings.videoSettings.videoHeight = publishTransformSettings.resizeHeight;
+        _webcamPublishSettings.videoSettings.videoWidth = publishTransformSettings.resizeWidth;
+        _webcamPublishSettings.videoSettings.videoHeight = publishTransformSettings.resizeHeight;
     }
 
-    _publishSettings.videoSettings.cropSettings.left = publishTransformSettings.cropLeft;
-    _publishSettings.videoSettings.cropSettings.top = publishTransformSettings.cropTop;
-    _publishSettings.videoSettings.cropSettings.right = publishTransformSettings.cropRight;
-    _publishSettings.videoSettings.cropSettings.bottom = publishTransformSettings.cropBottom;
+    _webcamPublishSettings.videoSettings.cropSettings.left = publishTransformSettings.cropLeft;
+    _webcamPublishSettings.videoSettings.cropSettings.top = publishTransformSettings.cropTop;
+    _webcamPublishSettings.videoSettings.cropSettings.right = publishTransformSettings.cropRight;
+    _webcamPublishSettings.videoSettings.cropSettings.bottom = publishTransformSettings.cropBottom;
 
-    _publishSettings.videoSettings.flipMethod = (FlipMethod)publishTransformSettings.rotateType;
+    _webcamPublishSettings.videoSettings.flipMethod = (FlipMethod)publishTransformSettings.rotateType;
 }
 
 std::string InitialScreen::GetVideoFormatName (const VideoSettings& videoSettings)
