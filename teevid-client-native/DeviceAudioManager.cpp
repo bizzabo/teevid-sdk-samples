@@ -47,65 +47,22 @@ static GstFlowReturn new_sample_audio (GstElement *sink, gpointer data)
 
 bool DeviceAudioManager::Start(int fps, int frames, int channels, const std::string& format)
 {
-    _fps = fps;
-    _frames = frames;
-    _channels = channels;
-
-    gst_init(NULL, NULL);
-
+    _screenSharing = false;
     std::string pipelineStr = "alsasrc ! queue ! audioconvert ! audio/x-raw,format=" +
                               format + ",rate=" +
-                              std::to_string(_frames) + ",channels=" + std::to_string(_channels) +
+                              std::to_string(frames) + ",channels=" + std::to_string(channels) +
                               " ! appsink name=appsink_audio";
 
-//    std::string pipelineStr = "alsasrc ! queue ! audioconvert ! audio/x-raw,format=" +
-//                              format + ",rate=" +
-//                              std::to_string(_frames) + ",channels=" + std::to_string(_channels) +
-//                              " ! audiobuffersplit name=splitter ! appsink name=appsink_audio";
+    return StartInternal(pipelineStr);
+}
 
-    qDebug() << QString::fromStdString(pipelineStr);
+bool DeviceAudioManager::Start(const std::string &format)
+{
+    _screenSharing = true;
+    std::string pipelineStr = "audiotestsrc volume=0 ! queue ! audioconvert ! audio/x-raw,format=" + format +
+                              " ! appsink name=appsink_audio";
 
-    _pipeline = gst_parse_launch(pipelineStr.c_str(), NULL);
-    if (_pipeline == NULL)
-    {
-        emit audioError("Erroneous pipeline");
-        return false;
-    }
-
-    // BE AWARE: for now audiobuffersplit item is not used.
-    // If you use it (see commented pipeline) then un-comment the code below:
-
-//    GstElement* splitter = gst_bin_get_by_name(GST_BIN(_pipeline), "splitter");
-//    if (splitter != NULL)
-//    {
-//        g_object_set(splitter, "output-buffer-duration", 1, _fps, NULL);
-//    }
-
-    _appsink = gst_bin_get_by_name(GST_BIN(_pipeline), "appsink_audio");
-
-    GstStateChangeReturn ret = gst_element_set_state(_pipeline, GST_STATE_PLAYING);
-    if (ret == GST_STATE_CHANGE_FAILURE)
-    {
-        emit audioError("Failed to start pipeline");
-        gst_object_unref(_pipeline);
-        _pipeline = NULL;
-        return false;
-    }
-
-    _loop = g_main_loop_new(NULL, FALSE);
-
-    // add a message handler
-    _bus = gst_pipeline_get_bus(GST_PIPELINE(_pipeline));
-    _bus_watch_id = gst_bus_add_watch(_bus, bus_call, this);
-    gst_object_unref(_bus);
-
-    g_object_set (G_OBJECT (_appsink), "emit-signals", TRUE, NULL);
-    g_signal_connect (_appsink, "new-sample", G_CALLBACK (new_sample_audio), this);
-
-    std::thread t(&DeviceAudioManager::GstTimerFunc, this);
-    t.detach();
-
-    return true;
+    return StartInternal(pipelineStr);
 }
 
 void DeviceAudioManager::Stop()
@@ -138,7 +95,7 @@ void DeviceAudioManager::QuitMainLoop()
 
 void DeviceAudioManager::HandleError(QString error)
 {
-    emit audioError(error);
+    emit audioError(error, _screenSharing);
 }
 
 void DeviceAudioManager::GstTimerFunc()
@@ -147,6 +104,55 @@ void DeviceAudioManager::GstTimerFunc()
     {
         g_main_loop_run(_loop);
     }
+}
+
+bool DeviceAudioManager::StartInternal(const std::string &pipelineStr)
+{
+    gst_init(NULL, NULL);
+
+    qDebug() << QString::fromStdString(pipelineStr);
+
+    _pipeline = gst_parse_launch(pipelineStr.c_str(), NULL);
+    if (_pipeline == NULL)
+    {
+        emit audioError("Erroneous pipeline", _screenSharing);
+        return false;
+    }
+
+    // BE AWARE: for now audiobuffersplit item is not used.
+    // If you use it (see commented pipeline) then un-comment the code below:
+
+//    GstElement* splitter = gst_bin_get_by_name(GST_BIN(_pipeline), "splitter");
+//    if (splitter != NULL)
+//    {
+//        g_object_set(splitter, "output-buffer-duration", 1, _fps, NULL);
+//    }
+
+    _appsink = gst_bin_get_by_name(GST_BIN(_pipeline), "appsink_audio");
+
+    GstStateChangeReturn ret = gst_element_set_state(_pipeline, GST_STATE_PLAYING);
+    if (ret == GST_STATE_CHANGE_FAILURE)
+    {
+        emit audioError("Failed to start pipeline", _screenSharing);
+        gst_object_unref(_pipeline);
+        _pipeline = NULL;
+        return false;
+    }
+
+    _loop = g_main_loop_new(NULL, FALSE);
+
+    // add a message handler
+    _bus = gst_pipeline_get_bus(GST_PIPELINE(_pipeline));
+    _bus_watch_id = gst_bus_add_watch(_bus, bus_call, this);
+    gst_object_unref(_bus);
+
+    g_object_set (G_OBJECT (_appsink), "emit-signals", TRUE, NULL);
+    g_signal_connect (_appsink, "new-sample", G_CALLBACK (new_sample_audio), this);
+
+    std::thread t(&DeviceAudioManager::GstTimerFunc, this);
+    t.detach();
+
+    return true;
 }
 
 void DeviceAudioManager::PullBuffer()
@@ -168,7 +174,7 @@ void DeviceAudioManager::PullBuffer()
         return;
     }
 
-    emit audioFrame(map.data, map.size);
+    emit audioFrame(map.data, map.size, _screenSharing);
 
     gst_buffer_unmap(buffer, &map);
     gst_sample_unref(sample);

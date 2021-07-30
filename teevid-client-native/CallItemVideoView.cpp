@@ -46,6 +46,8 @@ CallItemVideoView::CallItemVideoView(QWidget *parent) :
     _subscribeSettings.videoSettings.videoWidth = 0;
     _subscribeSettings.videoSettings.videoHeight = 0;
 
+    _subscribeSettings.sinkElement = eGStreamer;
+
     _subscribeSettings.audioSettings.audioChannels = kStereo;
     _subscribeSettings.audioSettings.audioSampleRate = cAudioSubscribeSampleRate;
     _subscribeSettings.audioSettings.audioBpsType = kS16LE;

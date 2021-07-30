@@ -57,6 +57,27 @@ typedef enum {
 
 typedef enum
 {
+  TopLeft = 0,
+  TopRight = 1,
+  BottomLeft = 2,
+  BottomRight = 3
+} eWatermarkPosition;
+
+struct WatermarkOptions
+{
+  std::string imageFileName;
+  int width = 0;
+  int height = 0;
+
+  int offset_x = 0;
+  int offset_y = 0;
+  eWatermarkPosition position = eWatermarkPosition::TopLeft;
+
+  double alpha = 1;
+};
+
+typedef enum
+{
   kNone,               // Identity (no rotation)
   kCounterClockwise,   // Rotate counter-clockwise 90 degrees
   kRotate180,          // Rotate 180 degrees
@@ -67,12 +88,17 @@ typedef enum
   kUpperLeftDiagonal   // Flip across upper left/lower right diagonal
 } FlipMethod;
 
+typedef enum {
+  eGStreamer,
+  eNVidia
+} SinkElement;
+
 struct CropSettings
 {
-  int left;   // Pixels to crop at left
-  int right;  // Pixels to crop at right
-  int top;    // Pixels to crop at top
-  int bottom; // Pixels to crop at bottom
+  int left = 0;   // Pixels to crop at left
+  int right = 0;  // Pixels to crop at right
+  int top = 0;    // Pixels to crop at top
+  int bottom = 0; // Pixels to crop at bottom
 };
 
 struct AudioSettings
@@ -89,12 +115,20 @@ struct VideoSettings
   int videoWidth = 1920;
   int videoHeight = 1080;
 
+  // determine whether the source video should be resized
+  // 0 means no resize
+  int sourceWidth = 0;
+  int sourceHeight = 0;
+
   // this flag allows MJPG camera format usage
   // available only for INTERNAL pipeline mode and ONLY for EMBEDDED architecture
   // disabled by default
   bool allowMJPG = false;
 
-  FlipMethod flipMethod;
+  bool useWatermark = false;
+  WatermarkOptions watermarkOptions;
+
+  FlipMethod flipMethod = kNone;
   CropSettings cropSettings;
 };
 
@@ -103,6 +137,7 @@ typedef struct {
   VideoSettings videoSettings;
   SourceMode sourceMode;
   unsigned int previewWindowId = 0;
+  SinkElement sinkElement = eGStreamer;
 } MediaSettings;
 
 }

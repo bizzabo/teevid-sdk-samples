@@ -11,6 +11,7 @@
 #include "MuteAttributes.h"
 #include "teevid_sdk/Participant.h"
 #include "teevid_sdk/RoomParameters.h"
+#include "teevid_sdk/StreamType.h"
 
 namespace teevid_sdk
 {
@@ -29,7 +30,7 @@ class ITeeVidClientObserver {
   // OnStreamAdded N times
   // It contains parameters for identifying stream: streamId, participantId (one participant may have several streams),
   // name and StreamType
-  virtual void OnStreamAdded (long streamId, const std::string& name, const std::string& participantId, int type, bool isLocal, int order, const Participant::Status& status) = 0;
+  virtual void OnStreamAdded (long streamId, const std::string& name, const std::string& participantId, StreamType type, bool isLocal, int order, const Participant::Status& status) = 0;
 
   // Raised when one of observed streams has ended
   virtual void OnStreamRemoved (long streamId) = 0;
@@ -63,6 +64,12 @@ class ITeeVidClientObserver {
 
   // Informs client about allow/not allow to participant in the meeting after RiseHand request
   virtual void OnRaiseHandStatusUpdated (bool allowed) = 0;
+
+  // Informs client that screen sharing has started
+  virtual void OnScreenStarted () = 0;
+
+  // Informs client that screen sharing has stopped due to some reason (normal or error)
+  virtual void OnScreenStopped (const std::string& reason) = 0;
 };
 }
 

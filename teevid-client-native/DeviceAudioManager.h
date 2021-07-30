@@ -14,6 +14,7 @@ public:
     explicit DeviceAudioManager(QObject *parent = nullptr);
 
     bool Start(int fps, int frames, int channels, const std::string& format);
+    bool Start(const std::string& format);
     void Stop();
 
     void QuitMainLoop();
@@ -22,22 +23,20 @@ public:
     void PullBuffer();
 
 signals:
-    void audioFrame(unsigned char* data, long size);
-    void audioError(QString message);
+    void audioFrame(unsigned char* data, long size, bool screenSharing);
+    void audioError(QString message, bool screenSharing);
 
 protected:
     void GstTimerFunc();
+    bool StartInternal(const std::string& pipelineStr);
 
 private:
-    int _fps = 30;
-    int _frames = 48000;
-    int _channels = 2;
-
     GMainLoop* _loop = NULL;
     GstElement* _pipeline = NULL;
     GstElement* _appsink = NULL;
     GstBus* _bus = NULL;
     guint _bus_watch_id = 0;
+    bool _screenSharing = false;
 };
 
 #endif // DEVICEAUDIOMANAGER_H
