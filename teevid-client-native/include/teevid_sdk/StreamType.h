@@ -7,8 +7,8 @@
 namespace teevid_sdk
 {
     typedef enum {
-        eCamera,
-        eScreen
+      eWebCam,
+      eScreen
     } StreamType;
 }
 #endif //_STREAMTYPE_H_

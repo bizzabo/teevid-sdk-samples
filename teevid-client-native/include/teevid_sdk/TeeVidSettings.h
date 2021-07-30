@@ -9,7 +9,8 @@ namespace teevid_sdk
 {
     struct TeeVidSettings
     {
-      MediaSettings media_settings;
+      MediaSettings webcam_media_settings;
+      MediaSettings screen_media_settings;
     };
 }
 #endif //_TEEVIDSETTINGS_H_

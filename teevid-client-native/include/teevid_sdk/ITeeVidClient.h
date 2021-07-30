@@ -17,6 +17,7 @@
 #include "RoomParameters.h"
 #include "SourceMode.h"
 #include "IFrameModifier.h"
+#include "DesktopShare.h"
 
 namespace teevid_sdk {
     struct ITeeVidClient {
@@ -51,7 +52,7 @@ namespace teevid_sdk {
 
         // videoSettings parameter contains the resolution to which incoming video should be resized
         // to prevent resizing (receiving video as is) videoWidth and videoHeight fields in videoSettings should be set to 0
-        virtual void Subscribe(long streamId, const MediaSettings& mediaSettings, IStreamSubscriber* streamSubscriber) = 0;
+        virtual bool Subscribe(long streamId, const MediaSettings& mediaSettings, IStreamSubscriber* streamSubscriber) = 0;
         virtual void Unsubscribe(long streamId) = 0;
 
         // Allows to change settings (e.g. video format) for the video from already subscribed stream - without stopping
@@ -85,8 +86,18 @@ namespace teevid_sdk {
 
         // Those methods take raw media data and it's size to deliver it to the server
         // Application should provide data in format which has been configured by Configure method
-        virtual bool PutVideoFrame(unsigned char *data, size_t size, size_t stride) = 0;
-        virtual bool PutAudioFrame(unsigned char *data, size_t size) = 0;
+        // In case of video frames the source can be webcam video or desktop sharing
+        virtual bool PutVideoFrame(unsigned char *data, size_t size, size_t stride, StreamType eSourceType = eWebCam) = 0;
+        virtual bool PutAudioFrame(unsigned char *data, size_t size, StreamType eSourceType = eWebCam) = 0;
+
+        // Screen sharing alongside webcam video publishing
+        // When using an external pipeline no need to specify screen sharing options as they are already applied
+        virtual void StartScreenSharing (const MediaSettings& media_settings) = 0;
+
+        // When internal pipeline is used it is required to specify the sharing settings
+        virtual void StartScreenSharing (const MediaSettings& media_settings, const DesktopShareOptions& options) = 0;
+
+        virtual void StopScreenSharing () = 0;
     };
 
     typedef std::shared_ptr<ITeeVidClient> ITeeVidClientPtr;
