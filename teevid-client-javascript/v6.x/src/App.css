@@ -1,0 +1,97 @@
+.App {
+  text-align: center;
+  background-color: #282c34;
+  background-image: url(./bg.png);
+  background-repeat: no-repeat;
+  background-size: cover;
+  height: 100vh;
+  display: flex;
+  color: white;
+  flex-flow: row wrap;
+}
+
+.App-logo {
+  /* animation: App-logo-spin infinite 20s linear; */
+  /* height: 40vmin; */
+  max-width: 100%;
+  max-height: 100%;
+  pointer-events: none;
+}
+
+.App-header {
+  flex-flow: row wrap;
+  align-items: center;
+  font-size: calc(10px + 2vmin);
+  width: 100%;
+  height: 100px;
+  padding: 15px;
+  box-sizing: border-box;
+
+}
+
+.App-link {
+  color: #61dafb;
+}
+.meeting {
+  display: flex;
+  flex-flow: row wrap;
+  width: 100%;
+  justify-content: center;
+  align-items: center;
+  height: calc(100vh - 100px);
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.meeting {
+
+  display: flex;
+  justify-content: center;
+  flex-flow: row wrap;
+
+}
+.stream {
+  width: calc(100vw / 4);
+  height: calc(100vh / 4);
+  margin: 8px;
+  border-radius: 10px;
+  border: 4px solid #02598a;
+  overflow: hidden;
+}
+.licode_subbar {
+  display: none;
+}
+.join {
+  background: #0878E3 !important;
+  color:white;
+  font-size: 16px;
+
+}
+
+.join__inputs * {
+  color: white!important;
+}
+
+.stream p {
+  margin-top: -34px;
+  position: relative !important;
+}
+
+.stream video {
+  position: relative !important;
+}
+
+input {
+  outline: 0!important;
+}
+
+input:focus {
+  outline-offset: 0!important;
+}
