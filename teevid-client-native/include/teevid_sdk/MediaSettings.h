@@ -2,9 +2,6 @@
 #define TEEVID_SDK_SETTINGS_H
 
 #include "SourceMode.h"
-
-#include <string>
-
 namespace teevid_sdk
 {
 
