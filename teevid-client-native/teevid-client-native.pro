@@ -106,6 +106,8 @@ contains( UNAME, x86_64 ):{
     } else {
         LIBS += -L"$$PWD/libs/desktop/release" -lteevid_sdk
     }
+    LIBS += -L"$$PWD/3rd_party_libs/desktop/speechsdk" -lMicrosoft.CognitiveServices.Speech.core
+    LIBS += -L"$$PWD/3rd_party_libs/desktop/speechsdk" -lMicrosoft.CognitiveServices.Speech.extension.audio.sys
 }
 
 contains( UNAME, aarch64 ):{
@@ -114,4 +116,6 @@ contains( UNAME, aarch64 ):{
     } else {
         LIBS += -L"$$PWD/libs/jetson/release" -lteevid_sdk
     }
+    LIBS += -L"$$PWD/3rd_party_libs/embedded/speechsdk" -lMicrosoft.CognitiveServices.Speech.core
+    LIBS += -L"$$PWD/3rd_party_libs/embedded/speechsdk" -lMicrosoft.CognitiveServices.Speech.extension.audio.sys
 }
