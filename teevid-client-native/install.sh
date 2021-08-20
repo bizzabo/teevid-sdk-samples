@@ -91,8 +91,6 @@ echo "net.core.wmem_max=$SOCKET_BUFFER_SIZE" >> /etc/sysctl.conf
 echo "net.core.rmem_default=$SOCKET_BUFFER_SIZE" >> /etc/sysctl.conf
 echo "net.core.rmem_max=$SOCKET_BUFFER_SIZE" >> /etc/sysctl.conf
 
-unzip $(pwd)/libs.zip
-
 sudo chmod a+x $(pwd)/opencv_install.sh
 sudo chmod a+x $(pwd)/opencv_patch.sh
 sudo chmod a+x $(pwd)/opencv_recover.sh
