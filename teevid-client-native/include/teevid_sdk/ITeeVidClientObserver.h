@@ -70,6 +70,8 @@ class ITeeVidClientObserver {
 
   // Informs client that screen sharing has stopped due to some reason (normal or error)
   virtual void OnScreenStopped (const std::string& reason) = 0;
+
+  virtual void OnRecognizedTextReceived(const std::string& participant, const std::string& original_text, const std::string& translated_text) = 0;
 };
 }
 

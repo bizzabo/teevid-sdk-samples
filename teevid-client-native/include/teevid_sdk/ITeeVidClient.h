@@ -8,6 +8,7 @@
 #endif //TEEVID_SDK_ITEEVIDCLIENT_H
 #include <string>
 #include <memory>
+#include <vector>
 #include "ITeeVidClientObserver.h"
 #include "IStreamSubscriber.h"
 #include "SourceType.h"
@@ -18,6 +19,7 @@
 #include "SourceMode.h"
 #include "IFrameModifier.h"
 #include "DesktopShare.h"
+#include "FileInfo.h"
 
 namespace teevid_sdk {
     struct ITeeVidClient {
@@ -98,6 +100,9 @@ namespace teevid_sdk {
         virtual void StartScreenSharing (const MediaSettings& media_settings, const DesktopShareOptions& options) = 0;
 
         virtual void StopScreenSharing () = 0;
+
+        // Personal repository methods
+        virtual std::vector<FileInfo> GetUserFileList () = 0;
     };
 
     typedef std::shared_ptr<ITeeVidClient> ITeeVidClientPtr;

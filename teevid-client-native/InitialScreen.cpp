@@ -34,6 +34,9 @@ const int cAudioPublishSampleRate = 48000;
 const int cAudioSubscribeSampleRate = 48000;
 const int cMaxAudioSetsCount = 512;
 
+const std::string cSpeechKey = "a9a8a2051e9c48c68842988d30b3b345";
+const std::string cSubscriptionRegion = "chinaeast2";
+
 const QString cSourceDir = "teevid-client-native";
 
 // choose audio sample file
@@ -67,6 +70,9 @@ InitialScreen::InitialScreen(QWidget *parent) : QWidget(parent), ui(new Ui::Init
 
     _screenPublishSettings = _webcamPublishSettings;
     _screenPublishSettings.sourceMode = kInternalSourceMode;
+
+    _speechSettings.sdk_speech_key = cSpeechKey;
+    _speechSettings.sdk_subscribe_region = cSubscriptionRegion;
 
     InitUI();
 
@@ -176,8 +182,11 @@ void InitialScreen::InitUI()
 
     ui->btnModeFriends->setChecked(true);
 
-    ui->comboBoxLanguage->addItem("English");
-    ui->comboBoxLanguage->addItem("Chinese");
+    ui->comboBoxMyLanguage->addItem("English", "en-US");
+    ui->comboBoxMyLanguage->addItem("Chinese", "zh-CN");
+
+    ui->comboBoxToLanguage->addItem("English", "en");
+    ui->comboBoxToLanguage->addItem("Chinese", "zh");
 
     connect(_modeGroup, SIGNAL(buttonClicked(int)), this, SLOT(onModeSelected(int)));
     connect(ui->checkBoxCamera, SIGNAL(stateChanged(int)), this, SLOT(onCameraChecked(int)));
@@ -355,6 +364,28 @@ void InitialScreen::ChangeVideoSource()
 
 void InitialScreen::OnRoomConnected(const RoomParameters &roomParameters)
 {
+    std::vector<FileInfo> files = teeVidClient_->GetUserFileList();
+    if (!files.empty())
+    {
+        for (auto iter = files.begin(); iter != files.end(); ++iter)
+        {
+            FileInfo info = *iter;
+            qDebug() << "*** FILE INFO:";
+            qDebug() << "filename:" << QString::fromStdString(info.fileName);
+            qDebug() << "type:" << QString::fromStdString(info.type);
+            qDebug() << "MIME type:" << QString::fromStdString(info.mimeType);
+            qDebug() << "size:" << info.size;
+            qDebug() << "created ts:" << info.createdTs;
+            qDebug() << "owner:" << QString::fromStdString(info.owner);
+            qDebug() << "filepath:" << QString::fromStdString(info.filepath);
+            qDebug() << "URL:" << QString::fromStdString(info.downloadUrl) << "\n";
+        }
+    }
+    else
+    {
+        qDebug() << "Looks like you don't have any files in your personal repository";
+    }
+
     int width = roomParameters.video_resolution_.width;
     int height = roomParameters.video_resolution_.height;
 
@@ -380,9 +411,14 @@ void InitialScreen::OnRoomConnected(const RoomParameters &roomParameters)
 
     if (teeVidClient_)
     {
+        _speechSettings.show_subtitles = ui->checkBoxTranslate->isChecked();
+        _speechSettings.speak_lang = ui->comboBoxMyLanguage->currentData().toString().toStdString();
+        _speechSettings.read_lang = ui->comboBoxToLanguage->currentData().toString().toStdString();
+
         TeeVidSettings settings;
         settings.webcam_media_settings = _webcamPublishSettings;
         settings.screen_media_settings = _screenPublishSettings;
+        settings.speech_settings = _speechSettings;
         teeVidClient_->Configure(settings);
         ChangeVideoSource();
     }
@@ -526,6 +562,12 @@ void InitialScreen::OnScreenStopped(const std::string &reason)
 
 }
 
+void InitialScreen::OnRecognizedTextReceived(const std::string &participant, const std::string &original_text, const std::string &translated_text)
+{
+    qDebug() << "OnRecognizedTextReceived : participant:" << QString::fromStdString(participant)
+             << "\noriginal text:" << QString::fromStdString(original_text) << "\ntranslated text:" << QString::fromStdString(translated_text);
+}
+
 void InitialScreen::onConnectParamsApplied()
 {
     InitSDK();
@@ -553,7 +595,7 @@ void InitialScreen::onTanslationChecked(int state)
 {
     ui->labelTranslate->setProperty("checked", state == Qt::Checked);
     style()->polish(ui->labelTranslate);
-    ui->comboBoxLanguage->setEnabled(state == Qt::Checked);
+    ui->comboBoxToLanguage->setEnabled(state == Qt::Checked);
 }
 
 
@@ -820,6 +862,7 @@ void InitialScreen::onTransformSettingsUpdated(long streamId)
         TeeVidSettings settings;
         settings.webcam_media_settings = _webcamPublishSettings;
         settings.screen_media_settings = _screenPublishSettings;
+        settings.speech_settings = _speechSettings;
 
         teeVidClient_->Configure(settings);
     }
@@ -977,6 +1020,7 @@ void InitialScreen::OnVideoStarted(int width, int height, bool screenSharing)
         TeeVidSettings settings;
         settings.webcam_media_settings = _webcamPublishSettings;
         settings.screen_media_settings = _screenPublishSettings;
+        settings.speech_settings = _speechSettings;
         teeVidClient_->Configure(settings);
         ChangeVideoSource();
     }

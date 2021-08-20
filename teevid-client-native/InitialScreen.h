@@ -59,6 +59,7 @@ public:
     void OnRaiseHandStatusUpdated (bool allowed) override;
     void OnScreenStarted () override;
     void OnScreenStopped (const std::string& reason) override;
+    void OnRecognizedTextReceived(const std::string& participant, const std::string& original_text, const std::string& translated_text) override;
 
     // IFrameModifier
     void OnVideoSourceFrame (unsigned char *data, size_t size, size_t stride) override;
@@ -155,6 +156,7 @@ private:
 
     MediaSettings _webcamPublishSettings;
     MediaSettings _screenPublishSettings;
+    SpeechSettings _speechSettings;
 };
 
 #endif // INITIALSCREEN_H
