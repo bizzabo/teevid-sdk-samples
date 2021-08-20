@@ -1,3 +1,10 @@
 #!/bin/sh
 
-unzip $(pwd)/libs.zip
+userid=$(id -u)
+
+if [ $userid -ne 0 ]; then
+    unzip $(pwd)/libs.zip
+else
+	echo "ERROR: You need to run this script without sudo permissions!"
+fi
+
