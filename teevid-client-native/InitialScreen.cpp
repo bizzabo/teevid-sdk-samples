@@ -76,7 +76,7 @@ InitialScreen::InitialScreen(QWidget *parent) : QWidget(parent), ui(new Ui::Init
 
     InitUI();
 
-    //_webcamPublishSettings.previewWindowId = ui->frameCallPart_Local->_subscribeSettings.previewWindowId;
+    _webcamPublishSettings.previewWindowId = ui->frameCallPart_Local->_subscribeSettings.previewWindowId;
 }
 
 InitialScreen::~InitialScreen()
@@ -1319,10 +1319,7 @@ void InitialScreen::OnVideoSourceFrame (unsigned char *data, size_t size, size_t
 {
     // comment this to remove a blu line on top of the video
     int index = 0;
-    for (int j = 0; j < size / 5; j += 4){
-        data[j+3] = 0;
-    }
-   /* for (int j = 0; j < size / 3; j += 4)
+    for (int j = 0; j < size / 3; j += 4)
     {
       if (j < size / 3)
       {
@@ -1342,7 +1339,7 @@ void InitialScreen::OnVideoSourceFrame (unsigned char *data, size_t size, size_t
         data[j + 1] = (index < 16) ? 0xff - (index * 4) : 0xff - (32 - index) * 4;
         data[j + 2] = 0x00;
       }
-    }*/
+    }
 }
 
 void InitialScreen::OnAudioSourceFrame (unsigned char *data, size_t size, int channels, int bps) {
