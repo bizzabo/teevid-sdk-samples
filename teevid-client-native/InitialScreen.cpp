@@ -76,7 +76,7 @@ InitialScreen::InitialScreen(QWidget *parent) : QWidget(parent), ui(new Ui::Init
 
     InitUI();
 
-    _webcamPublishSettings.previewWindowId = ui->frameCallPart_Local->_subscribeSettings.previewWindowId;
+    //_webcamPublishSettings.previewWindowId = ui->frameCallPart_Local->_subscribeSettings.previewWindowId;
 }
 
 InitialScreen::~InitialScreen()
