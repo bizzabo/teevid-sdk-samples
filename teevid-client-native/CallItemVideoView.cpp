@@ -493,6 +493,7 @@ void CallItemVideoView::onTransformSettingsApplied()
         _subscribeSettings.videoSettings.cropSettings.right = _transformSettingsDialog->GetCropRight();
         _subscribeSettings.videoSettings.cropSettings.bottom = _transformSettingsDialog->GetCropBottom();
 
+        _subscribeSettings.videoSettings.isResize = _transformSettingsDialog->IsResizeActivated();
         _subscribeSettings.videoSettings.videoWidth = _transformSettingsDialog->GetResizeWidth();
         _subscribeSettings.videoSettings.videoHeight = _transformSettingsDialog->GetResizeHeight();
 

@@ -62,6 +62,11 @@ int TransformSettingsDialog::GetCropBottom() const
     return ui->editCropBottom->text().toInt();
 }
 
+bool TransformSettingsDialog::IsResizeActivated()
+{
+    return ui->checkBoxResize->isChecked();
+}
+
 int TransformSettingsDialog::GetResizeWidth()
 {
     return ui->editResizeWidth->text().toInt();

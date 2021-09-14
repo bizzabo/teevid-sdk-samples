@@ -871,7 +871,7 @@ void InitialScreen::onTransformSettingsUpdated(long streamId)
         CallItemVideoView* callItem = GetVideoViewById(streamId);
         mediaSettings = callItem->_subscribeSettings;
     }
-    teeVidClient_->SetStreamMediaSettings(streamId, mediaSettings);
+    teeVidClient_->ApplyTransform(streamId, mediaSettings);
 }
 
 void InitialScreen::onDisplayLocalVideoChecked(int state)
