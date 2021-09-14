@@ -54,13 +54,13 @@ namespace teevid_sdk {
 
         // videoSettings parameter contains the resolution to which incoming video should be resized
         // to prevent resizing (receiving video as is) videoWidth and videoHeight fields in videoSettings should be set to 0
-        virtual bool Subscribe(long streamId, const MediaSettings& mediaSettings, IStreamSubscriber* streamSubscriber) = 0;
+        virtual bool Subscribe(long streamId, MediaSettings& mediaSettings, IStreamSubscriber* streamSubscriber) = 0;
         virtual void Unsubscribe(long streamId) = 0;
 
         // Allows to change settings (e.g. video format) for the video from already subscribed stream - without stopping
-        virtual void SetStreamMediaSettings(long streamId, const MediaSettings& mediaSettings) = 0;
+        virtual void SetStreamMediaSettings(long streamId, MediaSettings& mediaSettings) = 0;
 
-        virtual void ApplyTransform(long streamId, const VideoSettings& settings) = 0;
+        virtual void ApplyTransform(long streamId, MediaSettings& settings) = 0;
 
         virtual void UpdateVideoCaps(int width, int height, int fps) = 0;
 

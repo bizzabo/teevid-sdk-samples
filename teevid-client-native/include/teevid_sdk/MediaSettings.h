@@ -130,6 +130,7 @@ struct VideoSettings
 
   FlipMethod flipMethod = kNone;
   CropSettings cropSettings;
+  bool isResize = false;
 };
 
 typedef struct {
