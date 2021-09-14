@@ -23,6 +23,7 @@ public:
     int GetCropRight() const;
     int GetCropBottom() const;
 
+    bool IsResizeActivated();
     int GetResizeWidth();
     int GetResizeHeight();
 
