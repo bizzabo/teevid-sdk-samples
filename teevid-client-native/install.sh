@@ -76,6 +76,9 @@ sudo cp $CUSTOM_LIB_DIR/gstreamer-1.0/libgstrtp.so $INSTALL_LIB_DIR/gstreamer-1.
 if [ "$ARCHITECTURE" = "aarch64" ]; then
     echo "Install $CUSTOM_LIB_DIR/gstreamer-1.0/libgstnvvideo4linux2.so"
     sudo cp $CUSTOM_LIB_DIR/gstreamer-1.0/libgstnvvideo4linux2.so $INSTALL_LIB_DIR/gstreamer-1.0/
+
+    echo "Install $CUSTOM_LIB_DIR/gstreamer-1.0/libgstnvv4l2camerasrc.so"
+    sudo cp $CUSTOM_LIB_DIR/gstreamer-1.0/libgstnvv4l2camerasrc.so $INSTALL_LIB_DIR/gstreamer-1.0/
 fi
 
 echo "Install video modifying libraries"
