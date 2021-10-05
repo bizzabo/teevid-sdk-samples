@@ -82,6 +82,24 @@ eTransformRotateType TransformSettingsDialog::GetRotateType() const
     return (eTransformRotateType)_rotateGroup->checkedId();
 }
 
+void TransformSettingsDialog::setTransformSettings(const TransformSettings &transformSettings)
+{
+    ui->editCropLeft->setText(QString::number(transformSettings.cropLeft));
+    ui->editCropTop->setText(QString::number(transformSettings.cropTop));
+    ui->editCropRight->setText(QString::number(transformSettings.cropRight));
+    ui->editCropBottom->setText(QString::number(transformSettings.cropBottom));
+
+    ui->checkBoxResize->setChecked(transformSettings.isResizeActivated);
+    ui->editResizeWidth->setText(QString::number(transformSettings.resizeWidth));
+    ui->editResizeHeight->setText(QString::number(transformSettings.resizeHeight));
+
+    QRadioButton *pRotateRadioBtn = dynamic_cast<QRadioButton*>(_rotateGroup->button((int)transformSettings.rotateType));
+    if (pRotateRadioBtn != nullptr)
+    {
+        pRotateRadioBtn->setChecked(true);
+    }
+}
+
 void TransformSettingsDialog::onResizeChecked(int state)
 {
     bool enabled = state == Qt::Checked;

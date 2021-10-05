@@ -29,6 +29,8 @@ public:
 
     eTransformRotateType GetRotateType() const;
 
+    void setTransformSettings(const TransformSettings& transformSettings);
+
 signals:
     void settingsApplied();
 

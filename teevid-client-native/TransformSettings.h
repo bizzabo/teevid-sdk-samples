@@ -23,6 +23,7 @@ public:
     int cropRight = 0;
     int cropBottom = 0;
 
+    bool isResizeActivated = false;
     int resizeWidth = 0;
     int resizeHeight = 0;
 

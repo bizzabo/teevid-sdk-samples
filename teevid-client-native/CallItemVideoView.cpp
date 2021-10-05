@@ -470,6 +470,7 @@ void CallItemVideoView::onTransformSettingsPressed()
     }
     if (_transformSettingsDialog->isHidden())
     {
+        _transformSettingsDialog->setTransformSettings(_transformSettings);
         _transformSettingsDialog->show();
     }
 }
@@ -483,6 +484,7 @@ void CallItemVideoView::onTransformSettingsApplied()
         _transformSettings.cropRight = _transformSettingsDialog->GetCropRight();
         _transformSettings.cropBottom = _transformSettingsDialog->GetCropBottom();
 
+        _transformSettings.isResizeActivated = _transformSettingsDialog->IsResizeActivated();
         _transformSettings.resizeWidth = _transformSettingsDialog->GetResizeWidth();
         _transformSettings.resizeHeight = _transformSettingsDialog->GetResizeHeight();
 
